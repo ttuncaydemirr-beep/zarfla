@@ -47,7 +47,9 @@ void main() {
       for (final l in kLangs) File('assets/l10n/app_$l.arb'),
     ];
     for (final f in files) {
-      final text = f.readAsStringSync();
+      var text = f.readAsStringSync();
+      // invite.html içindeki tasarım görünen adları ("Deniz Altı" gibi) kişi adı değildir.
+      if (f.path.endsWith('invite.html')) text = text.replaceAll(RegExp(r'"name":\{[^}]*\}'), '');
       for (final n in names) {
         expect(RegExp('(?<![\\p{L}])${RegExp.escape(n)}(?![\\p{L}])', unicode: true).hasMatch(text), isFalse,
             reason: '${f.path} içinde örnek ad: $n');
