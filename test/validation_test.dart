@@ -34,17 +34,17 @@ void main() {
     });
     test('çiftte iki isim de gerekli; boşluk isim sayılmaz', () {
       final inv = _inv('nisan')
-        ..n1 = 'Pelin'
+        ..n1 = 'Test A'
         ..n2 = '   ';
       expect(validateInvitation(inv)['names'], 'reqNames');
     });
     test('eksiksiz davetiye geçer', () {
       final inv = _inv('nisan')
-        ..n1 = 'Pelin'
-        ..n2 = 'Burak'
+        ..n1 = 'Test A'
+        ..n2 = 'Test B'
         ..date = '2027-06-12'
         ..time = '19:00'
-        ..venue = 'Baler Garden'
+        ..venue = 'Test Venue'
         ..wa = '905551112233';
       expect(validateInvitation(inv), isEmpty);
     });

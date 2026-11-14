@@ -30,6 +30,35 @@ void main() {
     }
   });
 
+  // Marka adı / ortak sözcük olduğu için diller arasında aynı kalabilen anahtarlar (açık istisna listesi).
+  const sameAllowed = {'app', 'premiumOn', 'lay_monogram', 'type_baby'};
+
+  test('hiçbir değer başka dilin metniyle aynı değil (istisnalar hariç)', () {
+    final maps = {
+      for (final l in kLangs) l: AppStrings.parseArb(File('assets/l10n/app_$l.arb').readAsStringSync()),
+    };
+    for (final k in maps['tr']!.keys) {
+      if (sameAllowed.contains(k)) continue;
+      for (var i = 0; i < kLangs.length; i++) {
+        for (var j = i + 1; j < kLangs.length; j++) {
+          expect(maps[kLangs[i]]![k] == maps[kLangs[j]]![k], isFalse, reason: '$k: ${kLangs[i]} ve ${kLangs[j]} aynı');
+        }
+      }
+    }
+  });
+
+  test('yer tutucu {x} kümesi dört dilde aynı', () {
+    final maps = {
+      for (final l in kLangs) l: AppStrings.parseArb(File('assets/l10n/app_$l.arb').readAsStringSync()),
+    };
+    Set<String> ph(String v) => RegExp(r'\{(\w+)\}').allMatches(v).map((m) => m.group(1)!).toSet();
+    for (final k in maps['tr']!.keys) {
+      for (final l in kLangs) {
+        expect(ph(maps[l]![k]!), ph(maps['tr']![k]!), reason: '$l.$k yer tutucuları farklı');
+      }
+    }
+  });
+
   test('yer tutucu değişimi', () {
     final s = AppStrings({
       'tr': {'x': 'Kalan: {n}'},

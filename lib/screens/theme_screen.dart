@@ -55,9 +55,10 @@ class _ThemeScreenState extends State<ThemeScreen> {
   Widget build(BuildContext context) {
     final st = context.watch<AppState>();
     final lang = st.lang;
+    // İsim girilmediyse nötr monogram (örnek kişi adı gösterilmez).
     final sample = inv.isCouple
-        ? '${inv.n1.isNotEmpty ? inv.n1 : 'Pelin'} & ${inv.n2.isNotEmpty ? inv.n2 : 'Burak'}'
-        : (inv.n1.isNotEmpty ? inv.n1 : (lang == 'ar' ? 'يوسف' : 'Ali Kerem'));
+        ? '${inv.n1.trim().isNotEmpty ? inv.n1.trim() : 'A'} & ${inv.n2.trim().isNotEmpty ? inv.n2.trim() : 'B'}'
+        : (inv.n1.trim().isNotEmpty ? inv.n1.trim() : 'A');
     final order = kRecommended[inv.type] ?? kThemes.keys.toList();
     return Scaffold(
       body: SafeArea(

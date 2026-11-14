@@ -21,10 +21,10 @@ void main() {
   test('başlık ve çip etiketi', () {
     final inv = Invitation.create(id: 'a', type: 'nisan', lang: 'tr', now: 0);
     expect(invitationTitle(inv, 'İsimsiz'), 'İsimsiz');
-    inv.n1 = 'Pelin';
-    expect(invitationTitle(inv, 'İsimsiz'), 'Pelin');
-    inv.n2 = 'Burak';
-    expect(invitationTitle(inv, 'İsimsiz'), 'Pelin & Burak');
+    inv.n1 = 'Test A';
+    expect(invitationTitle(inv, 'İsimsiz'), 'Test A');
+    inv.n2 = 'Test B';
+    expect(invitationTitle(inv, 'İsimsiz'), 'Test A & Test B');
     expect(chipLabel('a' * 50).length, 47);
   });
 

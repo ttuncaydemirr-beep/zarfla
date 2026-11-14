@@ -3,8 +3,8 @@ import 'package:zarfla/logic/lock_rules.dart';
 import 'package:zarfla/models/invitation.dart';
 
 Invitation _ready() => Invitation.create(id: 'test01', type: 'dugun', lang: 'tr', now: 0)
-  ..n1 = 'Pelin'
-  ..n2 = 'Burak'
+  ..n1 = 'Test A'
+  ..n2 = 'Test B'
   ..date = '2027-06-12';
 
 void main() {
@@ -31,15 +31,15 @@ void main() {
   test('isim: 3 düzeltme, sonra hak yok; değişmeyen ve boş isim hak yemez', () {
     final inv = _ready();
     markPublished(inv, 'premium');
-    expect(applyNameEdit(inv, first: true, value: ' Pelin '), EditOutcome.unchanged);
+    expect(applyNameEdit(inv, first: true, value: ' Test A '), EditOutcome.unchanged);
     expect(applyNameEdit(inv, first: true, value: ''), EditOutcome.empty);
     expect(inv.nameEditsLeft, 3);
-    expect(applyNameEdit(inv, first: true, value: 'Pelin Su'), EditOutcome.applied);
-    expect(applyNameEdit(inv, first: false, value: 'Burak Can'), EditOutcome.applied);
-    expect(applyNameEdit(inv, first: true, value: 'Pelinsu'), EditOutcome.applied);
+    expect(applyNameEdit(inv, first: true, value: 'Test A1'), EditOutcome.applied);
+    expect(applyNameEdit(inv, first: false, value: 'Test B2'), EditOutcome.applied);
+    expect(applyNameEdit(inv, first: true, value: 'Test A2'), EditOutcome.applied);
     expect(inv.nameEditsLeft, 0);
     expect(applyNameEdit(inv, first: false, value: 'Başka'), EditOutcome.noRightsLeft);
-    expect(inv.n2, 'Burak Can');
+    expect(inv.n2, 'Test B2');
   });
 
   test('tarih: ±60 gün penceresi', () {

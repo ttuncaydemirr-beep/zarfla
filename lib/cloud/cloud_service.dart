@@ -53,7 +53,7 @@ class CloudService {
       _ready = true;
     } catch (e) {
       _initError = e;
-      debugPrint('Firebase başlatılamadı: $e');
+      debugPrint('Firebase init failed: $e');
     }
   }
 

@@ -46,10 +46,27 @@ class AppStrings {
   }
 }
 
+/// Dil değişince `context.t` kullanan TÜM widget'ları (const olanlar dahil) yeniden çizdirir.
+/// Kök neden: `const _Empty()` gibi const widget'lar üst widget yeniden çizilince de
+/// atlanır; `context.t` bağımlılık kaydetmediği için metin eski dilde kalıyordu.
+class LangScope extends InheritedWidget {
+  const LangScope({super.key, required this.lang, required super.child});
+
+  final String lang;
+
+  @override
+  bool updateShouldNotify(LangScope oldWidget) => oldWidget.lang != lang;
+}
+
 extension L10nX on BuildContext {
-  /// Arayüz dilinde metin. Ekranlar build içinde `context.watch<AppState>()` çağırdığı
-  /// için dil değişince yeniden çizilir; burada dinleme yapılmaz (geri çağrılarda da güvenli).
+  /// Arayüz dilinde metin. [LangScope] bağımlılığı sayesinde dil değişince build içinde
+  /// çağıran her widget yeniden çizilir (geri çağrılarda da güvenli).
   String t(String key, [Map<String, Object> args = const {}]) {
+    try {
+      if (mounted) dependOnInheritedWidgetOfExactType<LangScope>();
+    } catch (_) {
+      // initState gibi bağımlılık kaydedilemeyen yerlerde sessizce geç.
+    }
     final st = Provider.of<AppState>(this, listen: false);
     return st.strings.get(st.lang, key, args);
   }

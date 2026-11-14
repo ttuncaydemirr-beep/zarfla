@@ -12,11 +12,11 @@ Invitation _inv({String plan = 'free'}) => Invitation(
       theme: 'papatya',
       lang: 'tr',
       created: 0,
-      n1: 'Pelin Su',
-      n2: 'Burak',
+      n1: 'Test A',
+      n2: 'Test B',
       msg: 'Sizi "aramızda" görmek isteriz.\nSevgiyle',
       date: '2027-06-12',
-      venue: 'Baler Garden',
+      venue: 'Test Venue',
       wa: '905551112233',
       program: [ProgramStep(t: '19:00', x: 'Karşılama')],
       cover: 'c.jpg',
@@ -96,8 +96,8 @@ void main() {
       expect(m['cover'], 'https://x/c');
       expect(m['photos'], ['https://x/1', 'https://x/2']);
       // Kuralların aradığı birebir parçalar
-      expect(j.contains('"n1":"Pelin Su"'), isTrue);
-      expect(j.contains('"n2":"Burak"'), isTrue);
+      expect(j.contains('"n1":"Test A"'), isTrue);
+      expect(j.contains('"n2":"Test B"'), isTrue);
       expect(j.contains('"date":"2027-06-12"'), isTrue);
       expect(j.contains('"status":"live"'), isTrue);
       expect(j.contains('"plan":"free"'), isTrue);
@@ -147,9 +147,9 @@ void main() {
     });
 
     test('isimde yasak karakterler', () {
-      expect(cloudSafeName('Pe"lin\\ Su'), 'Pelin Su');
+      expect(cloudSafeName('Te"st\\ A'), 'Test A');
       expect(cloudSafeName('Çağla & Şükrü'), 'Çağla & Şükrü');
-      expect(cloudSafeName('نورة'), 'نورة');
+      expect(cloudSafeName('اختبار'), 'اختبار');
     });
   });
 

@@ -45,14 +45,14 @@ function dataJson(o = {}) {
     lang: 'tr',
     layout: 'klasik',
     opening: 'door',
-    n1: o.n1 ?? 'Pelin Su',
-    n2: o.n2 ?? 'Burak',
+    n1: o.n1 ?? 'Test A',
+    n2: o.n2 ?? 'Test B',
     host: '',
     msg: o.msg ?? 'Sizi aramızda görmek isteriz.',
     date: o.date ?? '2027-06-12',
     time: '19:00',
     end: '',
-    venue: 'Baler Garden',
+    venue: 'Test Venue',
     address: 'Avcılar / İstanbul',
     wa: '905551112233',
     program: [{ t: '19:00', x: 'Karşılama' }],
@@ -70,8 +70,8 @@ function freeDoc(uid, o = {}) {
   const now = Date.now();
   const exp = o.expMs ?? now + 24 * H;
   const date = o.date ?? '2027-06-12';
-  const n1 = o.n1 ?? 'Pelin Su';
-  const n2 = o.n2 ?? 'Burak';
+  const n1 = o.n1 ?? 'Test A';
+  const n2 = o.n2 ?? 'Test B';
   const theme = o.theme ?? 'papatya';
   const type = o.type ?? 'nisan';
   return {
@@ -109,7 +109,7 @@ function seededFree(uid, o = {}) {
 function seededPaid(uid, o = {}) {
   const exp = Date.now() + 365 * D;
   const date = o.date ?? '2027-06-12';
-  const n1 = o.n1 ?? 'Pelin Su';
+  const n1 = o.n1 ?? 'Test A';
   const theme = o.theme ?? 'altin';
   return {
     ...freeDoc(uid, { ...o, theme, n1, date, expMs: exp, dataPlan: 'premium' }),
@@ -224,7 +224,7 @@ describe('Firestore · güncelleme (ücretsiz)', () => {
   test('U1 sahibi metni ve isimleri güncelleyebilir', async () => {
     await seed(ID, seededFree('alice'));
     await assertSucceeds(updateDoc(inv('alice'), {
-      data: dataJson({ n1: 'Pelin', msg: 'Yeni mesaj' }), n1: 'Pelin',
+      data: dataJson({ n1: 'Test A1', msg: 'Yeni mesaj' }), n1: 'Test A1',
     }));
   });
   test('U2 başkası güncelleyemez', async () => {
@@ -267,19 +267,19 @@ describe('Firestore · güncelleme (ücretli kilitler)', () => {
 
   test('P1 isim düzeltme: nameEdits tam +1 ile geçer', async () => {
     await seed(ID, seededPaid('alice'));
-    await assertSucceeds(updateDoc(inv('alice'), { n1: 'Pelin', nameEdits: 1, data: paidData({ n1: 'Pelin' }) }));
+    await assertSucceeds(updateDoc(inv('alice'), { n1: 'Test A1', nameEdits: 1, data: paidData({ n1: 'Test A1' }) }));
   });
   test('P2 sayaç artmadan isim değişmez', async () => {
     await seed(ID, seededPaid('alice'));
-    await assertFails(updateDoc(inv('alice'), { n1: 'Pelin', data: paidData({ n1: 'Pelin' }) }));
+    await assertFails(updateDoc(inv('alice'), { n1: 'Test A1', data: paidData({ n1: 'Test A1' }) }));
   });
   test('P3 sayaç +2 olamaz', async () => {
     await seed(ID, seededPaid('alice'));
-    await assertFails(updateDoc(inv('alice'), { n1: 'Pelin', nameEdits: 2, data: paidData({ n1: 'Pelin' }) }));
+    await assertFails(updateDoc(inv('alice'), { n1: 'Test A1', nameEdits: 2, data: paidData({ n1: 'Test A1' }) }));
   });
   test('P4 3 hak bitince isim değişmez', async () => {
     await seed(ID, seededPaid('alice', { nameEdits: 3 }));
-    await assertFails(updateDoc(inv('alice'), { n1: 'Pelin', nameEdits: 4, data: paidData({ n1: 'Pelin' }) }));
+    await assertFails(updateDoc(inv('alice'), { n1: 'Test A1', nameEdits: 4, data: paidData({ n1: 'Test A1' }) }));
   });
   test('P5 tasarım ve tür değişmez', async () => {
     await seed(ID, seededPaid('alice'));

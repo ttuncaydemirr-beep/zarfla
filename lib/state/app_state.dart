@@ -9,6 +9,7 @@ import '../cloud/invite_contract.dart';
 import '../data/catalog.dart';
 import '../l10n/strings.dart';
 import '../logic/lock_rules.dart';
+import '../logic/sample_names.dart';
 import '../models/invitation.dart';
 import '../storage/invitation_store.dart';
 import '../storage/photo_store.dart';
@@ -58,6 +59,14 @@ class AppState extends ChangeNotifier {
           ..cloudFiles = {};
         migrated = true;
       }
+    }
+    // Tek seferlik: eski sürümün otomatik doldurduğu örnek isimleri temizle.
+    const flag = 'zarfla_sample_names_cleared_v1';
+    if (!await _store.loadFlag(flag)) {
+      for (final i in invitations) {
+        if (clearSampleNames(i)) migrated = true;
+      }
+      await _store.saveFlag(flag, true);
     }
     if (migrated) await _store.saveAll(invitations);
   }

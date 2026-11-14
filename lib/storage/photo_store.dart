@@ -21,7 +21,7 @@ class PhotoStore {
 
   Directory get dir {
     final d = _dir;
-    if (d == null) throw StateError('PhotoStore.init çağrılmadı');
+    if (d == null) throw StateError('PhotoStore.init was not called');
     return d;
   }
 

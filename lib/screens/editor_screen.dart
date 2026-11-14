@@ -219,7 +219,7 @@ class _DetailsFormState extends State<DetailsForm> {
   late final FocusNode _n1Focus, _n2Focus;
   final Map<ProgramStep, TextEditingController> _stepCtl = {};
   final _picker = ImagePicker();
-  String? _photoWarn;
+  String? _photoWarn; // ARB anahtarı (dil değişince doğru dilde gösterilir)
   bool _busy = false;
 
   Invitation get inv => widget.inv;
@@ -375,7 +375,7 @@ class _DetailsFormState extends State<DetailsForm> {
     try {
       f = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 1600, maxHeight: 1600, imageQuality: 82);
     } catch (_) {
-      if (mounted) setState(() => _photoWarn = context.t('photoErr'));
+      if (mounted) setState(() => _photoWarn = 'photoErr');
       return;
     }
     if (f == null || !mounted) return;
@@ -386,7 +386,7 @@ class _DetailsFormState extends State<DetailsForm> {
     if (!mounted) return;
     setState(() {
       _busy = false;
-      _photoWarn = err == null ? null : context.t(err);
+      _photoWarn = err;
     });
   }
 
@@ -400,7 +400,7 @@ class _DetailsFormState extends State<DetailsForm> {
     try {
       files = await _picker.pickMultiImage(maxWidth: 1200, maxHeight: 1200, imageQuality: 82);
     } catch (_) {
-      if (mounted) setState(() => _photoWarn = context.t('photoErr'));
+      if (mounted) setState(() => _photoWarn = 'photoErr');
       return;
     }
     if (files.isEmpty || !mounted) return;
@@ -416,7 +416,7 @@ class _DetailsFormState extends State<DetailsForm> {
     if (!mounted) return;
     setState(() {
       _busy = false;
-      _photoWarn = warn == null ? null : context.t(warn);
+      _photoWarn = warn;
     });
   }
 
@@ -700,7 +700,7 @@ class _DetailsFormState extends State<DetailsForm> {
               controller: _wa,
               keyboardType: TextInputType.phone,
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9 +()-]')), LengthLimitingTextInputFormatter(24)],
-              decoration: fieldDecoration(hint: '90 5xx xxx xx xx'),
+              decoration: fieldDecoration(hint: context.t('phWa')),
               style: bodyStyle(16),
               onChanged: (v) => _set(() => inv.wa = v),
             ),
@@ -804,7 +804,7 @@ class _DetailsFormState extends State<DetailsForm> {
         FieldBlock(
           label: context.t('gallery'),
           hint: context.t('galHint', {'n': inv.photos.length}),
-          error: _photoWarn,
+          error: _photoWarn == null ? null : context.t(_photoWarn!),
           child: Column(
             children: [
               if (inv.photos.isNotEmpty)

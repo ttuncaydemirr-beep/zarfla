@@ -45,6 +45,12 @@ class InvitationStore {
     await (await _p()).setString(_kLang, lang);
   }
 
+  Future<bool> loadFlag(String key) async => (await _p()).getBool(key) ?? false;
+
+  Future<void> saveFlag(String key, bool v) async {
+    await (await _p()).setBool(key, v);
+  }
+
   Future<bool> loadPremiumUser() async => (await _p()).getBool(_kPrem) ?? false;
 
   Future<void> savePremiumUser(bool v) async {

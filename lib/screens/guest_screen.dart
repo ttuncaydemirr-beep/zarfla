@@ -18,30 +18,30 @@ class GuestScreen extends StatelessWidget {
       backgroundColor: Colors.black,
       body: inv == null
           ? const SizedBox.shrink()
-          : Stack(
-              children: [
-                Positioned.fill(child: SafeArea(child: InviteView(inv: inv))),
-                PositionedDirectional(
-                  top: 0,
-                  end: 0,
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: TextButton.icon(
-                        style: TextButton.styleFrom(
-                          backgroundColor: const Color(0x8C000000),
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(48, 48),
-                          shape: const StadiumBorder(),
-                        ),
+          : SafeArea(
+              child: Column(
+                children: [
+                  // İnce üst çubuk: kapat düğmesi davetiye içeriğini örtmez, içerik çubuğun altından başlar.
+                  Container(
+                    height: 48,
+                    color: const Color(0xCC000000),
+                    alignment: AlignmentDirectional.centerEnd,
+                    padding: const EdgeInsetsDirectional.only(end: 4),
+                    child: Semantics(
+                      button: true,
+                      label: context.t('close'),
+                      child: IconButton(
+                        tooltip: context.t('close'),
+                        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                        style: IconButton.styleFrom(backgroundColor: const Color(0x33FFFFFF), foregroundColor: Colors.white),
+                        icon: const Icon(Icons.close, size: 20),
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close, size: 18),
-                        label: Text(context.t('close')),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  Expanded(child: InviteView(inv: inv)),
+                ],
+              ),
             ),
     );
   }
