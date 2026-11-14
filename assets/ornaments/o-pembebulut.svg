@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100"><defs><linearGradient id="gD_moon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF3C6"/><stop offset="1" stop-color="#FFD98A"/></linearGradient><linearGradient id="gD_cloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FBD9E3"/></linearGradient></defs><g transform="translate(0 -1)">
+<path d="M-12.37 -33.94 A22 22 0 1 0 6.13 -3.12 A18 18 0 1 1 -12.37 -33.94Z" transform="translate(-4 2)" fill="url(#gD_moon)" stroke="#C38A2A" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M24.0 -36.0 L27.6 -27.0 L37.3 -26.3 L29.9 -20.1 L32.2 -10.7 L24.0 -15.8 L15.8 -10.7 L18.1 -20.1 L10.7 -26.3 L20.4 -27.0Z" fill="#FFE9A0" stroke="#C38A2A" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M0 5 C-9 -1 -9 -9 -4 -9 C-1.8 -9 0 -7.4 0 -6 C0 -7.4 1.8 -9 4 -9 C9 -9 9 -1 0 5Z" transform="translate(32 0) rotate(12) scale(1.15)" fill="#F58BAA" stroke="#B0557A" stroke-width="1.57" stroke-linejoin="round"/>
+<path d="M0 5 C-9 -1 -9 -9 -4 -9 C-1.8 -9 0 -7.4 0 -6 C0 -7.4 1.8 -9 4 -9 C9 -9 9 -1 0 5Z" transform="translate(10 -34) rotate(-10) scale(0.8)" fill="#F7A5BE" stroke="#B0557A" stroke-width="2.00" stroke-linejoin="round"/>
+<path d="M-34 38 A10 10 0 0 1 -32 18 A15 15 0 0 1 -5 12 A17 17 0 0 1 24 18 A10 10 0 0 1 30 38 Z" fill="url(#gD_cloud)" stroke="#B0557A" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M-26 28 C-22 24 -18 24 -15 27" fill="none" stroke="#F3B7C8" stroke-width="2" stroke-linecap="round"/>
+</g></svg>

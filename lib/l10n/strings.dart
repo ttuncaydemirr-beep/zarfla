@@ -37,6 +37,9 @@ class AppStrings {
     return out;
   }
 
+  /// Anahtar bu dilde (ya da Türkçe yedekte) tanımlı mı?
+  bool has(String lang, String key) => (_maps[lang]?.containsKey(key) ?? false) || (_maps['tr']?.containsKey(key) ?? false);
+
   String get(String lang, String key, [Map<String, Object> args = const {}]) {
     var s = _maps[lang]?[key] ?? _maps['tr']?[key] ?? key;
     args.forEach((k, v) {
@@ -69,6 +72,12 @@ extension L10nX on BuildContext {
     }
     final st = Provider.of<AppState>(this, listen: false);
     return st.strings.get(st.lang, key, args);
+  }
+
+  /// [key] tanımlıysa onu, değilse [fallbackKey] metnini verir (ör. türe özel tek isim etiketi).
+  String tOr(String key, String fallbackKey) {
+    final st = Provider.of<AppState>(this, listen: false);
+    return t(st.strings.has(st.lang, key) ? key : fallbackKey);
   }
 
   /// Belirli bir dilde metin (ör. davetiye dili).

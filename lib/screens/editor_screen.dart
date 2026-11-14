@@ -536,7 +536,7 @@ class _DetailsFormState extends State<DetailsForm> {
             ],
           )
         else
-          nameField(true, context.t('nameOne'), context.t('phOne')),
+          nameField(true, context.tOr('nameLabel_${inv.type}', 'nameOne'), context.t('phOne')),
         if (err('names') != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),

@@ -8,7 +8,7 @@ Paket adı: `com.demirgamesstudio.zarfla` · Diller: Türkçe, English, Deutsch,
 ```
 lib/
   main.dart, app.dart        Başlangıç, MaterialApp (4 dil, Arapça otomatik sağdan sola)
-  data/catalog.dart          17 tasarım (renkler birebir), REC sıraları, etkinlik türleri, hazır mesajlar
+  data/catalog.dart          33 tasarım (renkler birebir), REC sıraları, 19 etkinlik türü, hazır mesajlar
   models/invitation.dart     Davetiye modeli (web önizlemesindeki alanlar)
   logic/                     Doğrulama, yayın sonrası kilit kuralları, tarih ve metin yardımcıları
   l10n/strings.dart          ARB metinlerini okur (assets/l10n/app_<dil>.arb)
@@ -124,6 +124,10 @@ CI'daki **rules** işi `rules-test/rules.test.mjs` ile aşağıdakilerin hepsini
 | C17 | createdAt istemci saati | ret |
 | C18 | İsimde çift tırnak | ret |
 | C19 | Regex özel karakterli isim | izin |
+| T1 | Yeni etkinlik türü + papatya ile ücretsiz oluşturma (11 tür) | izin |
+| T2 | Ücretsiz planda yeni tasarım (16 tasarım) | ret |
+| T3 | Geçersiz biçimli tür anahtarı (büyük harf, 25 karakter, tire) | ret |
+| T4 | Ücretli yeni tasarım + yeni türde isim düzeltme izin; tür/tasarım değişimi ret | izin/ret |
 | R1 | Yayındaki belgeyi herkes okur | izin |
 | R2 | Süresi dolmuş belgeyi başkası okur | ret |
 | R3 | Sahibi süresi dolmuş belgesini okur | izin |

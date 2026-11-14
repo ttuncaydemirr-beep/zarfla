@@ -195,6 +195,37 @@ describe('Firestore · oluşturma', () => {
 });
 
 // ============================================================================
+// Kurallarda tür/tasarım beyaz listesi YOK: yalnız anahtar biçimi ([a-z0-9]{1,24}) ve
+// "ücretsiz plan yalnız papatya" denetlenir. Bu yüzden yeni tür/tasarım için kural değişikliği gerekmez.
+const NEW_TYPES = ['nikah', 'asker', 'mevlit', 'mezuniyet', 'evacilisi', 'iftar', 'disbugdayi', 'cinsiyet', 'yildonumu', 'bekarliga', 'kurumsal'];
+const NEW_THEMES = ['cini', 'kurugul', 'orman', 'kadife', 'gunbatimi', 'mevlit', 'monogram', 'sakayik', 'ayicik', 'pembebulut', 'uzay', 'safari', 'denizalti', 'prens', 'mezuniyet', 'yeniev'];
+
+describe('Firestore · yeni türler ve tasarımlar', () => {
+  for (const ty of NEW_TYPES) {
+    test(`T1 yeni tür "${ty}" + papatya ile ücretsiz oluşturma geçer`, async () => {
+      await assertSucceeds(setDoc(inv('alice'), freeDoc('alice', { type: ty })));
+    });
+  }
+  for (const th of NEW_THEMES) {
+    test(`T2 ücretsiz planda yeni tasarım "${th}" reddedilir`, async () => {
+      await assertFails(setDoc(inv('alice'), freeDoc('alice', { theme: th })));
+    });
+  }
+  test('T3 geçersiz biçimli tür (büyük harf, 25 karakter, tire) reddedilir', async () => {
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { type: 'Nikah' })));
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { type: 'a'.repeat(25) })));
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { type: 'dis-bugdayi' })));
+  });
+  test('T4 ücretli yeni tasarım + yeni türde isim düzeltme geçer, tür/tasarım değişmez', async () => {
+    const paid = (o = {}) => dataJson({ type: 'nikah', theme: 'kadife', plan: 'premium', ...o });
+    await seed(ID, seededPaid('alice', { type: 'nikah', theme: 'kadife' }));
+    await assertSucceeds(updateDoc(inv('alice'), { n1: 'Test A1', nameEdits: 1, data: paid({ n1: 'Test A1' }) }));
+    await assertFails(updateDoc(inv('alice'), { theme: 'orman', data: paid({ theme: 'orman' }) }));
+    await assertFails(updateDoc(inv('alice'), { type: 'asker', data: paid({ type: 'asker' }) }));
+  });
+});
+
+// ============================================================================
 describe('Firestore · okuma', () => {
   test('R1 herkes yayındaki belgeyi okur (get)', async () => {
     await seed(ID, seededFree('alice'));
