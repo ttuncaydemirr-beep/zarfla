@@ -16,7 +16,7 @@ import '../models/invitation.dart';
 ///   expiresAt timestamp free: yayın + 24 saat · paid: yayın + 365 gün
 ///   deleteAt  timestamp expiresAt + 30 gün (Firestore TTL alanı)
 ///   type, theme, n1, n2, date (YYYY-MM-DD), origDate, nameEdits (int), dateEdits (int)  — kilit alanları
-/// Storage: invites/{id}/cover.<ext>, invites/{id}/g1.<ext> … g6.<ext> (≤ 2 MB, image/*)
+/// Storage: invites/{id}/cover.EXT, invites/{id}/g1.EXT … g6.EXT (< 2 MB, image/*)
 /// Bağlantı: https://ttuncaydemirr-beep.github.io/davetiye/?id={id}
 
 const int kInviteSchema = 1;

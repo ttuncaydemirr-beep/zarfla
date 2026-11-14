@@ -132,7 +132,7 @@ void main() {
 
       final rules = File('firestore.rules').readAsStringSync();
       final m = RegExp(r'hasOnly\(\[([^\]]*)\]\)').firstMatch(rules)!;
-      final keys = RegExp(r"'([A-Za-z]+)'").allMatches(m.group(1)!).map((x) => x.group(1)).toSet();
+      final keys = RegExp(r"'([A-Za-z0-9]+)'").allMatches(m.group(1)!).map((x) => x.group(1)).toSet();
       expect(keys, kInviteDocKeys.toSet());
     });
 
