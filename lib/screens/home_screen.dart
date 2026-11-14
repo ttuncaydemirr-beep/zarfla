@@ -155,9 +155,11 @@ class _InvItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                live
-                    ? ZBadge(label: context.t('live'), bg: AppColors.tint, fg: AppColors.ok, icon: Icons.check)
-                    : ZBadge(label: context.t('draft'), bg: AppColors.sand, fg: AppColors.draftInk),
+                live && st.isExpired(inv)
+                    ? ZBadge(label: context.t('expired'), bg: AppColors.sand, fg: AppColors.err, icon: Icons.timer_off_outlined)
+                    : live
+                        ? ZBadge(label: context.t('live'), bg: AppColors.tint, fg: AppColors.ok, icon: Icons.check)
+                        : ZBadge(label: context.t('draft'), bg: AppColors.sand, fg: AppColors.draftInk),
               ],
             ),
           ),

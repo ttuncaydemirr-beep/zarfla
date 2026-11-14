@@ -48,6 +48,9 @@ jobs:
       - name: Paketler
         run: flutter pub get
 
+      - name: Çözülen Firebase sürümleri
+        run: grep -A2 -E '^  (firebase_core|firebase_auth|cloud_firestore|firebase_storage):' pubspec.lock || true
+
       - name: Analiz (uyarılar geçer, hatalar durdurur)
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
@@ -73,3 +76,28 @@ jobs:
           name: zarfla-release-aab
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 7
+
+  # Güvenlik kuralları: Firebase emülatöründe firestore.rules + storage.rules testleri (rules-test/).
+  rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Test paketleri
+        working-directory: rules-test
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: Kural testleri (emülatör)
+        run: >
+          npx -y firebase-tools@latest emulators:exec --project demo-zarfla --only firestore,storage
+          "node --test --test-reporter=spec rules-test/rules.test.mjs"

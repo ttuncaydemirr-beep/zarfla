@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import '../cloud/invite_contract.dart';
 import '../data/catalog.dart';
 import '../l10n/strings.dart';
 import '../logic/date_utils.dart';
@@ -38,6 +39,7 @@ class _EditorScreenState extends State<EditorScreen> {
   bool _showErr = false;
   DateTime? _delArmedAt;
   int _previewKey = 0;
+  bool _cloudBusy = false;
 
   void _goPreview(int tab) {
     FocusScope.of(context).unfocus();
@@ -51,9 +53,22 @@ class _EditorScreenState extends State<EditorScreen> {
     final now = DateTime.now();
     final armed = _delArmedAt;
     if (armed != null && now.difference(armed).inMilliseconds < 3500) {
+      if (_cloudBusy) return;
+      _delArmedAt = null;
       final nav = Navigator.of(context);
-      await context.read<AppState>().delete(inv);
-      if (mounted) nav.pop();
+      if (inv.cloudId != null) {
+        setState(() => _cloudBusy = true);
+        showToast(context, context.t('deleting'), ms: 20000);
+      }
+      final err = await context.read<AppState>().deleteInvitation(inv);
+      if (!mounted) return;
+      setState(() => _cloudBusy = false);
+      if (err != null) {
+        showToast(context, context.t(err), ms: 5000);
+        return;
+      }
+      ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
+      nav.pop();
       return;
     }
     _delArmedAt = now;
@@ -73,12 +88,30 @@ class _EditorScreenState extends State<EditorScreen> {
     }
     final st = context.read<AppState>();
     if (inv.isLive) {
-      st.save();
-      showToast(context, context.t('updated'));
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => DoneScreen(invId: inv.id)));
+      _pushUpdate(st, inv);
       return;
     }
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => PublishScreen(invId: inv.id)));
+  }
+
+  Future<void> _pushUpdate(AppState st, Invitation inv) async {
+    if (_cloudBusy) return;
+    if (st.isExpired(inv)) {
+      showToast(context, context.t('expiredNote'), ms: 5000);
+      return;
+    }
+    setState(() => _cloudBusy = true);
+    showToast(context, context.t('cloudUpdating'), ms: 30000);
+    final nav = Navigator.of(context);
+    final err = await st.pushUpdate(inv);
+    if (!mounted) return;
+    setState(() => _cloudBusy = false);
+    if (err != null) {
+      showToast(context, context.t(err), ms: 5000);
+      return;
+    }
+    showToast(context, context.t('updated'));
+    nav.push(MaterialPageRoute(builder: (_) => DoneScreen(invId: inv.id)));
   }
 
   @override
@@ -125,7 +158,10 @@ class _EditorScreenState extends State<EditorScreen> {
                 label: _tab == 0 ? context.t('preview') : context.t('details'),
                 onPressed: () => _goPreview(_tab == 0 ? 1 : 0),
               ),
-              PrimaryButton(label: inv.isLive ? context.t('update') : context.t('publish'), onPressed: () => _toPublish(inv)),
+              PrimaryButton(
+                label: _cloudBusy ? context.t('cloudUpdating') : (inv.isLive ? context.t('update') : context.t('publish')),
+                onPressed: _cloudBusy ? null : () => _toPublish(inv),
+              ),
             ]),
           ],
         ),
@@ -233,11 +269,22 @@ class _DetailsFormState extends State<DetailsForm> {
   void _commitName(bool first, {bool silent = false}) {
     final ctl = first ? _n1 : _n2;
     final old = first ? inv.n1 : inv.n2;
+    final oldLeft = inv.nameEditsLeft;
     final r = applyNameEdit(inv, first: first, value: ctl.text);
     switch (r) {
       case EditOutcome.applied:
         st.save(notify: !silent);
         if (!silent) showToast(context, context.t('savedLeft', {'n': inv.nameEditsLeft}), ms: 3000);
+        // Ücretli kilit: her düzeltme buluta ayrı yazılır (kural: nameEdits tam +1).
+        _syncLocked(() {
+          if (first) {
+            inv.n1 = old;
+          } else {
+            inv.n2 = old;
+          }
+          inv.nameEditsLeft = oldLeft;
+          if (!silent && mounted) ctl.text = old;
+        });
         break;
       case EditOutcome.unchanged:
         break;
@@ -251,6 +298,16 @@ class _DetailsFormState extends State<DetailsForm> {
         if (!silent) showToast(context, context.t(inv.isCouple ? 'reqNames' : 'reqName'), ms: 3000);
         break;
     }
+  }
+
+  /// Yayındaki ücretli davetiyede kilitli düzeltmeyi hemen buluta yazar; olmazsa geri alır.
+  Future<void> _syncLocked(void Function() revert) async {
+    if (!inv.isLive || inv.cloudId == null) return;
+    final err = await st.pushUpdate(inv);
+    if (err == null) return;
+    revert();
+    await st.save();
+    if (mounted) showToast(context, context.t(err), ms: 5000);
   }
 
   void _set(void Function() f) {
@@ -275,11 +332,18 @@ class _DetailsFormState extends State<DetailsForm> {
     final picked = await showDatePicker(context: context, initialDate: initial, firstDate: first, lastDate: last);
     if (picked == null || !mounted) return;
     final iso = isoOf(DateTime.utc(picked.year, picked.month, picked.day));
+    final oldDate = inv.date, oldLeft = inv.dateEditsLeft, wasLocked = isLocked(inv);
     final r = applyDateEdit(inv, iso);
     switch (r) {
       case EditOutcome.applied:
         await st.save();
-        if (isLocked(inv) && mounted) showToast(context, context.t('savedLeft', {'n': inv.dateEditsLeft}), ms: 3000);
+        if (wasLocked && mounted) showToast(context, context.t('savedLeft', {'n': inv.dateEditsLeft}), ms: 3000);
+        if (wasLocked) {
+          await _syncLocked(() {
+            inv.date = oldDate;
+            inv.dateEditsLeft = oldLeft;
+          });
+        }
         break;
       case EditOutcome.unchanged:
         break;
@@ -395,7 +459,8 @@ class _DetailsFormState extends State<DetailsForm> {
             controller: first ? _n1 : _n2,
             focusNode: first ? _n1Focus : _n2Focus,
             readOnly: nameRO,
-            inputFormatters: maxLen(40),
+            // Bulut kuralı: isimlerde " \ ve kontrol karakteri yok (bkz. firestore.rules).
+            inputFormatters: [...maxLen(40), FilteringTextInputFormatter.deny(kCloudNameForbidden)],
             textInputAction: TextInputAction.next,
             decoration: fieldDecoration(hint: ph, readOnly: nameRO),
             style: bodyStyle(16),
@@ -424,6 +489,7 @@ class _DetailsFormState extends State<DetailsForm> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
+        if (app.isExpired(inv)) NoteBox(context.t('expiredNote'), icon: Icons.timer_off_outlined),
         // Tür + tasarım
         ZCard(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),

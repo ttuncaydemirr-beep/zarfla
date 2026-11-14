@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 import 'app.dart';
+import 'cloud/cloud_service.dart';
 import 'l10n/strings.dart';
 import 'state/app_state.dart';
 import 'storage/invitation_store.dart';
@@ -15,9 +16,14 @@ Future<void> main() async {
   await initializeDateFormatting();
   _registerFontLicenses();
   final strings = await AppStrings.load();
-  final state = AppState(strings: strings, store: InvitationStore(), photos: PhotoStore());
+  final photos = PhotoStore();
+  final cloud = CloudService(photos);
+  await cloud.init(); // yerel başlatma; ağ gerektirmez
+  final state = AppState(strings: strings, store: InvitationStore(), photos: photos, cloud: cloud);
   await state.init();
   runApp(ChangeNotifierProvider<AppState>.value(value: state, child: const ZarflaApp()));
+  // Anonim giriş arka planda (çevrimdışıysa yayın anında yeniden denenir).
+  state.warmUpCloud();
 }
 
 /// Paketlenen yazı tiplerinin OFL lisansları (Ayarlar > Lisanslar'da görünür).

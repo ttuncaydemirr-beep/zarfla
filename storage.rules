@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// Zarfla — Cloud Storage güvenlik kuralları (kova: zarfla-37da9.firebasestorage.app)
+// Dosyalar: invites/{id}/cover.<uzantı>, invites/{id}/g1.<uzantı> … g6.<uzantı>
+// Yazma/silme: yalnız Firestore'daki invites/{id} belgesinin sahibi. Bu yüzden uygulama önce belgeyi
+// oluşturur, sonra fotoğrafları yükler; silerken önce fotoğrafları, sonra belgeyi siler.
+// Not: firestore.get() ilk yayında Firebase konsolu "Storage'ın Firestore'u okumasına izin ver"
+// iznini ister — onaylayın.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /invites/{id}/{file} {
+
+      function ownsInvite() {
+        return request.auth != null
+            && firestore.get(/databases/(default)/documents/invites/$(id)).data.ownerUid == request.auth.uid;
+      }
+
+      allow read: if true;
+
+      allow create, update: if ownsInvite()
+                            && file.matches('(cover|g[1-6])\\.(webp|jpg|jpeg|png|gif)')
+                            && request.resource.size < 2 * 1024 * 1024
+                            && request.resource.contentType.matches('image/.*');
+
+      allow delete: if ownsInvite();
+    }
+
+    // Diğer her şey kapalı
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

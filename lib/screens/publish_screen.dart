@@ -9,7 +9,7 @@ import '../widgets/common.dart';
 import 'done_screen.dart';
 
 /// Yayınla: Ücretsiz (Papatya, 1 gün, alt yazı) ya da "1 Davetiye Hakkı".
-/// Aşama 1: satın alma SAHTE — düğme "yakında" bilgisi verir, akış test için yayınlanmış sayılır.
+/// Aşama 2: ücretsiz yayın buluta (Firestore + Storage) yazılır. Ücretli yayın Aşama 3'e kadar kapalı ("yakında").
 class PublishScreen extends StatefulWidget {
   const PublishScreen({super.key, required this.invId});
 
@@ -25,21 +25,23 @@ class _PublishScreenState extends State<PublishScreen> {
 
   Future<void> _publish(String plan) async {
     if (_busy) return;
+    if (plan != 'free') {
+      showToast(context, context.t('paidSoon'), ms: 4000);
+      return;
+    }
     final st = context.read<AppState>();
     final inv = st.byId(widget.invId);
     if (inv == null) return;
     setState(() => _busy = true);
-    final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
-    final soon = context.t('paySoon');
-    await st.publish(inv, plan);
+    final err = await st.publishFree(inv);
     if (!mounted) return;
-    nav.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => DoneScreen(invId: inv.id)), (r) => r.isFirst);
-    if (plan == 'premium') {
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(soon), duration: const Duration(seconds: 5)));
+    setState(() => _busy = false);
+    if (err != null) {
+      showToast(context, context.t(err), ms: 5000);
+      return;
     }
+    nav.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => DoneScreen(invId: inv.id)), (r) => r.isFirst);
   }
 
   @override
@@ -87,14 +89,18 @@ class _PublishScreenState extends State<PublishScreen> {
                     onTap: () => setState(() => _plan = 'premium'),
                   ),
                   if (prem) NoteBox(context.t('premThemeNeed')),
-                  NoteBox(context.t('demoNoteApp')),
+                  NoteBox(context.t('paidSoon')),
                 ],
               ),
             ),
             ZBottomBar(children: [
               PrimaryButton(
-                label: plan == 'free' ? context.t('publishFree') : context.t('pay', {'p': price}),
-                onPressed: _busy ? null : () => _publish(plan),
+                label: _busy
+                    ? context.t('cloudPublishing')
+                    : plan == 'free'
+                        ? context.t('publishFree')
+                        : context.t('paidSoonBtn'),
+                onPressed: (_busy || plan != 'free') ? null : () => _publish(plan),
               ),
             ]),
           ],

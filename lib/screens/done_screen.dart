@@ -3,16 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../cloud/invite_contract.dart';
 import '../data/catalog.dart';
+import '../logic/date_utils.dart';
 import '../l10n/strings.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/ornament.dart';
 import 'guest_screen.dart';
-
-/// Davetiyenin bağlantı adresi (Aşama 2'de stüdyo sitesinde açılacak).
-String inviteLink(String id) => 'ttuncaydemirr-beep.github.io/davet/$id';
 
 class DoneScreen extends StatelessWidget {
   const DoneScreen({super.key, required this.invId});
@@ -25,8 +24,18 @@ class DoneScreen extends StatelessWidget {
     final inv = st.byId(invId);
     if (inv == null) return const Scaffold(body: SizedBox.shrink());
     final th = kThemes[inv.theme] ?? kThemes['papatya']!;
-    final link = inviteLink(inv.id);
-    final full = 'https://$link';
+    final cid = inv.cloudId;
+    if (cid == null) return const Scaffold(body: SizedBox.shrink());
+    final link = inviteUrlDisplay(cid);
+    final full = inviteUrl(cid);
+    final expired = st.isExpired(inv);
+    final exp = inv.expiresAt == null ? null : DateTime.fromMillisecondsSinceEpoch(inv.expiresAt!);
+    final expTxt = exp == null
+        ? ''
+        : context.t('untilDate', {
+            'd': '${formatShortDate(isoOf(DateTime.utc(exp.year, exp.month, exp.day)), st.lang)} '
+                '${exp.hour.toString().padLeft(2, '0')}:${exp.minute.toString().padLeft(2, '0')}',
+          });
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -44,7 +53,7 @@ class DoneScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   FieldBlock(
                     label: context.t('linkL'),
-                    hint: context.t('linkNoteApp'),
+                    hint: expired ? context.t('expiredNote') : '${context.t('linkNoteApp')} $expTxt'.trim(),
                     child: Directionality(
                       textDirection: TextDirection.ltr,
                       child: Container(

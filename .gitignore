@@ -26,3 +26,8 @@ assets/fonts/licenses/
 
 # iOS (Aşama 1'de yok)
 ios/
+
+# Kural testleri
+rules-test/node_modules/
+rules-test/package-lock.json
+*-debug.log

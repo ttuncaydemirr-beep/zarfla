@@ -13,6 +13,23 @@ class ProgramStep {
       ProgramStep(t: (j['t'] ?? '').toString(), x: (j['x'] ?? '').toString());
 }
 
+/// Buluta yüklenmiş bir fotoğraf: Storage yolu + indirme URL'si.
+class CloudFile {
+  const CloudFile({required this.path, required this.url});
+
+  final String path;
+  final String url;
+
+  Map<String, dynamic> toJson() => {'p': path, 'u': url};
+
+  static CloudFile? fromJson(Object? j) {
+    if (j is! Map) return null;
+    final p = j['p'], u = j['u'];
+    if (p is! String || u is! String || p.isEmpty || u.isEmpty) return null;
+    return CloudFile(path: p, url: u);
+  }
+}
+
 /// Davetiye. Alan adları web önizlemesiyle (ve davetli sayfasının veri sözleşmesiyle) aynıdır.
 class Invitation {
   Invitation({
@@ -41,8 +58,12 @@ class Invitation {
     this.nameEditsLeft = 3,
     this.dateEditsLeft = 2,
     this.originalDate,
+    this.cloudId,
+    this.expiresAt,
+    Map<String, CloudFile>? cloudFiles,
   })  : program = program ?? <ProgramStep>[],
-        photos = photos ?? <String>[];
+        photos = photos ?? <String>[],
+        cloudFiles = cloudFiles ?? <String, CloudFile>{};
 
   String id;
   String type;
@@ -88,6 +109,18 @@ class Invitation {
   String? originalDate;
   int created;
 
+  /// Firestore belge kimliği (invites/{cloudId}); yayında değilse null.
+  String? cloudId;
+
+  /// Bağlantının kapanacağı an (ms, UTC epoch); yayında değilse null.
+  int? expiresAt;
+
+  /// Yerel fotoğraf dosya adı → buluttaki kopyası (yalnız değişen fotoğraflar yeniden yüklenir).
+  Map<String, CloudFile> cloudFiles;
+
+  /// Bağlantının süresi doldu mu?
+  bool isExpiredAt(DateTime now) => isLive && expiresAt != null && now.millisecondsSinceEpoch >= expiresAt!;
+
   bool get isLive => status == 'live';
   bool get isCouple => kCoupleTypes.contains(type);
 
@@ -131,6 +164,9 @@ class Invitation {
         'dateEditsLeft': dateEditsLeft,
         'originalDate': originalDate,
         'created': created,
+        'cloudId': cloudId,
+        'expiresAt': expiresAt,
+        'cloudFiles': cloudFiles.map((k, v) => MapEntry(k, v.toJson())),
       };
 
   factory Invitation.fromJson(Map<String, dynamic> j) {
@@ -154,6 +190,15 @@ class Invitation {
       }
     }
     final plan = j['plan'] == null ? null : j['plan'].toString();
+    final files = <String, CloudFile>{};
+    if (j['cloudFiles'] is Map) {
+      (j['cloudFiles'] as Map).forEach((k, v) {
+        final f = CloudFile.fromJson(v);
+        if (k is String && f != null) files[k] = f;
+      });
+    }
+    final cloudId = j['cloudId'] is String && (j['cloudId'] as String).isNotEmpty ? j['cloudId'] as String : null;
+    final expiresAt = j['expiresAt'] is int ? j['expiresAt'] as int : null;
     return Invitation(
       id: s('id'),
       type: type,
@@ -180,13 +225,18 @@ class Invitation {
       nameEditsLeft: n('nameEditsLeft', 3),
       dateEditsLeft: n('dateEditsLeft', 2),
       originalDate: j['originalDate']?.toString(),
+      cloudId: cloudId,
+      expiresAt: expiresAt,
+      cloudFiles: files,
     );
   }
 
   /// Davetli sayfasına (invite.html → window.renderInvite) giden veri.
   /// Fotoğraflar çağıran tarafından data URI (önizleme) ya da URL (Aşama 2) olarak verilir.
-  Map<String, dynamic> toInviteData({required String coverSrc, required List<String> photoSrcs}) => {
-        'id': id,
+  /// ANAHTAR SIRASI SÖZLEŞMEDİR: Firestore kuralları JSON'un `{"id":…,"type":…,"theme":…,`
+  /// ile başladığını denetler (bkz. firestore.rules). [publicId] verilirse id yerine o yazılır.
+  Map<String, dynamic> toInviteData({required String coverSrc, required List<String> photoSrcs, String? publicId}) => {
+        'id': publicId ?? id,
         'type': type,
         'theme': theme,
         'lang': lang,

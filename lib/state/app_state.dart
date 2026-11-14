@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 
+import '../cloud/cloud_service.dart';
+import '../cloud/invite_contract.dart';
 import '../data/catalog.dart';
 import '../l10n/strings.dart';
 import '../logic/lock_rules.dart';
@@ -15,11 +17,14 @@ import '../storage/photo_store.dart';
 /// Neden provider: tek ekranlı akış ve az sayıda paylaşılan durum için en sade,
 /// en yaygın ve kod üretimi gerektirmeyen seçenek (riverpod'a gerek yok).
 class AppState extends ChangeNotifier {
-  AppState({required this.strings, required InvitationStore store, required PhotoStore photos})
+  AppState({required this.strings, required InvitationStore store, required PhotoStore photos, this.cloud})
       : _store = store,
         _photos = photos;
 
   final AppStrings strings;
+
+  /// Firebase katmanı (testlerde ve Firebase başlatılamazsa null olabilir).
+  final CloudService? cloud;
   final InvitationStore _store;
   final PhotoStore _photos;
 
@@ -38,6 +43,32 @@ class AppState extends ChangeNotifier {
     invitations
       ..clear()
       ..addAll(await _store.loadAll());
+    // Aşama 1'de "yayınlanan" davetiyeler yalnız cihazdaydı (bağlantı çalışmıyordu, ödeme sahteydi):
+    // bulut kimliği olmayan yayındakiler taslağa döner, hakları sıfırlanır.
+    var migrated = false;
+    for (final i in invitations) {
+      if (i.isLive && i.cloudId == null) {
+        i
+          ..status = 'draft'
+          ..plan = null
+          ..nameEditsLeft = kNameEdits
+          ..dateEditsLeft = kDateEdits
+          ..originalDate = null
+          ..expiresAt = null
+          ..cloudFiles = {};
+        migrated = true;
+      }
+    }
+    if (migrated) await _store.saveAll(invitations);
+  }
+
+  /// Açılışta anonim oturumu arka planda hazırla (başarısızlık sessiz; yayınlarken yeniden denenir).
+  Future<void> warmUpCloud() async {
+    final c = cloud;
+    if (c == null || !c.ready) return;
+    try {
+      await c.ensureUser();
+    } catch (_) {}
   }
 
   String t(String key, [Map<String, Object> args = const {}]) => strings.get(lang, key, args);
@@ -58,7 +89,7 @@ class AppState extends ChangeNotifier {
 
   List<Invitation> get sorted => invitations.toList()..sort((a, b) => b.created.compareTo(a.created));
 
-  static final _rnd = Random();
+  static final _rnd = Random.secure();
   String newId() {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     final r = List.generate(6, (_) => chars[_rnd.nextInt(chars.length)]).join();
@@ -81,6 +112,22 @@ class AppState extends ChangeNotifier {
     return ok;
   }
 
+  /// Sil: yayındaysa önce buluttan (Storage + Firestore), sonra cihazdan.
+  /// Dönen değer: null (başarılı) ya da hata metin anahtarı (bu durumda cihazdan da silinmez).
+  Future<String?> deleteInvitation(Invitation inv) async {
+    if (inv.cloudId != null) {
+      final c = cloud;
+      if (c == null || !c.ready) return 'delCloudErr';
+      try {
+        await c.delete(inv);
+      } on CloudError catch (e) {
+        return e.key == 'netErr' ? 'delCloudErr' : e.key;
+      }
+    }
+    await delete(inv);
+    return null;
+  }
+
   Future<void> delete(Invitation inv) async {
     invitations.removeWhere((i) => i.id == inv.id);
     await save();
@@ -90,14 +137,46 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  /// Yayınla (Aşama 1: ücretli satın alma SAHTE; akış test için yayınlanmış sayılır).
-  Future<void> publish(Invitation inv, String plan) async {
-    markPublished(inv, plan);
-    if (plan == 'premium' && !premiumUser) {
-      premiumUser = true;
-      await _store.savePremiumUser(true);
+  bool isExpired(Invitation inv) => inv.isExpiredAt(DateTime.now());
+
+  /// Ücretsiz yayın: Firestore belgesi + Storage fotoğrafları. Dönen değer: null ya da hata metin anahtarı.
+  /// Ücretli yayın Aşama 3'te (Google Play + sunucu fonksiyonu) gelecek.
+  Future<String?> publishFree(Invitation inv) async {
+    final c = cloud;
+    if (c == null || !c.ready) return 'cloudSetup';
+    if (kThemes[inv.theme]?.premium ?? false) return 'premThemeNeed';
+    // Kötüye kullanım sınırı (istemci tarafı): aynı anda en fazla 1 aktif ücretsiz davetiye.
+    if (activeFreeCount(invitations, DateTime.now(), exceptId: inv.id) >= kMaxActiveFree) return 'freeLimit';
+    // Kural gereği: ilk yayında sayaçlar sıfır, isimlerde " \\ ve kontrol karakteri yok.
+    inv
+      ..n1 = cloudSafeName(inv.n1)
+      ..n2 = cloudSafeName(inv.n2)
+      ..nameEditsLeft = kNameEdits
+      ..dateEditsLeft = kDateEdits;
+    try {
+      await c.publishFree(inv);
+    } on CloudError catch (e) {
+      return e.key;
     }
     await save();
+    return null;
+  }
+
+  /// Yayındaki davetiyeyi buluta yaz ("Güncelle"). Dönen değer: null ya da hata metin anahtarı.
+  Future<String?> pushUpdate(Invitation inv) async {
+    if (!inv.isLive || inv.cloudId == null) return 'cloudGone';
+    if (isExpired(inv)) return 'expiredNote';
+    if (inv.plan != 'premium' && (kThemes[inv.theme]?.premium ?? false)) return 'premThemeNeed';
+    final c = cloud;
+    if (c == null || !c.ready) return 'cloudSetup';
+    try {
+      await c.update(inv);
+      return null;
+    } on CloudError catch (e) {
+      return e.key;
+    } finally {
+      await save(); // fotoğraf eşlemesi (cloudFiles) değişmiş olabilir
+    }
   }
 
   // ---- Fotoğraflar ----
