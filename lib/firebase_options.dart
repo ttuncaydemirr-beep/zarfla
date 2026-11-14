@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, Tar
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) return android;
-    throw UnsupportedError('Zarfla yalnız Android için yapılandırıldı.');
+    throw UnsupportedError('Zarfla is configured for Android only.');
   }
 
   static const FirebaseOptions android = FirebaseOptions(
