@@ -39,7 +39,7 @@
   "address": "Address",
   "phAddress": "Street, district, city",
   "wa": "WhatsApp number for RSVPs",
-  "waHint": "Include the country code, e.g. 44 7xxx xxxxxx. Guests reply without an account.",
+  "waHint": "Include the country code, e.g. 44 7xxx xxxxxx. Guests reply without an account. If you try it with your own number, WhatsApp may not open the message screen; test the RSVP form from another phone.",
   "opening": "Opening animation",
   "door": "Door",
   "env": "Envelope",

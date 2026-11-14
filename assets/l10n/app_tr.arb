@@ -39,7 +39,7 @@
   "address": "Adres",
   "phAddress": "Cadde, mahalle, ilçe / şehir",
   "wa": "Katılım yanıtlarının gideceği WhatsApp numarası",
-  "waHint": "Ülke koduyla yazın, örn. 90 5xx xxx xx xx. Davetliler hesap açmadan yanıt verir.",
+  "waHint": "Ülke koduyla yazın, örn. 90 5xx xxx xx xx. Davetliler hesap açmadan yanıt verir. Kendi numaranızla denerseniz WhatsApp mesaj ekranını açmayabilir; katılım formunu başka bir telefondan deneyin.",
   "opening": "Açılış animasyonu",
   "door": "Kapı",
   "env": "Zarf",

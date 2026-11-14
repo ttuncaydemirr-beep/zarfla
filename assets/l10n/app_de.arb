@@ -39,7 +39,7 @@
   "address": "Adresse",
   "phAddress": "Straße, Stadtteil, Stadt",
   "wa": "WhatsApp-Nummer für Zusagen",
-  "waHint": "Mit Ländervorwahl, z. B. 49 15x xxxxxxx. Gäste antworten ohne Konto.",
+  "waHint": "Mit Ländervorwahl, z. B. 49 15x xxxxxxx. Gäste antworten ohne Konto. Wenn du es mit deiner eigenen Nummer testest, öffnet WhatsApp den Nachrichtenbildschirm eventuell nicht; teste das Antwortformular von einem anderen Telefon.",
   "opening": "Öffnungsanimation",
   "door": "Tür",
   "env": "Umschlag",
