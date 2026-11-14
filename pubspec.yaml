@@ -1,0 +1,53 @@
+name: zarfla
+description: "Zarfla — Demir Games Studio dijital davetiye uygulaması."
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  provider: ^6.1.2
+  shared_preferences: ^2.3.2
+  path_provider: ^2.1.4
+  image_picker: ^1.1.2
+  webview_flutter: ^4.9.0
+  url_launcher: ^6.3.0
+  flutter_svg: ^2.0.10
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/l10n/
+    - assets/ornaments/
+    - assets/invite/
+    - assets/fonts/licenses/
+  # Yazı tipleri uygulamaya paketlenir (çalışma anında indirme yok).
+  # Dosyalar CI'da scripts/fetch_fonts.sh ile github.com/google/fonts'tan indirilir.
+  fonts:
+    - family: Fraunces
+      fonts:
+        - asset: assets/fonts/Fraunces.ttf
+        - asset: assets/fonts/Fraunces-Italic.ttf
+          style: italic
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope.ttf
+    - family: NotoNaskhArabic
+      fonts:
+        - asset: assets/fonts/NotoNaskhArabic.ttf
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-Regular.ttf
+        - asset: assets/fonts/Amiri-Bold.ttf
+          weight: 700

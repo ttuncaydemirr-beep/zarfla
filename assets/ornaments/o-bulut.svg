@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100"><defs><linearGradient id="bulutg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D9CFF0"/></linearGradient></defs><path d="M-30 30 C-42 30 -42 10 -28 10 C-28 -4 -10 -10 -2 0 C6 -12 26 -6 26 8 C42 6 44 30 30 30 Z" fill="url(#bulutg)" stroke="#8E78B8" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M-20 22 C-14 25 -6 25 0 22" fill="none" stroke="#B9A9DB" stroke-width="2" stroke-linecap="round"/>
+    <path d="M24 -40 A15 15 0 1 0 40 -20 A12 12 0 1 1 24 -40 Z" fill="#F2C94C" stroke="#B8892A" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M-28,-36 L-25.3,-28.7 L-18,-26 L-25.3,-23.3 L-28,-16 L-30.7,-23.3 L-38,-26 L-30.7,-28.7Z" fill="#F2C94C" stroke="#B8892A" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M-6,-45.5 L-4.5,-41.5 L-0.5,-40 L-4.5,-38.5 L-6,-34.5 L-7.5,-38.5 L-11.5,-40 L-7.5,-41.5Z" fill="#F2C94C" stroke="#B8892A" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M30,37 L31.3,40.7 L35,42 L31.3,43.3 L30,47 L28.7,43.3 L25,42 L28.7,40.7Z" fill="#F2C94C" stroke="#B8892A" stroke-width="1.2" stroke-linejoin="round"/></svg>

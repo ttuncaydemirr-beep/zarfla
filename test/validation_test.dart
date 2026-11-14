@@ -1,0 +1,52 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:zarfla/logic/validation.dart';
+import 'package:zarfla/models/invitation.dart';
+
+Invitation _inv(String type) => Invitation.create(id: 'test01', type: type, lang: 'tr', now: 0);
+
+void main() {
+  group('WhatsApp numarası', () {
+    test('ülke koduyla geçerli', () {
+      expect(isValidWhatsApp('90 555 111 22 33'), isTrue);
+      expect(isValidWhatsApp('+49 151 2345678'), isTrue);
+    });
+    test('0 ile başlayan, kısa ya da uzun numara geçersiz', () {
+      expect(isValidWhatsApp('0555 111 22 33'), isFalse);
+      expect(isValidWhatsApp('905551112'), isFalse); // 9 rakam
+      expect(isValidWhatsApp('9055511122334455'), isFalse); // 16 rakam
+      expect(isValidWhatsApp(''), isFalse);
+    });
+  });
+
+  group('validateInvitation', () {
+    test('boş çift davetiyesinde tüm hatalar', () {
+      final e = validateInvitation(_inv('dugun')..time = '');
+      expect(e['names'], 'reqNames');
+      expect(e['date'], 'reqDate');
+      expect(e['venue'], 'reqVenue');
+      expect(e['wa'], 'reqWa');
+    });
+    test('tek isimli türde reqName; ikinci isim aranmaz', () {
+      final inv = _inv('dogum');
+      expect(validateInvitation(inv)['names'], 'reqName');
+      inv.n1 = 'Ali';
+      expect(validateInvitation(inv).containsKey('names'), isFalse);
+    });
+    test('çiftte iki isim de gerekli; boşluk isim sayılmaz', () {
+      final inv = _inv('nisan')
+        ..n1 = 'Pelin'
+        ..n2 = '   ';
+      expect(validateInvitation(inv)['names'], 'reqNames');
+    });
+    test('eksiksiz davetiye geçer', () {
+      final inv = _inv('nisan')
+        ..n1 = 'Pelin'
+        ..n2 = 'Burak'
+        ..date = '2027-06-12'
+        ..time = '19:00'
+        ..venue = 'Baler Garden'
+        ..wa = '905551112233';
+      expect(validateInvitation(inv), isEmpty);
+    });
+  });
+}

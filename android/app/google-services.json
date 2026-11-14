@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "759266825187",
+    "project_id": "zarfla-37da9",
+    "storage_bucket": "zarfla-37da9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:759266825187:android:409d036b5e330d50d546d6",
+        "android_client_info": {
+          "package_name": "com.demirgamesstudio.zarfla"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDh4G3ByFeDy70by0-qxULE2kVfGRZtRZQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
