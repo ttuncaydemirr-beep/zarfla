@@ -75,7 +75,7 @@ Map<String, dynamic> stage2Record() => {
     };
 
 /// Elle bozulmuş / beklenmedik türlerle dolu kayıt: hiçbiri istisnaya yol açmamalı.
-Map<String, dynamic> weirdRecord() => {
+Map<String, dynamic> weirdRecord({bool encodable = false}) => {
       'id': 77,
       'type': null,
       'theme': 'silinmis_tema',
@@ -91,7 +91,7 @@ Map<String, dynamic> weirdRecord() => {
       'program': [
         'Sadece metin',
         {'time': '20:00', 'text': 'Eski biçim'},
-        {1: 'sayı anahtarlı'},
+        if (encodable) {'1': 'sayı anahtarlı'} else {1: 'sayı anahtarlı'},
         null,
         42,
       ],
@@ -202,7 +202,7 @@ void main() {
         {'id': 'old111', 'type': 'kina'},
         {'type': 'dogum'},
         {'id': '', 'type': 'dogum', 'created': 5},
-        weirdRecord(),
+        weirdRecord(encodable: true),
       ]);
       final r = decodeInvitations(raw);
       expect(r.invitations.length, 6);
@@ -217,7 +217,7 @@ void main() {
   group('AppState.init eski verilerle', () {
     test('Aşama 1 + 2 + bozuk kayıtlar ve yanlış türdeki ayarlar: açılır, geçişler uygulanır', () async {
       SharedPreferences.setMockInitialValues({
-        'zarfla_invs_v1': jsonEncode([stage1Record(), stage2Record(), weirdRecord(), 5]),
+        'zarfla_invs_v1': jsonEncode([stage1Record(), stage2Record(), weirdRecord(encodable: true), 5]),
         'zarfla_lang': 7, // yanlış tür
         'zarfla_premium_user': 'true', // yanlış tür
         'zarfla_pending_paid_v1': 'bozuk',
