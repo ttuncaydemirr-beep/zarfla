@@ -17,7 +17,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 
 test('temizleme: kırpma, boşluk, kontrol/yön karakterleri, uzunluk', () => {
   assert.equal(cleanGuest('  Ayşe   Teyze \n'), 'Ayşe Teyze');
-  assert.equal(cleanGuest('A\u0000B‮C​D'), 'A B C D');
+  assert.equal(cleanGuest('A\u0000B\u202eC\u200bD'), 'A B C D');
   assert.equal(cleanGuest(null), '');
   assert.equal(cleanGuest(42), '');
   assert.equal(cleanGuest('a'.repeat(90)).length, GUEST_MAX);

@@ -46,7 +46,7 @@ void main() {
   group('kişiye özel bağlantı', () {
     test('ad temizleme: kırpma, boşluk, kontrol ve yön karakterleri', () {
       expect(cleanGuestName('  Ayşe   Teyze \n'), 'Ayşe Teyze');
-      expect(cleanGuestName('A\u0000B‮C​D'), 'A B C D');
+      expect(cleanGuestName('A\u0000B\u202eC\u200bD'), 'A B C D');
       expect(cleanGuestName('\t\r '), '');
     });
     test('en çok 60 kod noktası (emoji bölünmez)', () {

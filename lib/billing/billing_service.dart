@@ -129,7 +129,7 @@ class BillingService {
       final owned = <BillingPurchase>[];
       var pending = 0;
       for (final p in r.pastPurchases) {
-        if (p.productID != kInviteProductId || p is! GooglePlayPurchaseDetails) continue;
+        if (p.productID != kInviteProductId) continue;
         final state = p.billingClientPurchase.purchaseState;
         if (state == PurchaseStateWrapper.purchased) {
           owned.add(BillingPurchase._(p, BillingStatus.purchased));
