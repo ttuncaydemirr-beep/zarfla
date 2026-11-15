@@ -27,4 +27,16 @@ void main() {
       if (uses) expect(allowed, contains(path), reason: '$path içinde AdSlot olmamalı');
     }
   });
+
+  test('banner ekranın altına sabit: kaydırılan listenin/ızgaranın dışında, Expanded\'dan sonra', () {
+    for (final path in ['lib/screens/home_screen.dart', 'lib/screens/theme_screen.dart']) {
+      final src = File(path).readAsStringSync();
+      final ad = src.indexOf('AdSlot(');
+      expect(ad, greaterThan(0), reason: path);
+      expect(ad, greaterThan(src.indexOf('Expanded(')), reason: '$path: AdSlot kaydırılan alanın içinde');
+      expect(src.contains('SliverToBoxAdapter(child: st.premiumUser ? const SizedBox.shrink() : const AdSlot())'), isFalse);
+    }
+    expect(File('lib/screens/home_screen.dart').readAsStringSync().indexOf('AdSlot('),
+        greaterThan(File('lib/screens/home_screen.dart').readAsStringSync().indexOf("context.t('newInv')")));
+  });
 }

@@ -64,10 +64,11 @@ class HomeScreen extends StatelessWidget {
                     block: true,
                     onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TypeScreen())),
                   ),
-                  if (!st.premiumUser) const AdSlot(),
                 ],
               ),
             ),
+            // Banner ekranın altına sabit (SafeArea içinde, sistem gezinme çubuğunun üstünde); reklam yoksa yer kaplamaz.
+            if (!st.premiumUser) const AdSlot(topGap: AppSpace.x2, horizontal: AppSpace.edge),
           ],
         ),
       ),

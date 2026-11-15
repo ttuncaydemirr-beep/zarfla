@@ -10,7 +10,13 @@ import '../theme/app_theme.dart';
 /// Yalnız Davetiyelerim ve Tasarım galerisinde; ödeme yapmış kullanıcıda gösterilmez.
 /// Rıza alınmadan (AdService.ready) istek yapılmaz; reklam yüklenmezse yer kaplamaz.
 class AdSlot extends StatefulWidget {
-  const AdSlot({super.key});
+  const AdSlot({super.key, this.topGap = AppSpace.x6, this.horizontal = 0});
+
+  /// Üstteki içerikle arasındaki boşluk (birincil düğmeye bitişikse en az 24 px kalmalı).
+  final double topGap;
+
+  /// Ekranın altına sabitlendiğinde yan kenar boşluğu.
+  final double horizontal;
 
   @override
   State<AdSlot> createState() => _AdSlotState();
@@ -88,7 +94,7 @@ class _AdSlotState extends State<AdSlot> {
     if (ad == null || size == null) return const SizedBox.shrink();
     // Tasarım incelemesi #27: üstte küçük "Reklam" etiketi, birincil düğmeden en az 24 px uzak.
     return Padding(
-      padding: const EdgeInsets.only(top: AppSpace.x6, bottom: AppSpace.x1),
+      padding: EdgeInsets.fromLTRB(widget.horizontal, widget.topGap, widget.horizontal, AppSpace.x1),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

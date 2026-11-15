@@ -173,10 +173,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
                         child: Text(context.t('galleryEmpty'), textAlign: TextAlign.center, style: bodyStyle(14.5, color: AppColors.muted)),
                       ),
                     ),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(AppSpace.edge, 0, AppSpace.edge, AppSpace.x6),
-                    sliver: SliverToBoxAdapter(child: st.premiumUser ? const SizedBox.shrink() : const AdSlot()),
-                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: AppSpace.x6)),
                 ],
               ),
             ),
@@ -184,6 +181,8 @@ class _ThemeScreenState extends State<ThemeScreen> {
               GhostButton(label: context.t('previewDesign'), icon: const ZGlyph(ZGlyphs.eye, size: 18), onPressed: () => _preview(inv.theme)),
               PrimaryButton(label: '${context.t('edit')} →', onPressed: _continue),
             ]),
+            // Banner ekranın en altına sabit; düğmelerden en az 24 px uzak (topGap). Reklam yoksa yer kaplamaz.
+            if (!st.premiumUser) const AdSlot(horizontal: AppSpace.edge),
           ],
         ),
       ),
