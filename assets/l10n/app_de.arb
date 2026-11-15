@@ -213,5 +213,18 @@
   "paidSoon": "Die kostenpflichtige Veröffentlichung (1 Einladungsrecht) kommt bald mit Google-Play-Zahlung. Bis dahin kannst du kostenlos veröffentlichen.",
   "paidSoonBtn": "Bald verfügbar",
   "untilDate": "Der Link ist bis {d} geöffnet.",
-  "privacyOptions": "Datenschutzoptionen"
+  "privacyOptions": "Datenschutzoptionen",
+  "payUseCredit": "Mit gespeichertem Recht veröffentlichen",
+  "payProcessing": "Zahlung wird verarbeitet…",
+  "payCancelled": "Zahlung abgebrochen. Es wurde nichts berechnet.",
+  "payPending": "Deine Zahlung steht noch aus. Nach der Bestätigung wird deine Einladung automatisch veröffentlicht.",
+  "payErr": "Die Zahlung konnte nicht abgeschlossen werden. Falls etwas abgebucht wurde, erstattet Google Play es innerhalb weniger Tage automatisch.",
+  "payVerifyErr": "Deine Zahlung ist eingegangen, konnte aber gerade nicht geprüft werden. Beim nächsten Öffnen der App wird es automatisch erneut versucht; dein Recht bleibt erhalten.",
+  "payUsed": "Diese Zahlung wurde bereits für eine andere Einladung verwendet.",
+  "payCredit": "Du hast 1 ungenutztes Einladungsrecht; es wird für deine nächste kostenpflichtige Einladung verwendet.",
+  "payRefunded": "Diese Zahlung wurde erstattet; das Recht kann nicht mehr genutzt werden.",
+  "payDataErr": "Die Einladungsdaten wurden nicht angenommen. Prüfe Namen und Datum und versuche es erneut; deine Zahlung bleibt erhalten.",
+  "payUnavailable": "Google-Play-Zahlungen sind gerade nicht verfügbar. Stelle sicher, dass der Play Store aktuell ist und du angemeldet bist.",
+  "paidPhotoErr": "Deine Einladung ist online, aber einige Fotos konnten nicht hochgeladen werden. Bearbeite sie und tippe auf Aktualisieren.",
+  "payNote": "Einmalige Zahlung über Google Play. Kein Abo."
 }

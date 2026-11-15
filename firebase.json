@@ -5,6 +5,14 @@
   "storage": {
     "rules": "storage.rules"
   },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs22",
+      "ignore": ["node_modules", "test", ".git", "*.log", "package-lock.json"]
+    }
+  ],
   "emulators": {
     "firestore": { "host": "127.0.0.1", "port": 8080 },
     "storage": { "host": "127.0.0.1", "port": 9199 },

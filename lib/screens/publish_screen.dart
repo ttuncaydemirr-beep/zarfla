@@ -9,7 +9,8 @@ import '../widgets/common.dart';
 import 'done_screen.dart';
 
 /// Yayınla: Ücretsiz (Papatya, 1 gün, alt yazı) ya da "1 Davetiye Hakkı".
-/// Aşama 2: ücretsiz yayın buluta (Firestore + Storage) yazılır. Ücretli yayın Aşama 3'e kadar kapalı ("yakında").
+/// Ücretsiz: Firestore + Storage. Ücretli (Aşama 3): Google Play'de tek seferlik, tüketilebilir
+/// zarfla_invite_1 alımı → redeemPurchase sunucuda doğrular ve yazar → uygulama alımı tüketir.
 class PublishScreen extends StatefulWidget {
   const PublishScreen({super.key, required this.invId});
 
@@ -25,22 +26,21 @@ class _PublishScreenState extends State<PublishScreen> {
 
   Future<void> _publish(String plan) async {
     if (_busy) return;
-    if (plan != 'free') {
-      showToast(context, context.t('paidSoon'), ms: 4000);
-      return;
-    }
     final st = context.read<AppState>();
     final inv = st.byId(widget.invId);
     if (inv == null) return;
     setState(() => _busy = true);
     final nav = Navigator.of(context);
-    final err = await st.publishFree(inv);
+    final err = plan == 'free' ? await st.publishFree(inv) : await st.publishPaid(inv);
     if (!mounted) return;
     setState(() => _busy = false);
-    if (err != null) {
-      showToast(context, context.t(err), ms: 5000);
+    // 'paidPhotoErr': ödeme alındı ve davetiye yayında, yalnız bazı fotoğraflar yüklenemedi.
+    // Bekleyen ödeme sonradan onaylanırsa davetiye arka planda yayınlanmış olabilir.
+    if (err != null && err != 'paidPhotoErr' && !inv.isLive) {
+      showToast(context, context.t(err), ms: 6000);
       return;
     }
+    if (err != null) showToast(context, context.t(err), ms: 6000);
     nav.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => DoneScreen(invId: inv.id)), (r) => r.isFirst);
   }
 
@@ -51,7 +51,8 @@ class _PublishScreenState extends State<PublishScreen> {
     if (inv == null) return const Scaffold(body: SizedBox.shrink());
     final prem = kThemes[inv.theme]?.premium ?? false;
     final plan = prem ? 'premium' : (_plan ?? 'free');
-    final price = context.t('price');
+    final price = st.playPrice ?? context.t('price');
+    final payReady = st.billingReady;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -89,18 +90,20 @@ class _PublishScreenState extends State<PublishScreen> {
                     onTap: () => setState(() => _plan = 'premium'),
                   ),
                   if (prem) NoteBox(context.t('premThemeNeed')),
-                  NoteBox(context.t('paidSoon')),
+                  if (plan == 'premium') NoteBox(context.t(payReady ? (st.hasCredit ? 'payCredit' : 'payNote') : 'payUnavailable')),
                 ],
               ),
             ),
             ZBottomBar(children: [
               PrimaryButton(
                 label: _busy
-                    ? context.t('cloudPublishing')
+                    ? context.t(plan == 'free' ? 'cloudPublishing' : 'payProcessing')
                     : plan == 'free'
                         ? context.t('publishFree')
-                        : context.t('paidSoonBtn'),
-                onPressed: (_busy || plan != 'free') ? null : () => _publish(plan),
+                        : st.hasCredit
+                            ? context.t('payUseCredit')
+                            : context.t('pay', {'p': price}),
+                onPressed: (_busy || (plan != 'free' && !payReady)) ? null : () => _publish(plan),
               ),
             ]),
           ],

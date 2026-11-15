@@ -27,6 +27,11 @@ dependencies:
   firebase_storage: ">=13.0.0"
   # Reklam (Aşama 3): AdMob banner + Google UMP rıza formu. Sürüm CI'da çözülür (Firebase ile aynı gerekçe).
   google_mobile_ads: ">=6.0.0"
+  # Aşama 3: redeemPurchase çağrısı (europe-west3) ve Google Play Faturalandırma (resmî eklenti, yalnız Android).
+  # in_app_purchase_android doğrudan kullanılır (tüketme: consumePurchase, sahip olunan alımlar: queryPastPurchases).
+  cloud_functions: ">=6.0.0"
+  in_app_purchase: ">=3.2.0"
+  in_app_purchase_android: ">=0.4.0"
 
 dev_dependencies:
   flutter_test:

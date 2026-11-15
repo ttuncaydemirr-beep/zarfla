@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'ads/ad_service.dart';
 import 'app.dart';
+import 'billing/billing_service.dart';
 import 'cloud/cloud_service.dart';
 import 'l10n/strings.dart';
 import 'state/app_state.dart';
@@ -30,13 +31,21 @@ Future<void> main() async {
   final photos = PhotoStore();
   final cloud = CloudService(photos);
   await cloud.init(); // yerel başlatma; ağ gerektirmez
-  final state = AppState(strings: strings, store: InvitationStore(), photos: photos, cloud: cloud);
+  final state = AppState(
+    strings: strings,
+    store: InvitationStore(),
+    photos: photos,
+    cloud: cloud,
+    billing: BillingService(),
+  );
   await state.init();
   runApp(ChangeNotifierProvider<AppState>.value(value: state, child: const ZarflaApp()));
   // Anonim giriş arka planda (çevrimdışıysa yayın anında yeniden denenir).
   state.warmUpCloud();
   // Reklam: önce Google UMP rızası, sonra MobileAds başlatılır (arka planda).
   AdService.init();
+  // Google Play Faturalandırma: alım akışı, fiyat, yarım kalmış alımları tamamlama (hak ver → tüket).
+  state.startBilling();
 }
 
 /// Paketlenen yazı tiplerinin OFL lisansları (Ayarlar > Lisanslar'da görünür).
