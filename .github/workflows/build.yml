@@ -9,6 +9,10 @@ on:
         description: "Google Play kapalı teste (alpha) yükle"
         type: boolean
         default: false
+      play_check:
+        description: "Yalnızca Play API erişimini sına (yükleme yapmaz)"
+        type: boolean
+        default: false
 
 # Aynı dalda yeni push gelince eski çalışma iptal edilir (Actions bütçesi: aylık 10 $).
 concurrency:
@@ -184,3 +188,31 @@ jobs:
           track: alpha
           status: completed
           whatsNewDirectory: distribution/whatsnew
+
+  # Play API erişim sınaması: düzenleme açar, kanalları okur, düzenlemeyi siler (hiçbir şey yayınlamaz).
+  play-check:
+    if: github.event_name == 'workflow_dispatch' && inputs.play_check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Play API erişimini sına
+        env:
+          SA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$SA" ]; then echo "::error::PLAY_SERVICE_ACCOUNT_JSON secret'ı yok"; exit 1; fi
+          pip install -q google-api-python-client google-auth
+          python3 - <<'PY'
+          import os, json
+          from google.oauth2 import service_account
+          from googleapiclient.discovery import build
+          info = json.loads(os.environ["SA"])
+          print("Hizmet hesabı:", info.get("client_email"))
+          cr = service_account.Credentials.from_service_account_info(info, scopes=["https://www.googleapis.com/auth/androidpublisher"])
+          ap = build("androidpublisher", "v3", credentials=cr, cache_discovery=False)
+          pkg = "com.demirgamesstudio.zarfla"
+          e = ap.edits().insert(packageName=pkg, body={}).execute()
+          for t in ap.edits().tracks().list(packageName=pkg, editId=e["id"]).execute().get("tracks", []):
+              print("Kanal:", t["track"], [(r.get("status"), r.get("versionCodes")) for r in t.get("releases", [])])
+          ap.edits().delete(packageName=pkg, editId=e["id"]).execute()
+          print("Play API erişimi TAMAM")
+          PY
