@@ -52,6 +52,8 @@ jobs:
             adb exec-out screencap -p > shot_tap.png || true
             adb shell pidof com.demirgamesstudio.zarfla || echo "UYGULAMA ÇALIŞMIYOR (çöktü)"
             adb logcat -d > logcat.txt || true
+            grep -E " (E|W) flutter|E/flutter|Unhandled Exception" logcat.txt | head -60 || true
+            for f in shot_home.png shot_tap.png; do echo "=====B64 $f"; base64 -w0 $f; echo; echo "=====END"; done
             grep -n -A40 "FATAL EXCEPTION\|AndroidRuntime\|Fatal signal" logcat.txt | head -200 || true
       - uses: actions/upload-artifact@v4
         if: always()
