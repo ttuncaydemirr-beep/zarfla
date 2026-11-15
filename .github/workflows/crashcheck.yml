@@ -2,6 +2,7 @@ name: Çökme teşhisi (emülatör)
 on:
   push:
     branches: [crashcheck]
+    paths: ['.github/crashcheck_run_id']
 permissions:
   actions: read
   contents: read
@@ -10,11 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
+      - uses: actions/checkout@v4
+      - id: rid
+        run: echo "id=$(cat .github/crashcheck_run_id)" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@v4
         with:
           name: zarfla-release-aab-signed
           path: dist
-          run-id: 43743682349
+          run-id: ${{ steps.rid.outputs.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
       - uses: actions/setup-java@v4
