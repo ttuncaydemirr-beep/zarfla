@@ -10,6 +10,8 @@ import '../l10n/strings.dart';
 import '../models/invitation.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import 'common.dart';
+import 'ornament.dart';
 
 /// Davetli sayfasının uygulama içi önizlemesi.
 /// assets/invite/invite.html (tek kaynak) yüklenir; veri window.renderInvite(json) ile verilir.
@@ -80,12 +82,37 @@ class _InviteViewState extends State<InviteView> {
       children: [
         WebViewWidget(controller: _c),
         if (!_rendered && !_failed)
-          const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          Center(child: ZLoader(size: 40, label: context.t('loading'))),
+        // Tasarım incelemesi #20c: hata = süs + 2 satır metin + "Tekrar dene".
         if (_failed)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(context.t('previewLoadErr'), textAlign: TextAlign.center, style: bodyStyle(15, color: AppColors.muted)),
+          ColoredBox(
+            color: AppColors.bg,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpace.x6),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Ornament((kThemes[widget.inv.theme] ?? kThemes['papatya']!).orn, size: 56),
+                    const SizedBox(height: AppSpace.x3),
+                    Text(context.t('previewLoadErr'), textAlign: TextAlign.center, style: bodyStyle(15, weight: FontWeight.w600)),
+                    const SizedBox(height: AppSpace.x1),
+                    Text(context.t('tryAgainHint'), textAlign: TextAlign.center, style: bodyStyle(13.5, color: AppColors.muted, height: 1.45)),
+                    const SizedBox(height: AppSpace.x4),
+                    GhostButton(
+                      label: context.t('retry'),
+                      icon: const ZGlyph(ZGlyphs.retry, size: 18),
+                      onPressed: () {
+                        setState(() {
+                          _failed = false;
+                          _rendered = false;
+                        });
+                        _c.loadFlutterAsset('assets/invite/invite.html');
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
       ],

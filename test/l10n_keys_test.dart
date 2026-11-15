@@ -31,7 +31,9 @@ void main() {
   });
 
   // Marka adı / ortak sözcük olduğu için diller arasında aynı kalabilen anahtarlar (açık istisna listesi).
-  const sameAllowed = {'app', 'premiumOn', 'lay_monogram', 'type_baby'};
+  // amp: "&" işareti; shareHead/shareWhen: yalnız yer tutucu + simgeden oluşan paylaşım kalıpları;
+  // flt_modern: "Modern" tr/en/de'de aynı sözcük.
+  const sameAllowed = {'app', 'premiumOn', 'lay_monogram', 'type_baby', 'amp', 'shareHead', 'shareWhen', 'flt_modern'};
 
   test('hiçbir değer başka dilin metniyle aynı değil (istisnalar hariç)', () {
     final maps = {

@@ -111,11 +111,15 @@ class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: AppSpace.x8, horizontal: AppSpace.x3),
       child: Column(
         children: [
-          const Ornament('o-papatya', size: 72),
-          const SizedBox(height: 10),
+          // Tasarım incelemesi #21: soluk papatya yerine zümrüt daire içinde marka figürü.
+          Container(
+            decoration: const BoxDecoration(shape: BoxShape.circle, boxShadow: AppShadows.up),
+            child: const BrandMark(size: 96, round: true),
+          ),
+          const SizedBox(height: AppSpace.x4),
           Text(context.t('empty'), textAlign: TextAlign.center, style: bodyStyle(15, color: AppColors.muted, height: 1.6)),
         ],
       ),

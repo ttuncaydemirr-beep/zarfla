@@ -104,7 +104,7 @@ class _Tile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              border: Border.all(color: selected ? AppColors.primary : AppColors.line, width: 1.5),
+              border: Border.all(color: selected ? AppColors.primary : AppColors.lineStrong, width: selected ? 2 : 1.5),
               borderRadius: BorderRadius.circular(AppRadii.md),
               boxShadow: AppShadows.card,
             ),

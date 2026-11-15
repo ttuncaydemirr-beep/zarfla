@@ -67,6 +67,7 @@ class _MusicPickerState extends State<MusicPicker> {
       label: context.t('music'),
       hint: open ? context.t('musicHint') : context.t('musicLockHint'),
       error: _player.failed ? context.t('musicPreviewErr') : null,
+      frameError: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

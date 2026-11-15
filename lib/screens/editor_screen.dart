@@ -23,6 +23,7 @@ import '../widgets/common.dart';
 import '../widgets/invite_view.dart';
 import '../widgets/layout_thumb.dart';
 import '../widgets/music_picker.dart';
+import '../widgets/opening_picker.dart';
 import '../widgets/ornament.dart';
 import 'done_screen.dart';
 import 'publish_screen.dart';
@@ -918,18 +919,8 @@ class _DetailsFormState extends State<DetailsForm> {
         ),
         FieldBlock(
           label: context.t('opening'),
-          child: GridView.count(
-            crossAxisCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 2.0,
-            children: [
-              for (final k in kOpenings)
-                _SegButton(label: context.t('opn_$k'), on: inv.opening == k, onTap: () => _set(() => inv.opening = k)),
-            ],
-          ),
+          // Tasarım #15: her açılış için minik görsel.
+          child: OpeningPicker(value: inv.opening, theme: kThemes[inv.theme] ?? kThemes['papatya']!, onChanged: (k) => _set(() => inv.opening = k)),
         ),
         // Kapak
         FieldBlock(
@@ -1253,16 +1244,17 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.field)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.md), side: const BorderSide(color: AppColors.field)),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         child: Container(
           constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Align(
             widthFactor: 1,
-            child: Text(label, style: bodyStyle(12.5)),
+            // Tasarım #16: çip metni kesilmez, en çok 2 satır.
+            child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: bodyStyle(12.5, height: 1.3)),
           ),
         ),
       ),
