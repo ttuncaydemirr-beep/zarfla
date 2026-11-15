@@ -5,6 +5,18 @@ import 'package:zarfla/data/catalog.dart';
 import 'package:zarfla/l10n/strings.dart';
 
 void main() {
+  test('ARB dosyalarında tekrarlanan anahtar yok (birleştirmede ikiye katlanmasın)', () {
+    for (final l in kLangs) {
+      final keys = RegExp(r'^  "([^"]+)":', multiLine: true)
+          .allMatches(File('assets/l10n/app_$l.arb').readAsStringSync())
+          .map((m) => m.group(1)!)
+          .toList();
+      final seen = <String>{};
+      final dups = keys.where((k) => !seen.add(k)).toList();
+      expect(dups, isEmpty, reason: '$l tekrarlanan anahtarlar: $dups');
+    }
+  });
+
   test('4 dilin ARB anahtarları aynı ve boş metin yok', () {
     final maps = {
       for (final l in kLangs) l: AppStrings.parseArb(File('assets/l10n/app_$l.arb').readAsStringSync()),

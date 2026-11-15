@@ -114,6 +114,49 @@ class BillingService {
     }
   }
 
+  /// Geri yükleme sorgusu: tüketilmemiş satın alınmış alımlar + Play'de beklemedeki alım sayısı.
+  /// null: Play sorgusu başarısız (ağ / Play hizmeti) — "bulunamadı" ile karıştırılmaz.
+  Future<({List<BillingPurchase> owned, int pending})?> query() async {
+    if (!_supported) return null;
+    if (!_available) await ensureAvailable();
+    if (!_available) return null;
+    try {
+      final r = await _android.queryPastPurchases();
+      if (r.error != null) {
+        debugPrint('billing: queryPastPurchases error ${r.error}');
+        return null;
+      }
+      final owned = <BillingPurchase>[];
+      var pending = 0;
+      for (final p in r.pastPurchases) {
+        if (p.productID != kInviteProductId || p is! GooglePlayPurchaseDetails) continue;
+        final state = p.billingClientPurchase.purchaseState;
+        if (state == PurchaseStateWrapper.purchased) {
+          owned.add(BillingPurchase._(p, BillingStatus.purchased));
+        } else if (state == PurchaseStateWrapper.pending) {
+          pending++;
+        }
+      }
+      return (owned: owned, pending: pending);
+    } catch (e) {
+      debugPrint('billing: queryPastPurchases failed: $e');
+      return null;
+    }
+  }
+
+  /// Açılışta kullanılamayan faturalandırmayı yeniden dener (ör. Play hizmeti sonradan hazır oldu).
+  Future<bool> ensureAvailable() async {
+    if (!_supported) return false;
+    if (_available) return true;
+    try {
+      _available = await InAppPurchase.instance.isAvailable();
+      if (_available && _product == null) await loadProduct();
+    } catch (e) {
+      debugPrint('billing: isAvailable failed: $e');
+    }
+    return _available;
+  }
+
   /// Tüketir (aynı zamanda onaylar). YALNIZ sunucu hak verdikten sonra çağrılır. true: başarılı.
   Future<bool> consume(BillingPurchase p) async {
     if (!_supported) return false;

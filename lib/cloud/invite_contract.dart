@@ -59,6 +59,45 @@ bool isValidInviteId(String s) => _idRe.hasMatch(s);
 /// Davetiyenin tam bağlantısı (paylaşım metinleri dahil her yerde bu kullanılır).
 String inviteUrl(String id) => '$kInviteBaseUrl?id=$id';
 
+// ---- Kişiye özel bağlantı (?g=Ad) — isim YALNIZ bağlantıdadır, sunucuya yazılmaz ----
+
+/// Davetli adı için üst sınır (karakter/kod noktası; davetli sayfasındaki GUEST_MAX ile aynı).
+const int kGuestNameMax = 60;
+
+/// Tek seferde oluşturulabilecek en fazla kişiye özel bağlantı.
+const int kGuestLinksMax = 50;
+
+/// Kontrol karakterleri, sıfır genişlikli ve yön denetimi karakterleri (görünümü bozar/aldatır).
+final RegExp _guestBad = RegExp('[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]');
+
+/// Davetli adını temizler: kontrol/yön karakterleri boşluk olur, boşluklar teke iner, kırpılır,
+/// en çok [kGuestNameMax] kod noktası. (invite.html cleanGuest ile aynı kurallar.)
+String cleanGuestName(String s) {
+  final one = s.replaceAll(_guestBad, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  final runes = one.runes.toList();
+  if (runes.length <= kGuestNameMax) return one;
+  return String.fromCharCodes(runes.take(kGuestNameMax)).trim();
+}
+
+/// Çok satırlı girişten (her satıra bir isim) temiz, boş olmayan, tekrarsız isim listesi.
+List<String> parseGuestNames(String text) {
+  final out = <String>[];
+  final seen = <String>{};
+  for (final line in text.split(RegExp(r'[\r\n]+'))) {
+    final n = cleanGuestName(line);
+    if (n.isEmpty || !seen.add(n.toLowerCase())) continue;
+    out.add(n);
+    if (out.length >= kGuestLinksMax) break;
+  }
+  return out;
+}
+
+/// Kişiye özel bağlantı: …/davetiye/?id={id}&g={ad (URL kodlu)}. Ad boşsa düz bağlantı.
+String personalInviteUrl(String id, String guest) {
+  final g = cleanGuestName(guest);
+  return g.isEmpty ? inviteUrl(id) : '${inviteUrl(id)}&g=${Uri.encodeComponent(g)}';
+}
+
 /// Ekranda gösterilen kısa biçim (https:// olmadan).
 String inviteUrlDisplay(String id) => inviteUrl(id).replaceFirst('https://', '');
 

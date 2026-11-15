@@ -236,6 +236,45 @@ class AppState extends ChangeNotifier {
 
   bool get hasCredit => _credit != null;
 
+  /// Ödeme alındı ama sunucu henüz hak vermedi (Play beklemede ya da doğrulama yapılamadı):
+  /// ana ekranda "Ödemeniz doğrulanıyor…" bandı + "Tekrar dene".
+  bool _payVerifying = false;
+  bool get payVerifying => _payVerifying;
+
+  bool _restoring = false;
+  bool get restoring => _restoring;
+
+  void _setVerifying(bool v) {
+    if (_payVerifying == v) return;
+    _payVerifying = v;
+    notifyListeners();
+  }
+
+  /// "Satın alımı geri yükle": Play'deki tüketilmemiş alımları yeniden sorgular, her birini sunucuda
+  /// doğrulatır (redeemPurchase → hak verilince tüket). Dönen değer: kullanıcı metni ARB anahtarı.
+  Future<String> restorePurchases() async {
+    final b = billing;
+    final c = cloud;
+    if (b == null || !await b.ensureAvailable()) return 'payUnavailable';
+    if (c == null || !c.ready) return 'cloudSetup';
+    if (_restoring) return 'restorePending';
+    _restoring = true;
+    notifyListeners();
+    try {
+      final q = await b.query();
+      if (q == null) return restoreMessageKey(const [], queryFailed: true);
+      final results = <String?>[];
+      for (final p in q.owned) {
+        results.add(await _handleBought(p));
+      }
+      _setVerifying(needsVerifyBanner(results, pending: q.pending));
+      return restoreMessageKey(results, pending: q.pending);
+    } finally {
+      _restoring = false;
+      notifyListeners();
+    }
+  }
+
   /// Açılışta: alım akışını dinle, fiyatı yükle, tüketilmemiş alımları tamamla (hak ver → tüket).
   Future<void> startBilling() async {
     final b = billing;
@@ -244,9 +283,13 @@ class AppState extends ChangeNotifier {
     await b.init(_onPurchase);
     notifyListeners(); // fiyat / kullanılabilirlik
     if (!b.available) return;
-    for (final p in await b.owned()) {
-      await _handleBought(p);
+    final q = await b.query();
+    if (q == null) return;
+    final results = <String?>[];
+    for (final p in q.owned) {
+      results.add(await _handleBought(p));
     }
+    _setVerifying(needsVerifyBanner(results, pending: q.pending));
   }
 
   /// Ücretli yayın (yayınla ekranı). Dönen değer: null (yayında), 'paidPhotoErr' (yayında, fotoğraf eksik)
@@ -313,6 +356,7 @@ class AppState extends ChangeNotifier {
     }
     switch (p.status) {
       case BillingStatus.pending:
+        _setVerifying(true);
         _finishWait('payPending'); // bağlam saklı: onaylanınca akıştan "purchased" gelir ve yayınlanır
       case BillingStatus.canceled:
         _finishWait('payCancelled');
@@ -337,6 +381,7 @@ class AppState extends ChangeNotifier {
     if (!_inFlight.add(p.token)) return 'payProcessing'; // aynı alım zaten işleniyor; sonucu o iletecek
     final r = await _processBought(p);
     _inFlight.remove(p.token);
+    if (isUnverifiedResult(r)) _setVerifying(true);
     _finishWait(r);
     return r;
   }
@@ -378,6 +423,7 @@ class AppState extends ChangeNotifier {
     if (_credit?.token == p.token) _credit = null;
     await billing?.consume(p); // başarısızsa sonraki açılışta sunucu idempotent döner, yeniden tüketilir
     await _clearPending();
+    _payVerifying = false;
     premiumUser = true;
     await _store.savePremiumUser(true);
     await save();

@@ -317,12 +317,8 @@ class _EditorScreenState extends State<EditorScreen> {
                 ],
               ),
             ),
+            // Önizleme/Bilgiler geçişi yukarıdaki 1-2-3 adım sekmelerinde; alt çubukta yalnız ana eylem (tasarım #5).
             ZBottomBar(children: [
-              GhostButton(
-                label: _tab == 0 ? context.t('preview') : context.t('edit'),
-                icon: _tab == 0 ? null : const Icon(Icons.edit_outlined, size: 18),
-                onPressed: () => _goPreview(_tab == 0 ? 1 : 0),
-              ),
               PrimaryButton(
                 label: primaryLabel,
                 onPressed: _cloudBusy ? null : () => _toPublish(inv),
@@ -431,7 +427,7 @@ class _MoreMenu extends StatelessWidget {
         PopupMenuItem<String>(
           value: 'del',
           child: Row(children: [
-            const Icon(Icons.delete_outline, size: 20, color: AppColors.err),
+            const ZGlyph(ZGlyphs.trash, size: 20, color: AppColors.err),
             const SizedBox(width: 10),
             Text(context.t('del'), style: bodyStyle(15, color: AppColors.err)),
           ]),
@@ -1010,6 +1006,10 @@ class _DetailsFormState extends State<DetailsForm> {
           ]),
         );
 
+    // Tasarım #6: hatalı alanın kendisi ErrorFrame ile çerçevelenir (FieldBlock hatalarıyla aynı görünüm).
+    final namesErr = err('names') != null;
+    final dateErr = err('date') != null;
+
     Widget errLine(String? text) => text == null
         ? const SizedBox.shrink()
         : Padding(
@@ -1029,7 +1029,9 @@ class _DetailsFormState extends State<DetailsForm> {
     Widget nameField(bool first, String label, String ph) => FieldBlock(
           label: label,
           requiredLabel: reqL,
-          child: TextField(
+          child: _framed(
+            namesErr && (first ? inv.n1 : inv.n2).trim().isEmpty,
+            TextField(
             controller: first ? _n1 : _n2,
             focusNode: first ? _n1Focus : _n2Focus,
             readOnly: nameRO,
@@ -1048,6 +1050,7 @@ class _DetailsFormState extends State<DetailsForm> {
                       }
                     }),
             onSubmitted: locked ? (_) => _commitName(first) : null,
+            ),
           ),
         );
 
@@ -1144,13 +1147,16 @@ class _DetailsFormState extends State<DetailsForm> {
             FieldBlock(
               label: context.t('date'),
               requiredLabel: reqL,
-              child: PickerField(
-                text: formatShortDate(inv.date, lang),
-                placeholder: context.t('selectDate'),
-                readOnly: dateRO,
-                icon: Icons.calendar_today_outlined,
-                semanticLabel: context.t('date'),
-                onTap: _pickDate,
+              child: _framed(
+                dateErr && (inv.date.isEmpty || inv.time.isNotEmpty),
+                PickerField(
+                  text: formatShortDate(inv.date, lang),
+                  placeholder: context.t('selectDate'),
+                  readOnly: dateRO,
+                  glyph: ZGlyphs.calendar,
+                  semanticLabel: context.t('date'),
+                  onTap: _pickDate,
+                ),
               ),
             ),
             if (locked) lockHint(datesLeftText),
@@ -1161,15 +1167,18 @@ class _DetailsFormState extends State<DetailsForm> {
                   child: FieldBlock(
                     label: context.t('time'),
                     requiredLabel: reqL,
-                    child: PickerField(
-                      text: inv.time,
-                      placeholder: context.t('selectTime'),
-                      icon: Icons.schedule,
-                      semanticLabel: context.t('time'),
-                      onTap: () async {
-                        final v = await _pickTime(inv.time);
-                        if (v != null) _set(() => inv.time = v);
-                      },
+                    child: _framed(
+                      dateErr && inv.time.isEmpty,
+                      PickerField(
+                        text: inv.time,
+                        placeholder: context.t('selectTime'),
+                        glyph: ZGlyphs.clock,
+                        semanticLabel: context.t('time'),
+                        onTap: () async {
+                          final v = await _pickTime(inv.time);
+                          if (v != null) _set(() => inv.time = v);
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -1193,7 +1202,7 @@ class _DetailsFormState extends State<DetailsForm> {
                         if (inv.end.isNotEmpty)
                           IconButton(
                             tooltip: context.t('clear'),
-                            icon: const Icon(Icons.close, size: 18),
+                            icon: const ZGlyph(ZGlyphs.close, size: 18, color: AppColors.muted),
                             onPressed: () => _set(() => inv.end = ''),
                           ),
                       ],
@@ -1701,6 +1710,8 @@ class _DetailsFormState extends State<DetailsForm> {
     ];
   }
 
+  Widget _framed(bool on, Widget child) => on ? ErrorFrame(child: child) : child;
+
   /// Hediye IBAN'ı bölümü. Ücretsiz davetiyede kilitli (alanlar kapalı, "1 Davetiye Hakkı ile" rozeti).
   Widget _giftBlock(String? Function(String) err) {
     final open = isPaidInvite(inv);
@@ -1735,19 +1746,22 @@ class _DetailsFormState extends State<DetailsForm> {
                 children: [
                   Text(context.t('giftHolderL'), style: bodyStyle(12, weight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  TextField(
-                    controller: _giftHolder,
-                    focusNode: _holderFocus,
-                    enabled: open,
-                    maxLength: kGiftHolderMax,
-                    inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'[\r\n]'))],
-                    decoration: fieldDecoration(hint: context.t('giftHolderPh')),
-                    style: bodyStyle(16),
-                    onChanged: (v) => _set(() => inv.giftHolder = v),
+                  _framed(
+                    err('giftHolder') != null,
+                    TextField(
+                      controller: _giftHolder,
+                      focusNode: _holderFocus,
+                      enabled: open,
+                      maxLength: kGiftHolderMax,
+                      inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'[\r\n]'))],
+                      decoration: fieldDecoration(hint: context.t('giftHolderPh')),
+                      style: bodyStyle(16),
+                      onChanged: (v) => _set(() => inv.giftHolder = v),
+                    ),
                   ),
                   if (err('giftHolder') != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.only(top: 8),
                       child: Text(err('giftHolder')!, style: bodyStyle(13, color: AppColors.err)),
                     ),
                 ],
@@ -1761,7 +1775,9 @@ class _DetailsFormState extends State<DetailsForm> {
                 children: [
                   Text(context.t('giftIbanL'), style: bodyStyle(12, weight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  Directionality(
+                  _framed(
+                    err('giftIban') != null,
+                    Directionality(
                     textDirection: TextDirection.ltr,
                     child: TextField(
                       controller: _giftIban,
@@ -1775,10 +1791,11 @@ class _DetailsFormState extends State<DetailsForm> {
                       style: bodyStyle(16),
                       onChanged: (v) => setState(() => _set(() => inv.giftIban = normalizeIban(v))),
                     ),
+                    ),
                   ),
                   if (err('giftIban') != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.only(top: 8),
                       child: Text(err('giftIban')!, style: bodyStyle(13, color: AppColors.err)),
                     )
                   else if (ibanOk)
@@ -1831,7 +1848,7 @@ class _DetailsFormState extends State<DetailsForm> {
           ),
           const SizedBox(width: 4),
           ZIconButton(
-            icon: Icons.close,
+            glyph: ZGlyphs.close,
             tooltip: context.t('removeNote'),
             onPressed: () {
               if (i >= inv.notes.length || i >= _noteCtl.length) return;
@@ -1879,7 +1896,7 @@ class _DetailsFormState extends State<DetailsForm> {
           ),
           const SizedBox(width: 4),
           ZIconButton(
-            icon: Icons.close,
+            glyph: ZGlyphs.close,
             tooltip: context.t('removeStep'),
             onPressed: () {
               final c = _stepCtl.remove(s);

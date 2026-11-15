@@ -88,3 +88,31 @@ class PendingPaid {
     return PendingPaid(invId: inv, cloudId: cid);
   }
 }
+
+// ---- Satın alımı geri yükle + "Ödemeniz doğrulanıyor…" bandı ----
+
+/// Sunucu doğrulaması henüz yapılamamış (alım korunuyor, yeniden denenecek) sonuçlar.
+/// Bu durumlarda ana ekranda "Ödemeniz doğrulanıyor…" bandı gösterilir.
+const Set<String> kUnverifiedResults = {'payVerifyErr', 'payPending', 'payProcessing', 'cloudDenied', 'cloudSetup'};
+
+/// Tek bir alım işleme sonucu (null = hak verildi) doğrulama bekliyor mu?
+bool isUnverifiedResult(String? key) => key != null && kUnverifiedResults.contains(key);
+
+/// Geri yükleme sonrası bant gösterilsin mi: Play'de bekleyen alım varsa ya da en az bir alım doğrulanamadıysa.
+bool needsVerifyBanner(Iterable<String?> results, {int pending = 0}) =>
+    pending > 0 || results.any(isUnverifiedResult);
+
+/// "Satın alımı geri yükle" sonucu → kullanıcı metni (ARB anahtarı).
+/// [results]: sahip olunan her tüketilmemiş alım için işleme sonucu (null = hak verildi/tamamlandı).
+/// [pending]: Play'de henüz onaylanmamış (beklemede) alım sayısı. [queryFailed]: Play sorgusu başarısız.
+/// Öncelik: tamamlandı > kullanılmamış hak > beklemede > hata > geri yüklenecek bir şey yok.
+String restoreMessageKey(List<String?> results, {int pending = 0, bool queryFailed = false}) {
+  if (results.any((r) => r == null || r == 'paidPhotoErr')) return 'restoreDone';
+  if (results.contains('payCredit')) return 'restoreCredit';
+  if (pending > 0 || results.any((r) => r == 'payPending' || r == 'payProcessing')) return 'restorePending';
+  if (queryFailed) return 'restoreErr';
+  // Hak başka davetiyede kullanılmış (tüketildi) ya da alım iade/geçersiz: geri yüklenecek bir şey kalmadı.
+  const settled = {'payUsed', 'payRefunded'};
+  if (results.any((r) => !settled.contains(r))) return 'restoreErr';
+  return 'restoreNone';
+}

@@ -14,6 +14,7 @@ import '../theme/app_theme.dart';
 import '../widgets/ad_slot.dart';
 import '../widgets/common.dart';
 import '../widgets/ornament.dart';
+import '../widgets/restore_purchases.dart';
 import 'editor_screen.dart';
 import 'type_screen.dart';
 
@@ -45,12 +46,14 @@ class HomeScreen extends StatelessWidget {
                       : const SizedBox.shrink(),
                 ),
                 _LangSelect(value: st.lang, onChanged: (l) => st.setLang(l)),
+                const _HomeMenu(),
               ],
             ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                 children: [
+                  const PayVerifyBanner(),
                   H2(context.t('myInv')),
                   if (list.isEmpty) const _Empty() else ...list.map((inv) => _InvItem(inv: inv)),
                   const SizedBox(height: 6),
@@ -65,6 +68,42 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Başlıktaki "⋯" menüsü: satın alımı geri yükle.
+class _HomeMenu extends StatelessWidget {
+  const _HomeMenu();
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: context.t('more'),
+      onSelected: (v) {
+        if (v == 'restore') runRestorePurchases(context);
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem<String>(
+          value: 'restore',
+          child: Row(children: [
+            const ZGlyph(ZGlyphs.retry, size: 20, color: AppColors.primary),
+            const SizedBox(width: 10),
+            Flexible(child: Text(context.t('restoreBtn'), style: bodyStyle(15))),
+          ]),
+        ),
+      ],
+      child: Container(
+        width: 44,
+        height: 44,
+        margin: const EdgeInsetsDirectional.only(start: 6),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          border: Border.all(color: AppColors.line),
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+        ),
+        child: const Icon(Icons.more_horiz, size: 22, color: AppColors.ink),
       ),
     );
   }

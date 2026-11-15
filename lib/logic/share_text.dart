@@ -54,3 +54,10 @@ String shareNames(Invitation inv, String amp) {
 /// Bağlantıyı satır sonunda güzel kırmak için: yalnız '/' ve '&' sonrasına kırılma fırsatı (U+200B) eklenir;
 /// alan adı ve kimlik ortadan bölünmez. Yalnız GÖSTERİM içindir; kopyalanan/paylaşılan bağlantı ham kullanılır.
 String softBreakUrl(String url) => url.replaceAllMapped(RegExp(r'([/&])(?=.)'), (m) => '${m[1]}\u200B');
+
+/// Kişiye özel paylaşım mesajı: davetiye dilinde selam satırı ("Sevgili {g},") + normal paylaşım metni.
+String personalShareText({required String hiTpl, required String guest, required String body}) {
+  final g = guest.trim();
+  if (g.isEmpty) return body;
+  return '${hiTpl.replaceAll('{g}', g)}\n$body';
+}

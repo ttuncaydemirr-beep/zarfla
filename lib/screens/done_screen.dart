@@ -44,15 +44,16 @@ class DoneScreen extends StatelessWidget {
                 '${exp.hour.toString().padLeft(2, '0')}:${exp.minute.toString().padLeft(2, '0')}',
           });
     final il = inv.lang;
-    final shareText = buildShareText(
-      headTpl: context.tIn(il, 'shareHead'),
-      whenTpl: context.tIn(il, 'shareWhen'),
-      linkTpl: context.tIn(il, 'shareLink'),
-      names: shareNames(inv, context.tIn(il, 'amp')),
-      event: context.tIn(il, 'type_${inv.type}'),
-      when: formatShareWhen(inv, il),
-      link: full,
-    );
+    String textFor(String link) => buildShareText(
+          headTpl: context.tIn(il, 'shareHead'),
+          whenTpl: context.tIn(il, 'shareWhen'),
+          linkTpl: context.tIn(il, 'shareLink'),
+          names: shareNames(inv, context.tIn(il, 'amp')),
+          event: context.tIn(il, 'type_${inv.type}'),
+          when: formatShareWhen(inv, il),
+          link: link,
+        );
+    final shareText = textFor(full);
     Future<void> copy() async {
       final msg = context.t('copied');
       await Clipboard.setData(ClipboardData(text: full));
@@ -112,6 +113,31 @@ class DoneScreen extends StatelessWidget {
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(height: AppSpace.x3),
+                      // Kişiye özel bağlantı: davetli sayfası ?g=Ad ile davetliyi adıyla karşılar (isim sunucuya yazılmaz).
+                      GhostButton(
+                        label: context.t('guestLinkBtn'),
+                        block: true,
+                        dimmed: expired,
+                        icon: const ZGlyph(ZGlyphs.sparkle, size: 18, color: AppColors.primary),
+                        onPressed: expired
+                            ? () => showToast(context, context.t('expiredNote'), ms: 3500)
+                            : () => showModalBottomSheet<void>(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  useSafeArea: true,
+                                  backgroundColor: AppColors.bg,
+                                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.lg))),
+                                  builder: (_) => _GuestLinksSheet(
+                                    cloudId: cid,
+                                    messageFor: (guest, link) => personalShareText(
+                                      hiTpl: context.tIn(il, 'guestShareHi'),
+                                      guest: guest,
+                                      body: textFor(link),
+                                    ),
+                                  ),
+                                ),
                       ),
                       const SizedBox(height: AppSpace.x6),
                       // Paylaşım mesajı önizlemesi (davetlinin göreceği metin)
@@ -403,4 +429,144 @@ class _Bit {
   const _Bit({required this.x, required this.delay, required this.drift, required this.size, required this.spin});
 
   final double x, delay, drift, size, spin;
+}
+
+/// Kişiye özel bağlantılar: isimler (her satıra bir) → her davetli için ?g=Ad bağlantısı,
+/// kişiye özel WhatsApp mesajı ve kopyala. İsimler yalnız cihazda/bağlantıda; hiçbir yere kaydedilmez.
+class _GuestLinksSheet extends StatefulWidget {
+  const _GuestLinksSheet({required this.cloudId, required this.messageFor});
+
+  final String cloudId;
+  final String Function(String guest, String link) messageFor;
+
+  @override
+  State<_GuestLinksSheet> createState() => _GuestLinksSheetState();
+}
+
+class _GuestLinksSheetState extends State<_GuestLinksSheet> {
+  final _ctl = TextEditingController();
+  List<String>? _names;
+  bool _empty = false;
+  bool _truncated = false;
+  final Set<String> _sent = {};
+
+  @override
+  void dispose() {
+    _ctl.dispose();
+    super.dispose();
+  }
+
+  void _make() {
+    final raw = _ctl.text.split(RegExp(r'[\r\n]+')).where((l) => cleanGuestName(l).isNotEmpty).length;
+    final names = parseGuestNames(_ctl.text);
+    setState(() {
+      _empty = names.isEmpty;
+      _names = names.isEmpty ? null : names;
+      _truncated = raw > kGuestLinksMax;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final names = _names;
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.86),
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(AppSpace.edge, AppSpace.x4, AppSpace.edge, AppSpace.x6),
+          children: [
+            Text(context.t('guestLinkBtn'), style: headStyle(AppType.h1)),
+            const SizedBox(height: AppSpace.x2),
+            Text(context.t('guestLinkP'), style: bodyStyle(13.5, color: AppColors.muted, height: 1.5)),
+            const SizedBox(height: AppSpace.x4),
+            if (names == null) ...[
+              FieldBlock(
+                label: context.t('guestLinkL'),
+                error: _empty ? context.t('guestLinkEmpty') : null,
+                child: TextField(
+                  controller: _ctl,
+                  autofocus: true,
+                  minLines: 3,
+                  maxLines: 8,
+                  keyboardType: TextInputType.multiline,
+                  textCapitalization: TextCapitalization.words,
+                  inputFormatters: [LengthLimitingTextInputFormatter(kGuestLinksMax * (kGuestNameMax + 1))],
+                  decoration: fieldDecoration(hint: context.t('guestLinkPh')),
+                  style: bodyStyle(16),
+                  onChanged: (_) {
+                    if (_empty) setState(() => _empty = false);
+                  },
+                ),
+              ),
+              PrimaryButton(label: context.t('guestLinkMake'), block: true, onPressed: _make),
+            ] else ...[
+              Text(context.t('guestLinkReady', {'n': names.length}), style: bodyStyle(14, weight: FontWeight.w700)),
+              if (_truncated)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpace.x1),
+                  child: Text(context.t('guestLinkMax', {'n': kGuestLinksMax}), style: bodyStyle(12.5, color: AppColors.muted)),
+                ),
+              const SizedBox(height: AppSpace.x3),
+              for (final g in names) _row(g),
+              const SizedBox(height: AppSpace.x3),
+              GhostButton(label: context.t('guestLinkEdit'), block: true, onPressed: () => setState(() => _names = null)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(String guest) {
+    final link = personalInviteUrl(widget.cloudId, guest);
+    final sent = _sent.contains(guest);
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpace.x2),
+      padding: const EdgeInsetsDirectional.fromSTEB(AppSpace.x3, AppSpace.x1, AppSpace.x1, AppSpace.x1),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: sent ? AppColors.primary : AppColors.field),
+        borderRadius: BorderRadius.circular(AppRadii.sm),
+      ),
+      child: Row(
+        children: [
+          if (sent) const Padding(padding: EdgeInsetsDirectional.only(end: 6), child: ZGlyph(ZGlyphs.check, size: 18, color: AppColors.ok)),
+          Expanded(child: Text(guest, maxLines: 2, overflow: TextOverflow.ellipsis, style: bodyStyle(15, weight: FontWeight.w600))),
+          ZIconButton(
+            glyph: ZGlyphs.copy,
+            tooltip: context.t('copyLink'),
+            onPressed: () async {
+              final msg = context.t('copied');
+              await Clipboard.setData(ClipboardData(text: link));
+              if (mounted) showToast(context, msg);
+            },
+          ),
+          Semantics(
+            button: true,
+            label: '${context.t('shareWa')}: $guest',
+            child: Tooltip(
+              message: context.t('shareWa'),
+              child: InkResponse(
+                radius: 24,
+                onTap: () {
+                  setState(() => _sent.add(guest));
+                  launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(widget.messageFor(guest, link))}'),
+                      mode: LaunchMode.externalApplication);
+                },
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(AppRadii.sm)),
+                  child: const Center(child: WaIcon(size: 20)),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -8,6 +8,7 @@ import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/invite_mini.dart';
 import '../widgets/ornament.dart';
+import '../widgets/restore_purchases.dart';
 import 'done_screen.dart';
 
 /// Yayınla (paywall): kullanıcının KENDİ davetiyesinin kahraman önizlemesi, önerilen zümrüt "1 Davetiye Hakkı"
@@ -153,6 +154,9 @@ class _PublishScreenState extends State<PublishScreen> {
                       Flexible(child: Text(context.t('trustLine'), textAlign: TextAlign.center, style: bodyStyle(12, color: AppColors.muted))),
                     ],
                   ),
+                  // Alt bilgi: daha önce ödenmiş ama tamamlanmamış alımı geri yükle.
+                  const SizedBox(height: AppSpace.x2),
+                  const Center(child: RestorePurchasesButton()),
                 ],
               ),
             ),

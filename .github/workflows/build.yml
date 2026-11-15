@@ -211,6 +211,9 @@ jobs:
         working-directory: functions
         run: npm run verify
 
+      - name: Davetli sayfası (invite.html) JS testleri
+        run: node --test test/js/*.test.mjs
+
   # Google Play kapalı test (alpha) yüklemesi: yalnızca elle başlatılan çalışmada, play=true ise.
   # PLAY_SERVICE_ACCOUNT_JSON secret'ı (play-yukleyici hizmet hesabı) gerekir.
   play:

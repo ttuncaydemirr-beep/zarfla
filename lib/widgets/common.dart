@@ -497,13 +497,15 @@ List<TextInputFormatter> maxLen(int n) => [LengthLimitingTextInputFormatter(n)];
 
 /// Seçim kutusu görünümlü dokunulabilir alan (tarih/saat).
 class PickerField extends StatelessWidget {
-  const PickerField({super.key, required this.text, required this.placeholder, required this.onTap, this.readOnly = false, this.icon, this.semanticLabel});
+  const PickerField({super.key, required this.text, required this.placeholder, required this.onTap, this.readOnly = false, this.glyph, this.semanticLabel});
 
   final String text;
   final String placeholder;
   final VoidCallback? onTap;
   final bool readOnly;
-  final IconData? icon;
+
+  /// Sağdaki çizgi simgesi ([ZGlyphs] yolu; tasarım #18).
+  final String? glyph;
   final String? semanticLabel;
 
   @override
@@ -531,7 +533,7 @@ class PickerField extends StatelessWidget {
                   style: bodyStyle(16, color: (empty || readOnly) ? AppColors.muted : AppColors.ink),
                 ),
               ),
-              if (icon != null) Icon(icon, size: 18, color: AppColors.muted),
+              if (glyph != null) ZGlyph(glyph!, size: 18, color: AppColors.muted),
             ],
           ),
         ),
