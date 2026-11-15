@@ -23,3 +23,13 @@
 # Her ikisinin AAR'ı consumer kuralı taşır; ek -keep gerekmez. Yalnızca eksik-sınıf uyarıları için:
 -dontwarn com.google.android.gms.ads.**
 -dontwarn com.android.billingclient.**
+
+# --- ACİL DÜZELTME (129 çökmesi): WorkManager'ın Room veritabanı yansımayla oluşturuluyor ---
+# google_mobile_ads → WorkManager → Room "WorkDatabase_Impl" sınıfını isimle yükler; R8 silince açılışta çöküyordu:
+# "Failed to create an instance of androidx.work.impl.WorkDatabase" (emülatör logcat'i ile doğrulandı).
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keep class androidx.work.impl.WorkDatabase_Impl { *; }
+-keep class androidx.work.** { *; }
+-keep class androidx.startup.** { *; }
+-keep class * extends androidx.startup.Initializer { <init>(); }
+-dontwarn androidx.room.paging.**
