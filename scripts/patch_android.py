@@ -5,6 +5,7 @@
 - minSdk >= 23, targetSdk/compileSdk >= 35 (Flutter'ın varsayılanı daha yüksekse o kullanılır;
   Play'in güncel hedef API şartı ve eklentilerin compileSdk isteği bozulmasın diye)
 - Uygulama adı: "Zarfla"
+- AdMob: APPLICATION_ID meta-data (kaynak: lib/ads/ad_config.dart) + AD_ID izni (AndroidManifest)
 - Firebase: com.google.gms.google-services Gradle eklentisi (Kotlin DSL ve Groovy şablonlarının ikisi de)
   android/app/google-services.json depoda durur; eklenti onu derlemede okur.
 - Uygulama simgesi: assets/branding/android/res/ → android/app/src/main/res/ (Flutter varsayılanının üzerine)
@@ -188,6 +189,19 @@ def check_google_services() -> None:
         sys.exit(f"google-services.json içinde {APP_ID} paketi yok.")
 
 
+AD_ID_PERMISSION = "com.google.android.gms.permission.AD_ID"
+AD_CONFIG = ROOT / "lib" / "ads" / "ad_config.dart"
+
+
+def read_admob_app_id() -> str:
+    """lib/ads/ad_config.dart içindeki kAdMobAndroidAppId değerini okur (ca-app-pub-XXXX~YYYY)."""
+    text = AD_CONFIG.read_text(encoding="utf-8")
+    m = re.search(r"kAdMobAndroidAppId\s*=\s*'(ca-app-pub-\d+~\d+)'", text)
+    if not m:
+        sys.exit("lib/ads/ad_config.dart: kAdMobAndroidAppId bulunamadı veya biçimi bozuk (ca-app-pub-XXXX~YYYY).")
+    return m.group(1)
+
+
 def patch_manifest() -> None:
     m = APP / "src" / "main" / "AndroidManifest.xml"
     s = m.read_text(encoding="utf-8")
@@ -196,8 +210,24 @@ def patch_manifest() -> None:
     if "android:roundIcon" not in s:
         s = s.replace('android:icon="@mipmap/ic_launcher"',
                       'android:icon="@mipmap/ic_launcher"\n        android:roundIcon="@mipmap/ic_launcher_round"', 1)
+    # AdMob uygulama kimliği: tek kaynak lib/ads/ad_config.dart (gerçek kimliğe geçiş tek düzenleme).
+    app_id = read_admob_app_id()
+    if "com.google.android.gms.ads.APPLICATION_ID" not in s:
+        meta = (f'    <meta-data\n            android:name="com.google.android.gms.ads.APPLICATION_ID"\n'
+                f'            android:value="{app_id}"/>\n')
+        s, n = re.subn(r"(</application>)", lambda mm: meta + "    " + mm.group(1), s, count=1)
+        if n == 0:
+            sys.exit("AndroidManifest.xml: </application> bulunamadı; AdMob meta-data eklenemedi.")
+    else:
+        s = re.sub(r'(com\.google\.android\.gms\.ads\.APPLICATION_ID"\s+android:value=")[^"]*(")',
+                   lambda mm: mm.group(1) + app_id + mm.group(2), s, count=1)
+    if AD_ID_PERMISSION not in s:
+        perm = f'<uses-permission android:name="{AD_ID_PERMISSION}"/>\n    '
+        s, n = re.subn(r"(<application\b)", lambda mm: perm + mm.group(1), s, count=1)
+        if n == 0:
+            sys.exit("AndroidManifest.xml: <application> bulunamadı; AD_ID izni eklenemedi.")
     m.write_text(s, encoding="utf-8")
-    print("AndroidManifest.xml: label=Zarfla, icon/roundIcon")
+    print(f"AndroidManifest.xml: label=Zarfla, icon/roundIcon, AdMob app id={app_id}, AD_ID izni")
 
 
 def copy_icons() -> None:

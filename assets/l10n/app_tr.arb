@@ -212,5 +212,6 @@
   "delCloudErr": "Davetiye silinemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.",
   "paidSoon": "Ücretli yayın (1 Davetiye Hakkı) yakında Google Play ödemesiyle açılacak. Şimdilik ücretsiz yayınlayabilirsiniz.",
   "paidSoonBtn": "Yakında",
-  "untilDate": "Bağlantı {d} saatine kadar açık."
+  "untilDate": "Bağlantı {d} saatine kadar açık.",
+  "privacyOptions": "Gizlilik seçenekleri"
 }

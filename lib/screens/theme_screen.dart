@@ -83,7 +83,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
                         paidLabel: context.t('premium'),
                         onTap: () => _select(id),
                       ),
-                  if (!st.premiumUser) AdSlot(label: context.t('ad')),
+                  if (!st.premiumUser) const AdSlot(),
                 ],
               ),
             ),

@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
+import 'ads/ad_service.dart';
 import 'app.dart';
 import 'cloud/cloud_service.dart';
 import 'l10n/strings.dart';
@@ -24,6 +25,8 @@ Future<void> main() async {
   runApp(ChangeNotifierProvider<AppState>.value(value: state, child: const ZarflaApp()));
   // Anonim giriş arka planda (çevrimdışıysa yayın anında yeniden denenir).
   state.warmUpCloud();
+  // Reklam: önce Google UMP rızası, sonra MobileAds başlatılır (arka planda).
+  AdService.init();
 }
 
 /// Paketlenen yazı tiplerinin OFL lisansları (Ayarlar > Lisanslar'da görünür).

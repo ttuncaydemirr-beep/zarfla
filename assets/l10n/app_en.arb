@@ -212,5 +212,6 @@
   "delCloudErr": "The invitation could not be deleted. Please check your connection and try again.",
   "paidSoon": "Paid publishing (1 Invitation Pass) is coming soon with Google Play payments. For now you can publish for free.",
   "paidSoonBtn": "Coming soon",
-  "untilDate": "The link stays open until {d}."
+  "untilDate": "The link stays open until {d}.",
+  "privacyOptions": "Privacy options"
 }
