@@ -46,9 +46,13 @@ jobs:
             adb logcat -c
             adb shell monkey -p com.demirgamesstudio.zarfla -c android.intent.category.LAUNCHER 1
             sleep 25
+            adb exec-out screencap -p > shot_home.png || true
+            adb shell input tap 540 2100 || true
+            sleep 4
+            adb exec-out screencap -p > shot_tap.png || true
             adb shell pidof com.demirgamesstudio.zarfla || echo "UYGULAMA ÇALIŞMIYOR (çöktü)"
             adb logcat -d > logcat.txt || true
             grep -n -A40 "FATAL EXCEPTION\|AndroidRuntime\|Fatal signal" logcat.txt | head -200 || true
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: logcat, path: logcat.txt }
+        with: { name: logcat, path: "logcat.txt\nshot_*.png" }
