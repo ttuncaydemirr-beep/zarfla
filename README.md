@@ -44,7 +44,7 @@ uygulama simgesi).
 2. **Aşama 2 (şimdi):** Firebase (davetiyeler buluta), davetli sayfası stüdyo sitesinde
    (`https://ttuncaydemirr-beep.github.io/davetiye/?id=<id>`), aynı `invite.html` ile.
    Ücretsiz yayın çalışır; ücretli yayın "yakında" (Aşama 3).
-3. **Aşama 3:** Google Play Faturalandırma, AdMob banner, gerçek imza ve Play yüklemesi.
+3. **Aşama 3:** Google Play Faturalandırma (aşağıda), AdMob banner, gerçek imza ve Play yüklemesi.
 
 ## APK'yı telefondan indirme
 
@@ -107,7 +107,7 @@ Aynı anda en fazla 1 aktif ücretsiz davetiye (istemci denetimi).
    (Doğrudan adres: `https://console.cloud.google.com/firestore/databases/-default-/ttl?project=zarfla-37da9`)
 5. (Önerilir) Storage'da sahipsiz kalan fotoğraflar için Cloud Console → **Cloud Storage** → Buckets →
    `zarfla-37da9.firebasestorage.app` → **Lifecycle** → Add rule → Delete object, Age **400** gün.
-   (Aşama 3'te belge silinince fotoğrafları silen bir sunucu fonksiyonu eklenecek.)
+   (Aşama 3: `cleanupStorage` fonksiyonu bunu her gün yapar; kural yine yedek olarak kalabilir.)
 
 ### Kural test planı
 
@@ -120,6 +120,13 @@ CI'daki **rules** işi `rules-test/rules.test.mjs` ile aşağıdakilerin hepsini
 | C3 | ownerUid başka kullanıcı | ret |
 | C4 | plan = "paid" | ret |
 | C5 | expiresAt > şimdi + 25 saat | ret |
+| C20 | expiresAt > şimdi + 24 saat 10 dk (saat farkı payı) | ret |
+| C21 | expiresAt geçmişte | ret |
+| C22 | Tam tutarlı ücretli belgeyi istemci oluşturur | ret |
+| U9 | Ücretsizden ücretliye tutarlı yükseltme (istemci) | ret |
+| PD1 | Sunucunun (redeemPurchase) yazdığı ücretli belgeyi sahibi fotoğraf/isimle günceller; tasarım kilidi | izin/ret |
+| US1 | users/{uid}: yalnız kendisi okur, kimse yazamaz | izin/ret |
+| PU1 | purchases/*: istemciye kapalı | ret |
 | C6 | Listede olmayan ek alan | ret |
 | C7 | nameEdits ya da dateEdits ≠ 0 | ret |
 | C8 | origDate ≠ date | ret |
@@ -172,5 +179,32 @@ CI'daki **rules** işi `rules-test/rules.test.mjs` ile aşağıdakilerin hepsini
 | S7 | Herkes okur, yalnız sahibi siler | izin/ret |
 
 **Kuralların sınırı:** kurallar JSON ayrıştıramaz; `data` metni kilit alanlarına düzenli ifadelerle
-bağlanır (önek, tek anahtar, birebir değer). "Aynı anda 1 ücretsiz davetiye" sınırı yalnız istemcide
-denetlenir (kurallar kullanıcının diğer belgelerini sayamaz); tam garanti Aşama 3'te sunucu fonksiyonuyla.
+bağlanır (önek, tek anahtar, birebir değer). "Aynı anda 1 ücretsiz davetiye" sınırını kurallar sayamaz:
+istemci engeller, sunucuda `enforceFreeLimit` fonksiyonu yeni fazlalığı kapatır (anonim hesapta yeniden
+kurulumla aşılabilir; kabul edilen risk).
+
+## Aşama 3: Google Play Faturalandırma ve sunucu fonksiyonları
+
+**Ürün:** `zarfla_invite_1` — tek seferlik, **tüketilebilir** "1 Davetiye Hakkı" (abonelik yok).
+Ücretsiz: yalnız Papatya, 24 saat, alt yazı. Ücretli: tüm tasarımlar, 365 gün, alt yazı yok, hesap bir daha
+reklam görmez (`premiumUser`; sunucuda `users/{uid}.premium`).
+
+**Akış (uygulama):** Yayınla → ücretli → bağlam kaydedilir (taslak + önceden seçilen bulut kimliği) →
+tüketilmemiş eski alım varsa o kullanılır, yoksa Play satın alma (`autoConsume: false`) → jeton →
+`redeemPurchase` (europe-west3) → başarıda fotoğraflar yüklenir, alım **tüketilir**. Bekleyen ödeme
+onaylanınca, ya da uygulama açılışında tüketilmemiş alım bulunursa, aynı bağlamla tamamlanır (sunucu
+idempotent: aynı jeton + aynı davetiye = yine başarı). Kod: `lib/billing/`, `CloudService.publishPaid`,
+`AppState.publishPaid/startBilling`.
+
+**Fonksiyonlar** (`functions/`, Node 22, düz JS, çalışma kimliği `zarfla-functions@zarfla-37da9.iam.gserviceaccount.com`):
+
+| Fonksiyon | Tetik | İş |
+|---|---|---|
+| `redeemPurchase` | callable (oturum şart) | `purchases.products.get` ile doğrular (purchaseState 0, tüketilmemiş), `purchases/{sha256(jeton)}` kaydı (ham jeton saklanmaz), `invites/{id}` plan `paid`, +365 gün, deleteAt +395 gün, `users/{uid}.premium=true`, gerekirse acknowledge |
+| `voidedPurchases` | her gün 04:23 (İstanbul) | Son 30 günün iade/geri ödemeleri: alım `voided`, davetiye **en geç 24 saat içinde kapanır** (silinmez, plan/tasarım korunur), başka geçerli alım yoksa premium kalkar |
+| `enforceFreeLimit` | `invites/{id}` oluşturulunca | Aynı sahibin açık başka ücretsizi varsa yenisi hemen kapanır |
+| `cleanupStorage` | her gün 04:41 (İstanbul) | TTL ile silinmiş / deleteAt'i geçmiş davetiyelerin Storage dosyaları |
+
+**Kurallar:** istemci `paid` oluşturamaz/yükseltemez (yalnız Admin SDK); ücretsiz süre en çok 24 saat + 10 dk.
+**CI:** `functions` işi (`npm run verify`: sözdizimi + sahte Play API ile birim testleri + yükleme).
+**Yayın:** Actions → **Sunucu yayını (Functions + kurallar)** → Run workflow (secret `FIREBASE_DEPLOY_SA`).

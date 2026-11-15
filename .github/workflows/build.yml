@@ -53,8 +53,8 @@ jobs:
       - name: Paketler
         run: flutter pub get
 
-      - name: Çözülen Firebase sürümleri
-        run: grep -A6 -E '^  (firebase_core|firebase_auth|cloud_firestore|firebase_storage):' pubspec.lock || true
+      - name: Çözülen Firebase ve faturalandırma sürümleri
+        run: grep -A6 -E '^  (firebase_core|firebase_auth|cloud_firestore|firebase_storage|cloud_functions|in_app_purchase|in_app_purchase_android):' pubspec.lock || true
 
       - name: Analiz (uyarılar geçer, hatalar durdurur)
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
@@ -162,10 +162,34 @@ jobs:
           npx -y firebase-tools@latest emulators:exec --project demo-zarfla --only firestore,storage
           "node --test --test-reporter=spec rules-test/rules.test.mjs"
 
+  # Cloud Functions (functions/): sözdizimi denetimi, sahte Google Play API ile birim testleri,
+  # gerçek bağımlılıklarla index.js'nin yüklenmesi. Yayın (deploy) ayrı ve elle: deploy-functions.yml.
+  functions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Paketler
+        working-directory: functions
+        run: npm install --no-audit --no-fund
+
+      - name: Çözülen sürümler
+        working-directory: functions
+        run: npm ls firebase-functions firebase-admin googleapis --depth=0 || true
+
+      - name: Denetim + birim testleri + yükleme
+        working-directory: functions
+        run: npm run verify
+
   # Google Play kapalı test (alpha) yüklemesi: yalnızca elle başlatılan çalışmada, play=true ise.
   # PLAY_SERVICE_ACCOUNT_JSON secret'ı (play-yukleyici hizmet hesabı) gerekir.
   play:
-    needs: [build, rules]
+    needs: [build, rules, functions]
     if: github.event_name == 'workflow_dispatch' && inputs.play
     runs-on: ubuntu-latest
     timeout-minutes: 15

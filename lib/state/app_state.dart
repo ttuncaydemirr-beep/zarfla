@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 
+import '../billing/billing_logic.dart';
+import '../billing/billing_service.dart';
 import '../cloud/cloud_service.dart';
 import '../cloud/invite_contract.dart';
 import '../data/catalog.dart';
@@ -18,7 +21,7 @@ import '../storage/photo_store.dart';
 /// Neden provider: tek ekranlı akış ve az sayıda paylaşılan durum için en sade,
 /// en yaygın ve kod üretimi gerektirmeyen seçenek (riverpod'a gerek yok).
 class AppState extends ChangeNotifier {
-  AppState({required this.strings, required InvitationStore store, required PhotoStore photos, this.cloud})
+  AppState({required this.strings, required InvitationStore store, required PhotoStore photos, this.cloud, this.billing})
       : _store = store,
         _photos = photos;
 
@@ -26,6 +29,9 @@ class AppState extends ChangeNotifier {
 
   /// Firebase katmanı (testlerde ve Firebase başlatılamazsa null olabilir).
   final CloudService? cloud;
+
+  /// Google Play Faturalandırma (testlerde ve Android dışında null olabilir).
+  final BillingService? billing;
   final InvitationStore _store;
   final PhotoStore _photos;
 
@@ -72,12 +78,21 @@ class AppState extends ChangeNotifier {
   }
 
   /// Açılışta anonim oturumu arka planda hazırla (başarısızlık sessiz; yayınlarken yeniden denenir).
+  /// Sunucudaki premium (reklamsız) bayrağı da okunur (yalnız açar, kapatmaz).
   Future<void> warmUpCloud() async {
     final c = cloud;
     if (c == null || !c.ready) return;
     try {
       await c.ensureUser();
+      if (!premiumUser && await c.fetchPremium()) await _setPremiumUser();
     } catch (_) {}
+  }
+
+  Future<void> _setPremiumUser() async {
+    if (premiumUser) return;
+    premiumUser = true;
+    notifyListeners();
+    await _store.savePremiumUser(true);
   }
 
   String t(String key, [Map<String, Object> args = const {}]) => strings.get(lang, key, args);
@@ -149,7 +164,7 @@ class AppState extends ChangeNotifier {
   bool isExpired(Invitation inv) => inv.isExpiredAt(DateTime.now());
 
   /// Ücretsiz yayın: Firestore belgesi + Storage fotoğrafları. Dönen değer: null ya da hata metin anahtarı.
-  /// Ücretli yayın Aşama 3'te (Google Play + sunucu fonksiyonu) gelecek.
+  /// Ücretli yayın: [publishPaid].
   Future<String?> publishFree(Invitation inv) async {
     final c = cloud;
     if (c == null || !c.ready) return 'cloudSetup';
@@ -169,6 +184,172 @@ class AppState extends ChangeNotifier {
     }
     await save();
     return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Ücretli yayın: Google Play "1 Davetiye Hakkı" (tüketilebilir) + redeemPurchase
+  // ---------------------------------------------------------------------------
+
+  PendingPaid? _pending;
+  Completer<String?>? _buyWait;
+  final Set<String> _inFlight = {};
+
+  /// Sunucunun henüz hak vermediği, tüketilmemiş alım (kullanılmamış hak).
+  BillingPurchase? _credit;
+
+  /// Play'den gelen yerelleştirilmiş fiyat (yoksa ARB'deki 'price' gösterilir).
+  String? get playPrice => billing?.price;
+
+  bool get billingReady => billing?.available ?? false;
+
+  bool get hasCredit => _credit != null;
+
+  /// Açılışta: alım akışını dinle, fiyatı yükle, tüketilmemiş alımları tamamla (hak ver → tüket).
+  Future<void> startBilling() async {
+    final b = billing;
+    if (b == null) return;
+    _pending = await _store.loadPendingPaid();
+    await b.init(_onPurchase);
+    notifyListeners(); // fiyat / kullanılabilirlik
+    if (!b.available) return;
+    for (final p in await b.owned()) {
+      await _handleBought(p);
+    }
+  }
+
+  /// Ücretli yayın (yayınla ekranı). Dönen değer: null (yayında), 'paidPhotoErr' (yayında, fotoğraf eksik)
+  /// ya da hata metin anahtarı.
+  Future<String?> publishPaid(Invitation inv) async {
+    final c = cloud;
+    final b = billing;
+    if (c == null || !c.ready) return 'cloudSetup';
+    if (b == null || !b.available) return 'payUnavailable';
+    if (_buyWait != null) return 'payProcessing';
+    inv
+      ..n1 = cloudSafeName(inv.n1)
+      ..n2 = cloudSafeName(inv.n2)
+      ..nameEditsLeft = kNameEdits
+      ..dateEditsLeft = kDateEdits;
+    final String uid;
+    try {
+      uid = await c.ensureUser();
+    } on CloudError catch (e) {
+      return e.key;
+    }
+    final prev = _pending;
+    final ctx = (prev != null && prev.invId == inv.id) ? prev : PendingPaid(invId: inv.id, cloudId: generateInviteId());
+    _pending = ctx;
+    await _store.savePendingPaid(ctx);
+
+    // Kullanılmamış hak varsa yeniden satın alınmaz (tüketilmemiş alım varken Play yeni alıma izin vermez).
+    final credit = _credit ?? _firstOrNull(await b.owned());
+    if (credit != null) {
+      _credit = null;
+      return _handleBought(credit);
+    }
+
+    final wait = Completer<String?>();
+    _buyWait = wait;
+    final started = await b.buy(accountId: uid);
+    if (!started) {
+      _buyWait = null;
+      return 'payUnavailable';
+    }
+    // Sonuç alım akışından gelir (_onPurchase). Kullanıcı Play penceresinde beklerse süre sınırı geniş.
+    final r = await wait.future.timeout(const Duration(minutes: 15), onTimeout: () => 'payPending');
+    _buyWait = null;
+    return r;
+  }
+
+  static BillingPurchase? _firstOrNull(List<BillingPurchase> l) => l.isEmpty ? null : l.first;
+
+  void _finishWait(String? result) {
+    final w = _buyWait;
+    if (w != null && !w.isCompleted) w.complete(result);
+  }
+
+  Future<void> _onPurchase(BillingPurchase p) async {
+    final b = billing;
+    if (b == null) return;
+    if (p.productId != kInviteProductId) {
+      await b.complete(p);
+      return;
+    }
+    switch (p.status) {
+      case BillingStatus.pending:
+        _finishWait('payPending'); // bağlam saklı: onaylanınca akıştan "purchased" gelir ve yayınlanır
+      case BillingStatus.canceled:
+        _finishWait('payCancelled');
+      case BillingStatus.error:
+        if (p.alreadyOwned) {
+          final o = _firstOrNull(await b.owned());
+          if (o != null) {
+            await _handleBought(o); // sonucu bekleyen ekrana kendisi iletir
+            return;
+          }
+        }
+        _finishWait('payErr');
+      case BillingStatus.purchased:
+        await _handleBought(p);
+    }
+  }
+
+  /// Satın alınmış (tüketilmemiş) alımı işler: bağlamdaki taslağı ücretli yayınlar ya da (bağlam yoksa)
+  /// sunucuya daha önce hak verilip verilmediğini sorar. Tüketme yalnız sunucu hakkı verdikten sonra.
+  /// Sonuç, satın alma sonucunu bekleyen yayınla ekranına da iletilir (açılıştaki tamamlama dahil).
+  Future<String?> _handleBought(BillingPurchase p) async {
+    if (!_inFlight.add(p.token)) return 'payProcessing'; // aynı alım zaten işleniyor; sonucu o iletecek
+    final r = await _processBought(p);
+    _inFlight.remove(p.token);
+    _finishWait(r);
+    return r;
+  }
+
+  Future<String?> _processBought(BillingPurchase p) async {
+    final c = cloud;
+    final b = billing;
+    if (c == null || b == null) return 'cloudSetup';
+    try {
+      final ctx = _pending;
+      final inv = ctx == null ? null : byId(ctx.invId);
+      if (ctx != null && inv != null && !inv.isLive) {
+        final warn = await c.publishPaid(inv, purchaseToken: p.token, inviteId: ctx.cloudId);
+        await _granted(p);
+        return warn;
+      }
+      await c.redeemGranted(p.token);
+      await _granted(p);
+      return null;
+    } on RedeemFailure catch (f) {
+      switch (f.action) {
+        case RedeemAction.consume:
+          await b.consume(p);
+          await _clearPending();
+        case RedeemAction.keep:
+          if (f.key == 'payCredit') _credit = p;
+        case RedeemAction.drop:
+          await _clearPending();
+      }
+      notifyListeners();
+      return f.key;
+    } catch (e) {
+      debugPrint('paid publish failed: $e');
+      return 'payVerifyErr';
+    }
+  }
+
+  Future<void> _granted(BillingPurchase p) async {
+    if (_credit?.token == p.token) _credit = null;
+    await billing?.consume(p); // başarısızsa sonraki açılışta sunucu idempotent döner, yeniden tüketilir
+    await _clearPending();
+    premiumUser = true;
+    await _store.savePremiumUser(true);
+    await save();
+  }
+
+  Future<void> _clearPending() async {
+    _pending = null;
+    await _store.savePendingPaid(null);
   }
 
   /// Yayındaki davetiyeyi buluta yaz ("Güncelle"). Dönen değer: null ya da hata metin anahtarı.

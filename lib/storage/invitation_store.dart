@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../billing/billing_logic.dart';
 import '../models/invitation.dart';
 
 /// Taslaklar ve ayarlar: shared_preferences (Aşama 2'de Firestore ile eşitlenecek).
@@ -9,6 +10,7 @@ class InvitationStore {
   static const _kInvs = 'zarfla_invs_v1';
   static const _kLang = 'zarfla_lang';
   static const _kPrem = 'zarfla_premium_user';
+  static const _kPendingPaid = 'zarfla_pending_paid_v1';
 
   SharedPreferences? _prefs;
 
@@ -55,5 +57,25 @@ class InvitationStore {
 
   Future<void> savePremiumUser(bool v) async {
     await (await _p()).setBool(_kPrem, v);
+  }
+
+  /// Satın alma bağlamı (ücretli yayın sürerken; bkz. PendingPaid). null = temizle.
+  Future<PendingPaid?> loadPendingPaid() async {
+    final raw = (await _p()).getString(_kPendingPaid);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return PendingPaid.fromJson(jsonDecode(raw));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> savePendingPaid(PendingPaid? v) async {
+    final p = await _p();
+    if (v == null) {
+      await p.remove(_kPendingPaid);
+    } else {
+      await p.setString(_kPendingPaid, jsonEncode(v.toJson()));
+    }
   }
 }

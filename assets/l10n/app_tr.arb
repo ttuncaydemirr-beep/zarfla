@@ -212,5 +212,18 @@
   "delCloudErr": "Davetiye silinemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.",
   "paidSoon": "Ücretli yayın (1 Davetiye Hakkı) yakında Google Play ödemesiyle açılacak. Şimdilik ücretsiz yayınlayabilirsiniz.",
   "paidSoonBtn": "Yakında",
-  "untilDate": "Bağlantı {d} saatine kadar açık."
+  "untilDate": "Bağlantı {d} saatine kadar açık.",
+  "payUseCredit": "Kayıtlı hakkınla yayınla",
+  "payProcessing": "Ödeme işleniyor…",
+  "payCancelled": "Ödeme iptal edildi. Sizden ücret alınmadı.",
+  "payPending": "Ödemeniz beklemede. Onaylandığında davetiyeniz kendiliğinden yayınlanır.",
+  "payErr": "Ödeme tamamlanamadı. Ücret alındıysa Google Play birkaç gün içinde kendiliğinden iade eder.",
+  "payVerifyErr": "Ödemeniz alındı ama şu an doğrulanamadı. Uygulamayı yeniden açtığınızda otomatik olarak tekrar denenir; hakkınız güvende.",
+  "payUsed": "Bu ödeme daha önce başka bir davetiye için kullanılmış.",
+  "payCredit": "Kullanılmamış 1 Davetiye Hakkınız var; bir sonraki ücretli yayında kullanılacak.",
+  "payRefunded": "Bu ödeme iade edilmiş; bu hak artık kullanılamaz.",
+  "payDataErr": "Davetiye bilgileri kabul edilmedi. İsimleri ve tarihi kontrol edip tekrar deneyin; ödemeniz korunuyor.",
+  "payUnavailable": "Google Play ödemesi şu an kullanılamıyor. Play Store'un güncel olduğundan ve oturum açık olduğundan emin olun.",
+  "paidPhotoErr": "Davetiye yayınlandı ama bazı fotoğraflar yüklenemedi. Düzenleyip Güncelle'ye dokunarak tekrar deneyin.",
+  "payNote": "Tek seferlik ödeme, Google Play üzerinden alınır. Abonelik değildir."
 }

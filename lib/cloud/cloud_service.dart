@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 
+import '../billing/billing_logic.dart';
 import '../firebase_options.dart';
+import '../logic/lock_rules.dart';
 import '../models/invitation.dart';
 import '../storage/photo_store.dart';
 import 'invite_contract.dart';
@@ -57,12 +60,20 @@ class CloudService {
     }
   }
 
+  Future<String>? _signingIn;
+
   /// Anonim oturum (yoksa açar). Dönen değer: uid.
+  /// Aynı anda gelen çağrılar (açılışta bulut + faturalandırma) tek oturum açmayı paylaşır; aksi halde
+  /// iki ayrı anonim kullanıcı oluşabilirdi.
   Future<String> ensureUser() async {
     if (!_ready) throw CloudError('cloudSetup', _initError);
+    final u = _auth.currentUser;
+    if (u != null) return u.uid;
+    return _signingIn ??= _signIn().whenComplete(() => _signingIn = null);
+  }
+
+  Future<String> _signIn() async {
     try {
-      final u = _auth.currentUser;
-      if (u != null) return u.uid;
       final cred = await _auth.signInAnonymously().timeout(_opTimeout);
       final uid = cred.user?.uid;
       if (uid == null) throw const CloudError('cloudErr');
@@ -139,6 +150,95 @@ class CloudService {
         } catch (_) {}
       }
       throw mapError(e);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Yayınla (ücretli — Aşama 3)
+  // ---------------------------------------------------------------------------
+
+  /// Ücretli yayın. Sıra: redeemPurchase (sunucu Google Play jetonunu doğrular, belgeyi fotoğrafsız ve
+  /// "paid" olarak yazar; istemci "paid" yazamaz) → fotoğrafları yükle → data'yı URL'lerle güncelle.
+  /// Hak verilmezse [RedeemFailure] fırlatır. Hak verildiyse [inv] yayında işaretlenir; dönen değer null ya da
+  /// fotoğraflar yüklenemediyse 'paidPhotoErr' (davetiye yine yayındadır, "Güncelle" ile tekrar denenir).
+  /// [inviteId] satın almadan önce seçilir ve saklanır: yeniden denemede aynı kimlik → sunucu idempotent.
+  Future<String?> publishPaid(Invitation inv, {required String purchaseToken, required String inviteId}) async {
+    final origDate = inv.date;
+    final data = inviteDataJson(inv, publicId: inviteId, localPlan: 'premium', coverUrl: '', photoUrls: const []);
+    final res = await _redeem({
+      'inviteId': inviteId,
+      'purchaseToken': purchaseToken,
+      'productId': kInviteProductId,
+      'data': data,
+    });
+    final exp = res['expiresAt'];
+    final sameDoc = inv.cloudId == inviteId;
+    inv
+      ..cloudId = inviteId
+      ..expiresAt = exp is num ? exp.toInt() : expiresAtFor('paid', DateTime.now()).millisecondsSinceEpoch
+      ..status = 'live'
+      ..plan = 'premium'
+      ..originalDate = origDate
+      ..nameEditsLeft = kNameEdits
+      ..dateEditsLeft = kDateEdits
+      ..cloudFiles = sameDoc ? inv.cloudFiles : <String, CloudFile>{};
+    try {
+      final files = await _syncFiles(inviteId, inv, Map.of(inv.cloudFiles), onChange: (m) => inv.cloudFiles = Map.of(m));
+      inv.cloudFiles = files;
+      if (files.isNotEmpty) {
+        final d = _dataFor(inv, inviteId, 'premium', files);
+        await _db.runTransaction<void>((tx) async {
+          tx.update(_doc(inviteId), {'data': d});
+        }, timeout: _opTimeout).timeout(_opTimeout + const Duration(seconds: 5));
+      }
+      return null;
+    } catch (e) {
+      debugPrint('paid publish: photos failed: $e');
+      return 'paidPhotoErr';
+    }
+  }
+
+  /// Davetiyesiz doğrulama (açılışta bulunan tüketilmemiş alım): sunucu bu jetonla daha önce hak verdiyse
+  /// başarı döner (uygulama tüketir); vermediyse RedeemFailure('payCredit', keep) — kullanılmamış hak.
+  Future<void> redeemGranted(String purchaseToken) async {
+    await _redeem({'purchaseToken': purchaseToken, 'productId': kInviteProductId});
+  }
+
+  /// users/{uid}.premium (reklamsız) — yalnız sunucu yazar. Hata: false.
+  Future<bool> fetchPremium() async {
+    try {
+      final uid = await ensureUser();
+      final s = await _db.collection('users').doc(uid).get().timeout(_opTimeout);
+      return s.data()?['premium'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> _redeem(Map<String, Object> payload) async {
+    if (!_ready) throw const RedeemFailure('cloudSetup', RedeemAction.keep);
+    try {
+      await ensureUser();
+    } on CloudError catch (e) {
+      throw RedeemFailure(e.key, RedeemAction.keep);
+    }
+    try {
+      final callable = FirebaseFunctions.instanceFor(region: kFunctionsRegion).httpsCallable(
+        kRedeemFunction,
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 70)),
+      );
+      final res = await callable.call<Object?>(payload).timeout(const Duration(seconds: 80));
+      final d = res.data;
+      if (d is! Map || d['ok'] != true) throw const RedeemFailure('payVerifyErr', RedeemAction.keep);
+      return d.map((k, v) => MapEntry('$k', v));
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('redeemPurchase: ${e.code} ${e.message}');
+      throw redeemFailureFor(e.code, e.message);
+    } on RedeemFailure {
+      rethrow;
+    } catch (e) {
+      debugPrint('redeemPurchase failed: $e');
+      throw const RedeemFailure('payVerifyErr', RedeemAction.keep);
     }
   }
 

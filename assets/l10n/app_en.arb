@@ -212,5 +212,18 @@
   "delCloudErr": "The invitation could not be deleted. Please check your connection and try again.",
   "paidSoon": "Paid publishing (1 Invitation Pass) is coming soon with Google Play payments. For now you can publish for free.",
   "paidSoonBtn": "Coming soon",
-  "untilDate": "The link stays open until {d}."
+  "untilDate": "The link stays open until {d}.",
+  "payUseCredit": "Publish with your saved pass",
+  "payProcessing": "Processing payment…",
+  "payCancelled": "Payment cancelled. You were not charged.",
+  "payPending": "Your payment is pending. Your invitation will be published automatically once it is confirmed.",
+  "payErr": "The payment could not be completed. If you were charged, Google Play refunds it automatically within a few days.",
+  "payVerifyErr": "We received your payment but could not verify it right now. It will be retried automatically when you reopen the app; your pass is safe.",
+  "payUsed": "This payment has already been used for another invitation.",
+  "payCredit": "You have 1 unused Invitation Pass; it will be used for your next paid invitation.",
+  "payRefunded": "This payment was refunded, so the pass can no longer be used.",
+  "payDataErr": "The invitation details were not accepted. Check the names and date and try again; your payment is kept.",
+  "payUnavailable": "Google Play payments are not available right now. Make sure the Play Store is up to date and you are signed in.",
+  "paidPhotoErr": "Your invitation is live, but some photos could not be uploaded. Edit it and tap Update to try again.",
+  "payNote": "One-time payment through Google Play. Not a subscription."
 }

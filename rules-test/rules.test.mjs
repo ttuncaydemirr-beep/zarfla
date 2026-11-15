@@ -3,6 +3,7 @@
 //   npx firebase-tools emulators:exec --project demo-zarfla --only firestore,storage \
 //     "node --test rules-test/rules.test.mjs"
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { after, before, beforeEach, describe, test } from 'node:test';
 
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
@@ -10,6 +11,9 @@ import {
   Timestamp, collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc,
 } from 'firebase/firestore';
 import { deleteObject, getMetadata, ref, uploadBytes } from 'firebase/storage';
+
+// Sunucu fonksiyonunun (redeemPurchase) saf mantığı: ücretli belgeyi nasıl kurduğunu kurallarla sınamak için.
+const serverLogic = createRequire(import.meta.url)('../functions/src/logic.js');
 
 const PROJECT = 'demo-zarfla';
 const H = 3600 * 1000;
@@ -384,6 +388,67 @@ describe('Firestore · silme', () => {
     await seed(ID, seededFree('alice'));
     await assertFails(deleteDoc(inv('bob')));
     await assertFails(deleteDoc(inv(null)));
+  });
+});
+
+// ============================================================================
+// Aşama 3: ücretli plan yalnız sunucu fonksiyonundan; istemci "paid" oluşturamaz/yükseltemez.
+describe('Firestore · Aşama 3 (ödeme, sunucu yazımı, users/purchases)', () => {
+  const premiumData = (o = {}) => dataJson({ theme: 'altin', plan: 'premium', ...o });
+
+  test('C20 ücretsiz expiresAt yayın+24s10dk üstü reddedilir', async () => {
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { expMs: Date.now() + 24 * H + 30 * 60 * 1000 })));
+  });
+  test('C21 ücretsiz expiresAt geçmişte olamaz', async () => {
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { expMs: Date.now() - 60 * 1000 })));
+  });
+  test('C22 tutarlı ücretli belge (plan paid, data premium, 365 gün) istemciden oluşturulamaz', async () => {
+    const exp = Date.now() + 365 * D;
+    const paid = {
+      ...freeDoc('alice', { theme: 'altin', expMs: exp, dataPlan: 'premium' }),
+      plan: 'paid',
+    };
+    await assertFails(setDoc(inv('alice'), paid));
+  });
+  test('U9 ücretsizden ücretliye tam tutarlı yükseltme bile reddedilir', async () => {
+    const f = seededFree('alice');
+    await seed(ID, f);
+    await assertFails(updateDoc(inv('alice'), { plan: 'paid', theme: 'altin', data: premiumData() }));
+  });
+  test('PD1 sunucunun (redeemPurchase) yazdığı ücretli belgeyi sahibi fotoğraf URL\'leri ve isim düzeltmesiyle güncelleyebilir', async () => {
+    const built = serverLogic.buildPaidData(dataJson({ theme: 'nar', plan: 'premium', notes: ['Lütfen 15 dakika önce yerinizde olunuz.'] }), ID);
+    const t = serverLogic.paidTimes(Date.now());
+    await seed(ID, {
+      ownerUid: 'alice', schema: 1, data: built.data, plan: 'paid', status: 'live',
+      createdAt: Timestamp.fromMillis(Date.now()), expiresAt: Timestamp.fromMillis(t.expiresAtMs),
+      deleteAt: Timestamp.fromMillis(t.deleteAtMs), ...built.lock,
+    });
+    await assertSucceeds(getDoc(inv(null)));
+    const withPhotos = JSON.parse(built.data);
+    withPhotos.cover = 'https://firebasestorage.googleapis.com/v0/b/x/o/invites%2FAbCdEf123456%2Fcover.jpg?alt=media';
+    withPhotos.photos = ['https://firebasestorage.googleapis.com/v0/b/x/o/invites%2FAbCdEf123456%2Fg1.jpg?alt=media'];
+    await assertSucceeds(updateDoc(inv('alice'), { data: JSON.stringify(withPhotos) }));
+    const renamed = { ...withPhotos, n1: 'Test A1' };
+    await assertSucceeds(updateDoc(inv('alice'), { n1: 'Test A1', nameEdits: 1, data: JSON.stringify(renamed) }));
+    // tasarım kilidi sunucu belgesinde de geçerli
+    await assertFails(updateDoc(inv('alice'), { theme: 'altin', data: JSON.stringify({ ...renamed, theme: 'altin' }) }));
+  });
+  test('US1 kullanıcı yalnız kendi users belgesini okur, kimse yazamaz', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', 'alice'), { premium: true });
+    });
+    await assertSucceeds(getDoc(doc(db('alice'), 'users', 'alice')));
+    await assertFails(getDoc(doc(db('bob'), 'users', 'alice')));
+    await assertFails(getDoc(doc(db(null), 'users', 'alice')));
+    await assertFails(setDoc(doc(db('alice'), 'users', 'alice'), { premium: true }));
+    await assertFails(getDocs(collection(db('alice'), 'users')));
+  });
+  test('PU1 purchases koleksiyonu istemciye tamamen kapalı', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'purchases', 'h1'), { uid: 'alice' });
+    });
+    await assertFails(getDoc(doc(db('alice'), 'purchases', 'h1')));
+    await assertFails(setDoc(doc(db('alice'), 'purchases', 'h2'), { uid: 'alice' }));
   });
 });
 

@@ -1,0 +1,70 @@
+name: Sunucu yayını (Functions + kurallar)
+
+# Yalnız elle: Actions → "Sunucu yayını (Functions + kurallar)" → Run workflow.
+# Gerekli secret: FIREBASE_DEPLOY_SA (yayıncı hizmet hesabının JSON anahtarının TAMAMI).
+# Kurulum adımları: Aşama 3 faturalandırma kurulum belgesi (billing_setup.md).
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Yayınlanacaklar (firebase deploy --only)"
+        type: choice
+        default: "functions,firestore:rules,storage"
+        options:
+          - "functions,firestore:rules,storage"
+          - "functions"
+          - "firestore:rules,storage"
+
+concurrency:
+  group: deploy-functions
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Secret denetimi
+        env:
+          SA: ${{ secrets.FIREBASE_DEPLOY_SA }}
+        run: |
+          if [ -z "$SA" ]; then
+            echo "::error::FIREBASE_DEPLOY_SA secret'ı yok. Depo → Settings → Secrets and variables → Actions → New repository secret."
+            exit 1
+          fi
+
+      - name: Fonksiyon paketleri ve testler
+        working-directory: functions
+        run: |
+          npm install --no-audit --no-fund
+          npm run verify
+
+      - name: Kimlik dosyası
+        env:
+          SA: ${{ secrets.FIREBASE_DEPLOY_SA }}
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/deploy-sa.json"
+          node -e "const j=require(process.argv[1]); if(j.type!=='service_account'||j.project_id!=='zarfla-37da9'){console.error('Secret zarfla-37da9 projesinin hizmet hesabı anahtarı değil'); process.exit(1)} console.log('Yayıncı: '+j.client_email)" "$RUNNER_TEMP/deploy-sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/deploy-sa.json" >> "$GITHUB_ENV"
+
+      # --force: etkileşimsiz modda Artifact Registry temizlik politikasını (eski kapsayıcı görüntüleri) onaylar.
+      - name: Yayınla
+        run: >
+          npx -y firebase-tools@latest deploy
+          --project zarfla-37da9
+          --only "${{ inputs.only }}"
+          --non-interactive --force
+
+      - name: Fonksiyon listesi
+        if: success() && contains(inputs.only, 'functions')
+        run: npx -y firebase-tools@latest functions:list --project zarfla-37da9 || true
+
+      - name: Kimlik dosyasını sil
+        if: always()
+        run: rm -f "$RUNNER_TEMP/deploy-sa.json"

@@ -37,3 +37,7 @@ rules-test/package-lock.json
 *.jks
 *.keystore
 android/app/upload.jks
+
+# Cloud Functions (bağımlılıklar CI'da kurulur)
+functions/node_modules/
+functions/package-lock.json
