@@ -70,8 +70,7 @@ def patch_signing() -> None:
     """Release imzası: android/key.properties varsa signingConfigs.release, yoksa debug imza (idempotent).
 
     key.properties alanları: storeFile (android/app'e göre), storePassword, keyAlias, keyPassword.
-    R8/küçültme bilerek kapalı tutulur (bkz. README \"İmzalı sürüm\"): Firebase/Flutter için keep kuralı
-    gerektirmeyen güvenli yol; AAB boyutu Play'in kendi sıkıştırmasıyla yine küçülür.
+    R8/küçültme patch_r8() ile açılır (android/app/proguard-rules.pro).
     """
     path = _app_gradle()
     s = path.read_text(encoding="utf-8")
@@ -101,7 +100,6 @@ def patch_signing() -> None:
         )
         sign_ref = (f'signingConfig = if ({KEYPROPS_MARK}.isNotEmpty()) signingConfigs.getByName("release") '
                     'else signingConfigs.getByName("debug")')
-        minify = "            isMinifyEnabled = false\n            isShrinkResources = false\n"
     else:
         props = (
             f"def {KEYPROPS_MARK} = new Properties()\n"
@@ -121,7 +119,6 @@ def patch_signing() -> None:
             "    }\n\n"
         )
         sign_ref = (f"signingConfig = {KEYPROPS_MARK}.isEmpty() ? signingConfigs.debug : signingConfigs.release")
-        minify = "            minifyEnabled false\n            shrinkResources false\n"
 
     if is_kts and "import java.util.Properties" not in s:
         s = "import java.util.Properties\n\n" + s  # KTS'te `java` uzantısı paket adını gölgeler; import şart
@@ -134,13 +131,44 @@ def patch_signing() -> None:
     if n3 == 0:
         s, n3 = re.subn(r"(buildTypes\s*\{\s*\n\s*(?:getByName\(\"release\"\)|release)\s*\{\s*\n)",
                         lambda m: m.group(1) + "            " + sign_ref + "\n", s, count=1)
-    # 4) R8 kapalı
-    if "isMinifyEnabled" not in s and "minifyEnabled" not in s:
-        s = re.sub(r"(signingConfig\s*=[^\n]*\n)", lambda m: m.group(1) + minify, s, count=1)
     if not (n1 and n2 and n3):
         sys.exit(f"{path.name}: imza yaması uygulanamadı (props={n1}, signingConfigs={n2}, release={n3}).")
     path.write_text(s, encoding="utf-8")
     print(f"{path.name}: signingConfigs.release + release bağlandı (key.properties yoksa debug imza)")
+
+
+R8_MARK = "zarflaR8"
+
+
+def patch_r8() -> None:
+    """Release buildType'ında R8 küçültme/gizleme + kaynak küçültmeyi açar, proguard-rules.pro'yu bağlar (idempotent)."""
+    rules = APP / "proguard-rules.pro"
+    if not rules.exists():
+        sys.exit("android/app/proguard-rules.pro yok (depoda durmalı).")
+    path = _app_gradle()
+    s = path.read_text(encoding="utf-8")
+    if R8_MARK in s:
+        print(f"{path.name}: R8 yapılandırması zaten var")
+        return
+    is_kts = path.suffix == ".kts"
+    # Şablonun olası eski minify/shrink satırlarını temizle
+    s = re.sub(r"^[ \t]*(?:isMinifyEnabled|minifyEnabled|isShrinkResources|shrinkResources)\b[^\n]*\n", "", s, flags=re.M)
+    s = re.sub(r"^[ \t]*proguardFiles\b[^\n]*\n", "", s, flags=re.M)
+    if is_kts:
+        block = (f"            // {R8_MARK}\n"
+                 "            isMinifyEnabled = true\n"
+                 "            isShrinkResources = true\n"
+                 '            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")\n')
+    else:
+        block = (f"            // {R8_MARK}\n"
+                 "            minifyEnabled true\n"
+                 "            shrinkResources true\n"
+                 "            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'\n")
+    s, n = re.subn(r"^([ \t]*signingConfig\s*=[^\n]*\n)", lambda m: m.group(1) + block, s, count=1, flags=re.M)
+    if n == 0:
+        sys.exit(f"{path.name}: R8 yaması uygulanamadı (release bloğunda signingConfig satırı yok).")
+    path.write_text(s, encoding="utf-8")
+    print(f"{path.name}: isMinifyEnabled/isShrinkResources=true + proguard-rules.pro bağlandı")
 
 
 def patch_settings() -> None:
@@ -219,6 +247,7 @@ if __name__ == "__main__":
     check_google_services()
     patch_gradle()
     patch_signing()
+    patch_r8()
     patch_settings()
     patch_manifest()
     copy_icons()

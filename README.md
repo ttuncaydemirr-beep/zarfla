@@ -61,7 +61,7 @@ Elle derleme başlatmak için: Actions → Derleme → **Run workflow**.
 - **Parola secret'ta:** GitHub Actions secret'ı `SIGNING_PASSPHRASE` (hem şifre çözme hem keystore/key parolası). CI anahtarı geçici olarak çözer, `android/key.properties` yazar, derlemeden sonra siler. Secret yoksa (ör. fork) debug imzayla derler ve uyarır; bu AAB Play'e yüklenemez.
 - **Sürüm:** `versionName` 1.0.0 (`pubspec.yaml`), `versionCode` = `github.run_number + 100` (her derlemede artar).
 - **Çıktı:** Actions → Derleme → Artifacts → `zarfla-release-aab-signed` (14 gün). CI imza sahibini ve SHA-1/SHA-256 parmak izlerini loga yazar; parmak izleri gizli değildir.
-- **R8/küçültme kapalı** (`--no-shrink`, Gradle'da da `false`): Firebase ve Flutter için keep kuralı yazmak yerine güvenli yol seçildi; yansıma kaynaklı çalışma zamanı çökmesi riski yok. İleride açılırsa keep kuralları ve gerçek cihaz testi şart.
+- **R8 küçültme + gizleme açık** (`android/app/proguard-rules.pro`, `patch_android.py` bağlar). Her derleme `zarfla-r8-mapping` (mapping.txt) ve `zarfla-dart-symbols` artifact'larını saklar; Play'e yükleme işi mapping'i otomatik gönderir. Elle yüklemede: Play Console > Uygulama paketi gezgini > ilgili sürüm > Yükle > Yeniden eşleme (deobfuscation) dosyası.
 - **Play App Signing kullanılacak:** Play Console'a bu anahtarla imzalı AAB yüklenir; Google uygulama imza anahtarını kendisi tutar, bizim anahtarımız yalnızca *yükleme anahtarı*dır.
 - **Anahtar kaybı:** Parola ya da anahtar kaybolursa Play Console → Uygulama bütünlüğü → Uygulama imzalama → **Yükleme anahtarını sıfırla** ile yeni yükleme anahtarı tanımlanır (uygulama imzası etkilenmez). Parolayı güvenli bir yerde yedekleyin.
 

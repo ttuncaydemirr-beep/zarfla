@@ -13,6 +13,16 @@ import 'storage/photo_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Android 15 / targetSdk 35: uçtan uca (edge-to-edge) çizim, tüm sürümlerde tutarlı.
+  // Çubuk renkleri bilerek verilmez (eski setStatusBarColor/NavigationBarColor API'leri Play uyarısı üretir);
+  // edgeToEdge kipinde çubuklar şeffaf gelir. Zemin açık krem olduğundan simgeler koyu.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+    systemNavigationBarIconBrightness: Brightness.dark,
+    systemNavigationBarContrastEnforced: false,
+  ));
   await initializeDateFormatting();
   _registerFontLicenses();
   final strings = await AppStrings.load();
