@@ -1,0 +1,68 @@
+name: Güncelleme yolu teşhisi (emülatör, Play Store imajı)
+# Eski sürümü kur → kullan (monkey) → ara sürüme güncelle → yeni sürüme güncelle → aç; çökme/logcat topla.
+# .github/upgradecheck_runs: 1. satır "eski run id'leri" (boşlukla, sırayla), 2. satır "yeni run id'leri" (boşlukla).
+on:
+  push:
+    branches: [crashcheck]
+    paths: ['.github/upgradecheck_runs']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      olds: ${{ steps.p.outputs.olds }}
+      news: ${{ steps.p.outputs.news }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        run: |
+          olds=$(sed -n 1p .github/upgradecheck_runs)
+          news=$(sed -n 2p .github/upgradecheck_runs | tr ' ' '\n' | grep -v '^$' | jq -R . | jq -cs .)
+          echo "olds=$olds" >> $GITHUB_OUTPUT
+          echo "news=$news" >> $GITHUB_OUTPUT
+  emu:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        new: ${{ fromJson(needs.plan.outputs.news) }}
+    steps:
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - name: AAB'leri indir ve evrensel APK üret (aynı imza: güncelleme mümkün)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OLDS: ${{ needs.plan.outputs.olds }}
+          NEW: ${{ matrix.new }}
+        run: |
+          curl -sSL -o bundletool.jar https://github.com/google/bundletool/releases/download/1.17.2/bundletool-all-1.17.2.jar
+          keytool -genkeypair -keystore dbg.jks -storepass android -keypass android -alias dbg -dname "CN=dbg" -keyalg RSA -validity 1000
+          i=0
+          for r in $OLDS $NEW; do
+            i=$((i+1))
+            mkdir -p d$i
+            gh run download $r -R ${{ github.repository }} -n zarfla-release-aab-signed -D d$i
+            java -jar bundletool.jar build-apks --bundle=$(ls d$i/*.aab | head -1) --output=a$i.apks --mode=universal --ks=dbg.jks --ks-pass=pass:android --ks-key-alias=dbg --key-pass=pass:android
+            unzip -o -q a$i.apks universal.apk && mv universal.apk app$i.apk
+            echo "app$i.apk <- run $r"
+          done
+          echo "N=$i" >> $GITHUB_ENV
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Emülatörde güncelleme yolu
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis_playstore
+          disable-animations: true
+          script: bash -c 'P=com.demirgamesstudio.zarfla; for k in $(seq 1 $N); do echo "===== app$k"; adb install -r app$k.apk; adb shell dumpsys package $P | grep -m2 -E "versionCode|versionName"; adb logcat -c; adb shell monkey -p $P -c android.intent.category.LAUNCHER 1 >/dev/null; sleep 20; if [ $k -lt $N ]; then adb shell monkey -p $P --pct-syskeys 0 --pct-appswitch 0 --throttle 150 -s 7 400 >/dev/null 2>&1 || true; sleep 3; adb shell input keyevent KEYCODE_HOME; sleep 2; fi; adb shell pidof $P >/dev/null && echo "app$k ÇALIŞIYOR" || echo "app$k ÇALIŞMIYOR (çöktü?)"; adb logcat -d > logcat$k.txt || true; grep -n -A40 -E "FATAL EXCEPTION|Fatal signal" logcat$k.txt | head -120 || true; grep -E "zarfla|E/flutter" logcat$k.txt | head -40 || true; done; adb exec-out screencap -p > shot_final.png || true; adb shell run-as $P ls files 2>/dev/null || true'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "upgrade-logcat-${{ matrix.new }}", path: "logcat*.txt\nshot_*.png" }
