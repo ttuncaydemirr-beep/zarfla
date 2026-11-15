@@ -11,18 +11,39 @@ void main() {
   const singleNewTypes = ['asker', 'mevlit', 'mezuniyet', 'evacilisi', 'iftar', 'disbugdayi', 'bekarliga', 'kurumsal'];
   const colorKeys = ['bg', 'paper', 'ink', 'muted', 'accent', 'onAccent', 'gold', 'line', 'ring', 'err', 'door1', 'door2', 'doorLine', 'leaf'];
 
-  test('katalog: 33 tasarım, tek ücretsiz (Papatya), REC her türde tüm tasarımları içerir', () {
-    expect(kThemes.length, 33);
+  test('katalog: 43 tasarım, tek ücretsiz (Papatya), REC her türde tüm tasarımları içerir', () {
+    expect(kThemes.length, 43);
     expect(kThemes.values.where((t) => !t.premium).map((t) => t.id).toList(), ['papatya']);
     expect(kEventTypes.length, 19);
     for (final ty in kEventTypes) {
       expect(kRecommended[ty]!.toSet(), kThemes.keys.toSet(), reason: ty);
       expect(kRecommended[ty]!.length, kThemes.length, reason: '$ty: yinelenen tasarım');
-      expect(kRecommended[ty]!.take(4), contains('papatya'), reason: '$ty: papatya ilk 4 içinde olmalı');
+      // Dalga 1 tasarımları öne eklendiği için ücretsiz Papatya en geç 9. sırada kalır (nisan/dugun: 8. indeks).
+      expect(kRecommended[ty]!.take(9), contains('papatya'), reason: '$ty: papatya ilk 9 içinde olmalı');
       for (final l in kLangs) {
         expect(kMessages[l]![ty], isNotEmpty, reason: '$l/$ty');
       }
     }
+  });
+
+  test('dalga 1: 10 yeni tasarım, 12 açılış, hazır notlar (4 dilde 6 öneri), tür simgeleri', () {
+    const wave1 = ['fener', 'siyahbeyaz', 'limon', 'pampas', 'nar', 'safak', 'avize', 'sadu', 'kelebek', 'bugday'];
+    for (final id in wave1) {
+      expect(kThemes[id], isNotNull, reason: id);
+      expect(kThemes[id]!.premium, isTrue, reason: id);
+    }
+    expect(kOpenings, ['door', 'env', 'perde', 'kitap', 'muhur', 'isik', 'sarmasik', 'cicek', 'kurdele', 'kelebek', 'yildiz', 'pencere']);
+    for (final l in kLangs) {
+      expect(kNoteSuggestions[l]!.length, 6, reason: l);
+      for (final m in kNoteSuggestions[l]!) {
+        expect(m.trim(), isNotEmpty);
+        expect(m.length, lessThanOrEqualTo(kNoteLen), reason: '$l: $m');
+      }
+    }
+    expect(kTypeIcon['asker'], 'o-safak');
+    expect(kTypeIcon['iftar'], 'o-fener');
+    expect(kTypeIcon['disbugdayi'], 'o-bugday');
+    expect(kTypeIcon['cinsiyet'], 'o-kelebek');
   });
 
   test('etkinlik türleri: sıra (mevcut 8 → yeni 11, "diger" en sonda), çift/tek isim, simgeler', () {

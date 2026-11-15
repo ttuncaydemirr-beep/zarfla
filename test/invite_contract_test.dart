@@ -89,7 +89,7 @@ void main() {
       final m = jsonDecode(j) as Map<String, dynamic>;
       expect(m.keys.toList(), [
         'id', 'type', 'theme', 'lang', 'layout', 'opening', 'n1', 'n2', 'host', 'msg', 'date', 'time', 'end', //
-        'venue', 'address', 'wa', 'program', 'cover', 'photos', 'status', 'plan',
+        'venue', 'address', 'wa', 'program', 'notes', 'cover', 'photos', 'status', 'plan',
       ]);
       expect(m['status'], 'live');
       expect(m['plan'], 'free');
@@ -104,6 +104,30 @@ void main() {
       // Kullanıcı metnindeki tırnaklar kaçışlı → anahtar sahteciliği yok; \u00XX harf kaçışı üretilmez
       expect(RegExp(r'\\u00[2-7][0-9a-fA-F]').hasMatch(j), isFalse);
       expect('"theme"'.allMatches(j).length, 1);
+    });
+
+    test('notes: temizlenir (kırp, boş ele, ≤4, ≤140) ve JSON\'da program\'dan sonra gelir', () {
+      final inv = _inv()
+        ..notes = ['  Birinci not  ', '', 'x' * 200, 'üç', 'dört', 'beş'];
+      final j = inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'free', coverUrl: '', photoUrls: []);
+      final m = jsonDecode(j) as Map<String, dynamic>;
+      final notes = (m['notes'] as List).cast<String>();
+      expect(notes.length, 4);
+      expect(notes[0], 'Birinci not');
+      expect(notes[1].length, 140);
+      expect(notes.sublist(2), ['üç', 'dört']);
+      final keys = m.keys.toList();
+      expect(keys.indexOf('notes'), keys.indexOf('program') + 1);
+      expect(jsonDecode(jsonEncode(Invitation.fromJson(inv.toJson()).toJson()))['notes'], hasLength(4));
+    });
+
+    test('notes: boşsa [] gider; sahte tırnaklı not anahtar sahteciliği yapmaz', () {
+      var j = inviteDataJson(_inv(), publicId: 'AbCdEf123456', localPlan: 'free', coverUrl: '', photoUrls: []);
+      expect(jsonDecode(j)['notes'], isEmpty);
+      final inv = _inv()..notes = ['"theme":"altin"'];
+      j = inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'free', coverUrl: '', photoUrls: []);
+      expect('"theme"'.allMatches(j).length, 1);
+      expect(RegExp(r'\\u00[2-7][0-9a-fA-F]').hasMatch(j), isFalse);
     });
 
     test('ücretli → plan "premium" (alt yazı gizlenir)', () {

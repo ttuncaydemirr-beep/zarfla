@@ -8,7 +8,7 @@ Paket adı: `com.demirgamesstudio.zarfla` · Diller: Türkçe, English, Deutsch,
 ```
 lib/
   main.dart, app.dart        Başlangıç, MaterialApp (4 dil, Arapça otomatik sağdan sola)
-  data/catalog.dart          33 tasarım (renkler birebir), REC sıraları, 19 etkinlik türü, hazır mesajlar
+  data/catalog.dart          43 tasarım (renkler birebir), REC sıraları, 19 etkinlik türü, hazır mesajlar
   models/invitation.dart     Davetiye modeli (web önizlemesindeki alanlar)
   logic/                     Doğrulama, yayın sonrası kilit kuralları, tarih ve metin yardımcıları
   l10n/strings.dart          ARB metinlerini okur (assets/l10n/app_<dil>.arb)

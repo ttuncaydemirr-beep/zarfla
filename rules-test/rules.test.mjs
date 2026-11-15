@@ -44,7 +44,7 @@ function dataJson(o = {}) {
     theme: o.theme ?? 'papatya',
     lang: 'tr',
     layout: 'klasik',
-    opening: 'door',
+    opening: o.opening ?? 'door',
     n1: o.n1 ?? 'Test A',
     n2: o.n2 ?? 'Test B',
     host: '',
@@ -56,6 +56,7 @@ function dataJson(o = {}) {
     address: 'Avcılar / İstanbul',
     wa: '905551112233',
     program: [{ t: '19:00', x: 'Karşılama' }],
+    notes: o.notes ?? [],
     cover: o.cover ?? '',
     photos: o.photos ?? [],
     status: 'live',
@@ -199,6 +200,10 @@ describe('Firestore · oluşturma', () => {
 // "ücretsiz plan yalnız papatya" denetlenir. Bu yüzden yeni tür/tasarım için kural değişikliği gerekmez.
 const NEW_TYPES = ['nikah', 'asker', 'mevlit', 'mezuniyet', 'evacilisi', 'iftar', 'disbugdayi', 'cinsiyet', 'yildonumu', 'bekarliga', 'kurumsal'];
 const NEW_THEMES = ['cini', 'kurugul', 'orman', 'kadife', 'gunbatimi', 'mevlit', 'monogram', 'sakayik', 'ayicik', 'pembebulut', 'uzay', 'safari', 'denizalti', 'prens', 'mezuniyet', 'yeniev'];
+// Dalga 1: 10 yeni tasarım, 6 yeni açılış, "Ricalarımız" notları (data JSON'unda "notes").
+const WAVE1_THEMES = ['fener', 'siyahbeyaz', 'limon', 'pampas', 'nar', 'safak', 'avize', 'sadu', 'kelebek', 'bugday'];
+const WAVE1_OPENINGS = ['sarmasik', 'cicek', 'kurdele', 'kelebek', 'yildiz', 'pencere'];
+const NOTES_MAX = ['Herkesin siyah giyinmesini rica ederiz.'.padEnd(140, 'a'), 'Hediye yerine "dualarınızı" bekliyoruz.', 'Lütfen 15 dakika önce yerinizde olunuz.', 'Tören sırasında fotoğraf çekmemenizi rica ederiz.'];
 
 describe('Firestore · yeni türler ve tasarımlar', () => {
   for (const ty of NEW_TYPES) {
@@ -222,6 +227,35 @@ describe('Firestore · yeni türler ve tasarımlar', () => {
     await assertSucceeds(updateDoc(inv('alice'), { n1: 'Test A1', nameEdits: 1, data: paid({ n1: 'Test A1' }) }));
     await assertFails(updateDoc(inv('alice'), { theme: 'orman', data: paid({ theme: 'orman' }) }));
     await assertFails(updateDoc(inv('alice'), { type: 'asker', data: paid({ type: 'asker' }) }));
+  });
+});
+
+// ============================================================================
+describe('Firestore · Dalga 1 (yeni tasarım, açılış ve notlar)', () => {
+  for (const th of WAVE1_THEMES) {
+    test(`W1 ücretsiz planda dalga 1 tasarımı "${th}" reddedilir`, async () => {
+      await assertFails(setDoc(inv('alice'), freeDoc('alice', { theme: th, data: dataJson({ theme: th }) })));
+    });
+  }
+  for (const op of WAVE1_OPENINGS) {
+    test(`W2 ücretsiz papatya + yeni açılış "${op}" + 4 not geçer`, async () => {
+      const data = dataJson({ opening: op, notes: NOTES_MAX });
+      await assertSucceeds(setDoc(inv('alice'), freeDoc('alice', { data })));
+    });
+  }
+  test('W3 ücretli "nar" + "sarmasik" + 2 not: belge yerleştirilir, notlar/açılış güncellenir, tasarım değişmez', async () => {
+    const notes = ['Hediye yerine dualarınızı bekliyoruz.', 'Lütfen 15 dakika önce yerinizde olunuz.'];
+    const paid = (o = {}) => dataJson({ theme: 'nar', plan: 'premium', opening: 'sarmasik', notes, ...o });
+    await seed(ID, seededPaid('alice', { theme: 'nar', data: paid() }));
+    await assertSucceeds(getDoc(inv(null)));
+    // yalnız notlar + açılış değişir (kilitli alanlara dokunulmaz)
+    await assertSucceeds(updateDoc(inv('alice'), { data: paid({ opening: 'cicek', notes: NOTES_MAX }) }));
+    // tasarım kilidi sürer
+    await assertFails(updateDoc(inv('alice'), { theme: 'bugday', data: paid({ theme: 'bugday' }) }));
+  });
+  test('W4 ücretsiz "nar" 2 notla yine reddedilir', async () => {
+    const data = dataJson({ theme: 'nar', opening: 'sarmasik', notes: ['Hediye yerine dualarınızı bekliyoruz.', 'Lütfen 15 dakika önce yerinizde olunuz.'] });
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { theme: 'nar', data })));
   });
 });
 

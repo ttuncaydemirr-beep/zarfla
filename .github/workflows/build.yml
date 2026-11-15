@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      play:
+        description: "Google Play kapalı teste (alpha) yükle"
+        type: boolean
+        default: false
 
 # Aynı dalda yeni push gelince eski çalışma iptal edilir (Actions bütçesi: aylık 10 $).
 concurrency:
@@ -156,3 +161,26 @@ jobs:
         run: >
           npx -y firebase-tools@latest emulators:exec --project demo-zarfla --only firestore,storage
           "node --test --test-reporter=spec rules-test/rules.test.mjs"
+
+  # Google Play kapalı test (alpha) yüklemesi: yalnızca elle başlatılan çalışmada, play=true ise.
+  # PLAY_SERVICE_ACCOUNT_JSON secret'ı (play-yukleyici hizmet hesabı) gerekir.
+  play:
+    needs: [build, rules]
+    if: github.event_name == 'workflow_dispatch' && inputs.play
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: zarfla-release-aab-signed
+          path: dist
+      - name: Play'e yükle (alpha)
+        uses: r0adkll/upload-google-play@v1.1.3
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.demirgamesstudio.zarfla
+          releaseFiles: dist/app-release.aab
+          track: alpha
+          status: completed
+          whatsNewDirectory: distribution/whatsnew

@@ -218,6 +218,7 @@ class _DetailsFormState extends State<DetailsForm> {
   late final TextEditingController _n1, _n2, _host, _msg, _venue, _address, _wa;
   late final FocusNode _n1Focus, _n2Focus;
   final Map<ProgramStep, TextEditingController> _stepCtl = {};
+  final List<TextEditingController> _noteCtl = [];
   final _picker = ImagePicker();
   String? _photoWarn; // ARB anahtarı (dil değişince doğru dilde gösterilir)
   bool _busy = false;
@@ -241,6 +242,9 @@ class _DetailsFormState extends State<DetailsForm> {
     _venue = TextEditingController(text: inv.venue);
     _address = TextEditingController(text: inv.address);
     _wa = TextEditingController(text: inv.wa);
+    for (final n in inv.notes) {
+      _noteCtl.add(TextEditingController(text: n));
+    }
     _n1Focus = FocusNode()..addListener(() => _onNameFocus(true));
     _n2Focus = FocusNode()..addListener(() => _onNameFocus(false));
   }
@@ -252,7 +256,7 @@ class _DetailsFormState extends State<DetailsForm> {
       _commitName(true, silent: true);
       _commitName(false, silent: true);
     }
-    for (final c in [_n1, _n2, _host, _msg, _venue, _address, _wa, ..._stepCtl.values]) {
+    for (final c in [_n1, _n2, _host, _msg, _venue, _address, _wa, ..._stepCtl.values, ..._noteCtl]) {
       c.dispose();
     }
     _n1Focus.dispose();
@@ -420,6 +424,36 @@ class _DetailsFormState extends State<DetailsForm> {
     });
   }
 
+  /// Not denetleyicilerini inv.notes ile aynı uzunlukta tutar (satır başına bir denetleyici).
+  void _syncNoteCtl() {
+    while (_noteCtl.length < inv.notes.length) {
+      _noteCtl.add(TextEditingController(text: inv.notes[_noteCtl.length]));
+    }
+    while (_noteCtl.length > inv.notes.length) {
+      final c = _noteCtl.removeLast();
+      WidgetsBinding.instance.addPostFrameCallback((_) => c.dispose());
+    }
+  }
+
+  void _addNote([String text = '']) {
+    if (inv.notes.length >= kMaxNotes) return;
+    _set(() {
+      inv.notes.add(text);
+      _noteCtl.add(TextEditingController(text: text));
+    });
+  }
+
+  /// Hazır not: önce boş bir satırı doldurur, boş satır yoksa yeni satır ekler.
+  void _useNoteSuggestion(String m) {
+    final e = inv.notes.indexOf('');
+    if (e >= 0 && e < _noteCtl.length) {
+      _set(() => inv.notes[e] = m);
+      _noteCtl[e].text = m;
+    } else {
+      _addNote(m);
+    }
+  }
+
   TextEditingController _ctlFor(ProgramStep s) => _stepCtl.putIfAbsent(s, () => TextEditingController(text: s.x));
 
   @override
@@ -434,6 +468,8 @@ class _DetailsFormState extends State<DetailsForm> {
     final dateRO = locked && inv.dateEditsLeft <= 0;
     final win = dateWindow(inv);
     final msgs = kMessages[inv.lang]?[inv.type] ?? const <String>[];
+    _syncNoteCtl();
+    final noteSug = kNoteSuggestions[inv.lang] ?? kNoteSuggestions['tr'] ?? const <String>[];
 
     Widget lockHint(String text) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -722,6 +758,30 @@ class _DetailsFormState extends State<DetailsForm> {
             ],
           ),
         ),
+        // Ricalarımız (notlar)
+        FieldBlock(
+          label: context.t('notes'),
+          hint: context.t('notesHint'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < inv.notes.length; i++) _noteRow(i),
+              if (inv.notes.length < kMaxNotes) ...[
+                GhostButton(label: context.t('addNote'), block: true, onPressed: _addNote),
+                const SizedBox(height: 8),
+                Text(context.t('noteSug'), style: bodyStyle(12, color: AppColors.muted)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final m in noteSug) _Chip(label: chipLabel(m), onTap: () => _useNoteSuggestion(m)),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
         // Görünüm
         Container(
           margin: const EdgeInsets.only(top: 8, bottom: 10),
@@ -757,7 +817,7 @@ class _DetailsFormState extends State<DetailsForm> {
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 8,
             crossAxisSpacing: 8,
-            childAspectRatio: 2.3,
+            childAspectRatio: 2.0,
             children: [
               for (final k in kOpenings)
                 _SegButton(label: context.t('opn_$k'), on: inv.opening == k, onTap: () => _set(() => inv.opening = k)),
@@ -829,6 +889,44 @@ class _DetailsFormState extends State<DetailsForm> {
         ),
         FieldBlock(label: context.t('music'), hint: context.t('musicSoonApp'), child: const SizedBox.shrink()),
       ],
+    );
+  }
+
+  Widget _noteRow(int i) {
+    return Padding(
+      key: ObjectKey(_noteCtl[i]),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _noteCtl[i],
+              maxLength: kNoteLen,
+              minLines: 1,
+              maxLines: 3,
+              inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'[\r\n]'))],
+              decoration: fieldDecoration(hint: context.t('notePh')),
+              style: bodyStyle(16),
+              onChanged: (v) {
+                if (i < inv.notes.length) inv.notes[i] = v;
+                st.save(notify: false);
+              },
+            ),
+          ),
+          const SizedBox(width: 4),
+          ZIconButton(
+            icon: Icons.close,
+            tooltip: context.t('removeNote'),
+            onPressed: () {
+              if (i >= inv.notes.length || i >= _noteCtl.length) return;
+              final c = _noteCtl.removeAt(i);
+              _set(() => inv.notes.removeAt(i));
+              WidgetsBinding.instance.addPostFrameCallback((_) => c.dispose());
+            },
+          ),
+        ],
+      ),
     );
   }
 

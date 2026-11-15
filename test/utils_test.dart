@@ -41,4 +41,20 @@ void main() {
     expect(bad.opening, 'door');
     expect(bad.theme, 'papatya');
   });
+
+  test('notes: depolamada boş satır korunur, en çok 4 satır ve 140 karakter; yeni açılış/tasarım geçerli', () {
+    final inv = Invitation.fromJson({
+      'id': 'n',
+      'theme': 'nar',
+      'opening': 'sarmasik',
+      'notes': ['a', '', 7, 'b' * 150, 'c', 'd', 'e'],
+    });
+    expect(inv.theme, 'nar');
+    expect(inv.opening, 'sarmasik');
+    expect(inv.notes.length, 4);
+    expect(inv.notes[1], '');
+    expect(inv.notes[2].length, 140);
+    expect(Invitation.fromJson(inv.toJson()).notes, inv.notes);
+    expect(Invitation.fromJson({'id': 'm'}).notes, isEmpty);
+  });
 }

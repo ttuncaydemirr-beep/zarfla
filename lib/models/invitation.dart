@@ -13,6 +13,27 @@ class ProgramStep {
       ProgramStep(t: (j['t'] ?? '').toString(), x: (j['x'] ?? '').toString());
 }
 
+/// "Ricalarımız" notları: en çok [kMaxNotes] satır, her biri en çok [kNoteLen] karakter.
+/// [trim] true ise baştaki/sondaki boşluklar atılır ve boş satırlar elenir (yayın/yükleme);
+/// false ise satırlar olduğu gibi (boş satır dahil) korunur (editörde yazarken).
+List<String> sanitizeNotes(Object? src, {bool trim = true}) {
+  final out = <String>[];
+  if (src is! List) return out;
+  for (final e in src) {
+    if (e is! String) continue;
+    var s = e;
+    if (trim) s = s.trim();
+    if (s.length > kNoteLen) s = s.substring(0, kNoteLen);
+    if (trim) {
+      s = s.trim();
+      if (s.isEmpty) continue;
+    }
+    out.add(s);
+    if (out.length >= kMaxNotes) break;
+  }
+  return out;
+}
+
 /// Buluta yüklenmiş bir fotoğraf: Storage yolu + indirme URL'si.
 class CloudFile {
   const CloudFile({required this.path, required this.url});
@@ -51,6 +72,7 @@ class Invitation {
     this.address = '',
     this.wa = '',
     List<ProgramStep>? program,
+    List<String>? notes,
     this.cover = '',
     List<String>? photos,
     this.status = 'draft',
@@ -62,6 +84,7 @@ class Invitation {
     this.expiresAt,
     Map<String, CloudFile>? cloudFiles,
   })  : program = program ?? <ProgramStep>[],
+        notes = notes ?? <String>[],
         photos = photos ?? <String>[],
         cloudFiles = cloudFiles ?? <String, CloudFile>{};
 
@@ -86,6 +109,9 @@ class Invitation {
   String address;
   String wa;
   List<ProgramStep> program;
+
+  /// Davetlilerden ricalar (en çok 4 not, her biri en çok 140 karakter). Editörde boş satır olabilir.
+  List<String> notes;
 
   /// Kapak fotoğrafının uygulama belgeler klasöründeki dosya adı ('' = yok).
   String cover;
@@ -156,6 +182,7 @@ class Invitation {
         'address': address,
         'wa': wa,
         'program': program.map((e) => e.toJson()).toList(),
+        'notes': sanitizeNotes(notes, trim: false),
         'cover': cover,
         'photos': photos,
         'status': status,
@@ -183,6 +210,7 @@ class Invitation {
         if (e is Map) prog.add(ProgramStep.fromJson(Map<String, dynamic>.from(e)));
       }
     }
+    final notes = sanitizeNotes(j['notes'], trim: false);
     final photos = <String>[];
     if (j['photos'] is List) {
       for (final e in j['photos'] as List) {
@@ -218,6 +246,7 @@ class Invitation {
       address: s('address'),
       wa: s('wa'),
       program: prog,
+      notes: notes,
       cover: s('cover'),
       photos: photos,
       status: s('status') == 'live' ? 'live' : 'draft',
@@ -253,6 +282,7 @@ class Invitation {
         'address': address,
         'wa': wa,
         'program': program.map((e) => e.toJson()).toList(),
+        'notes': sanitizeNotes(notes),
         'cover': coverSrc,
         'photos': photoSrcs,
         'status': status,
