@@ -42,6 +42,12 @@ class AppState extends ChangeNotifier {
   /// Son kaydetme başarısız olduysa true (cihazda yer yok).
   bool lastSaveFailed = false;
 
+  /// Her başarılı/başarısız kaydetmede artar: editördeki "Kaydedildi ✓" göstergesi dinler.
+  final ValueNotifier<int> savedTick = ValueNotifier<int>(0);
+
+  /// Silinmek üzere gizlenen davetiyeler ("Geri al" süresi dolana kadar listede görünmez, cihazda durur).
+  final Set<String> _hidden = {};
+
   Future<void> init() async {
     await _photos.init();
     final l = await _store.loadLang();
@@ -111,7 +117,10 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  List<Invitation> get sorted => invitations.toList()..sort((a, b) => b.created.compareTo(a.created));
+  List<Invitation> get sorted =>
+      invitations.where((i) => !_hidden.contains(i.id)).toList()..sort((a, b) => b.created.compareTo(a.created));
+
+  bool isHidden(String id) => _hidden.contains(id);
 
   static final _rnd = Random.secure();
   String newId() {
@@ -133,7 +142,30 @@ class AppState extends ChangeNotifier {
     if (notify) notifyListeners();
     final ok = await _store.saveAll(invitations);
     lastSaveFailed = !ok;
+    savedTick.value++;
     return ok;
+  }
+
+  /// Silme 1. adım (onaydan sonra): davetiye listeden gizlenir, hiçbir şey silinmez. Uygulama bu arada
+  /// kapanırsa davetiye geri gelir (güvenli taraf). [undoDelete] geri alır, [commitDelete] gerçekten siler.
+  void hideForDelete(Invitation inv) {
+    if (_hidden.add(inv.id)) notifyListeners();
+  }
+
+  void undoDelete(String id) {
+    if (_hidden.remove(id)) notifyListeners();
+  }
+
+  /// Silme 2. adım ("Geri al" süresi doldu): buluttan ve cihazdan siler. Hata olursa davetiye yeniden görünür
+  /// ve hata metin anahtarı döner.
+  Future<String?> commitDelete(String id) async {
+    if (!_hidden.contains(id)) return null;
+    final inv = byId(id);
+    String? err;
+    if (inv != null) err = await deleteInvitation(inv);
+    _hidden.remove(id);
+    notifyListeners();
+    return err;
   }
 
   /// Sil: yayındaysa önce buluttan (Storage + Firestore), sonra cihazdan.
@@ -237,7 +269,11 @@ class AppState extends ChangeNotifier {
       return e.key;
     }
     final prev = _pending;
-    final ctx = (prev != null && prev.invId == inv.id) ? prev : PendingPaid(invId: inv.id, cloudId: generateInviteId());
+    // Ücretsiz yayındaki (süresi dolmuş olabilir) davetiye aynı bağlantıyla yükseltilir: aynı bulut kimliği.
+    final upgradeId = canUpgradeToPaid(inv) ? inv.cloudId : null;
+    final ctx = (prev != null && prev.invId == inv.id && (upgradeId == null || prev.cloudId == upgradeId))
+        ? prev
+        : PendingPaid(invId: inv.id, cloudId: upgradeId ?? generateInviteId());
     _pending = ctx;
     await _store.savePendingPaid(ctx);
 
@@ -312,7 +348,7 @@ class AppState extends ChangeNotifier {
     try {
       final ctx = _pending;
       final inv = ctx == null ? null : byId(ctx.invId);
-      if (ctx != null && inv != null && !inv.isLive) {
+      if (ctx != null && inv != null && (!inv.isLive || (canUpgradeToPaid(inv) && inv.cloudId == ctx.cloudId))) {
         final warn = await c.publishPaid(inv, purchaseToken: p.token, inviteId: ctx.cloudId);
         await _granted(p);
         return warn;

@@ -65,4 +65,17 @@ void main() {
     expect(applyDateEdit(inv, '2027-06-12'), EditOutcome.unchanged);
     expect(inv.dateEditsLeft, 2);
   });
+
+  test('ücretsizden ücretliye yükseltme (UX #11): yalnız buluttaki ücretsiz yayın', () {
+    final inv = _ready();
+    expect(canUpgradeToPaid(inv), isFalse); // taslak
+    markPublished(inv, 'free');
+    expect(canUpgradeToPaid(inv), isFalse); // bulut kimliği yok
+    inv
+      ..cloudId = 'AbCdEf123456'
+      ..expiresAt = 0; // süresi dolmuş olsa da yükseltilebilir
+    expect(canUpgradeToPaid(inv), isTrue);
+    inv.plan = 'premium';
+    expect(canUpgradeToPaid(inv), isFalse);
+  });
 }

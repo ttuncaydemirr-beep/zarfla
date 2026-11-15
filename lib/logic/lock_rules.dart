@@ -20,6 +20,11 @@ bool isPaidInvite(Invitation inv) =>
 
 bool canChangeTypeOrTheme(Invitation inv) => !isLocked(inv);
 
+/// Ücretsiz yayındaki (süresi dolmuş olsa da) davetiye "1 Davetiye Hakkı" ile AYNI bağlantıda ücretliye
+/// yükseltilebilir: sunucu (redeemPurchase) aynı belge kimliğini ücretli yazar, süre yeniden 1 yıl olur.
+/// Belge deleteAt'e (süre + 30 gün) kadar durur; sonrasında da aynı kimlikle yeniden oluşturulur.
+bool canUpgradeToPaid(Invitation inv) => inv.status == 'live' && inv.plan == 'free' && inv.cloudId != null;
+
 enum EditOutcome { applied, unchanged, noRightsLeft, empty, outOfRange }
 
 /// Yayınla: plan 'free' | 'premium'. Ücretli yayında haklar ve ilk tarih sıfırlanır.

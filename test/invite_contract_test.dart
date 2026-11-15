@@ -303,4 +303,12 @@ void main() {
       expect(r.cloudFiles['a.jpg']!.url, 'https://x/1');
     });
   });
+
+  test('yükseltmede bulut fotoğrafları: deleteAt\'ten 1 gün öncesine kadar korunur', () {
+    final exp = DateTime.utc(2026, 11, 1).millisecondsSinceEpoch;
+    expect(cloudFilesMayBeGone(null, DateTime.utc(2030)), isFalse);
+    expect(cloudFilesMayBeGone(exp, DateTime.utc(2026, 11, 2)), isFalse);
+    expect(cloudFilesMayBeGone(exp, DateTime.utc(2026, 11, 29)), isFalse);
+    expect(cloudFilesMayBeGone(exp, DateTime.utc(2026, 11, 30, 1)), isTrue);
+  });
 }

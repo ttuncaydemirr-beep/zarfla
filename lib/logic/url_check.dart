@@ -17,3 +17,16 @@ String cleanLiveUrl(String input) {
 }
 
 bool isValidLiveUrl(String input) => cleanLiveUrl(input) != '';
+
+/// Alan bırakılınca: "youtube.com/…" gibi şemasız bağlantının başına https:// ekler, http:// ise https:// yapar.
+/// Başka şemalı (javascript:, data: …) ya da alan adına benzemeyen metne dokunmaz (doğrulama reddeder).
+String withHttps(String input) {
+  final u = input.trim();
+  if (u.isEmpty) return u;
+  if (u.toLowerCase().startsWith('http://')) return 'https://${u.substring(7)}';
+  if (u.contains('://')) return u;
+  if (u.startsWith('//')) return 'https:$u';
+  final host = u.split(RegExp(r'[/?#]')).first;
+  if (RegExp(r'^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+(:\d{1,5})?$').hasMatch(host)) return 'https://$u';
+  return u;
+}

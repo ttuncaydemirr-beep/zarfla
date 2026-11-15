@@ -93,13 +93,60 @@ void main() {
       expect(isValidLocalNumber('123456789012345'), isFalse);
     });
 
-    test('varsayılan ülke kodu: cihaz bölgesi, yoksa dil', () {
-      expect(defaultDial(deviceCountry: 'DE', lang: 'tr'), '49');
-      expect(defaultDial(deviceCountry: 'kz', lang: 'tr'), '7');
-      expect(defaultDial(deviceCountry: 'CA', lang: 'tr'), '1');
+    test('varsayılan ülke kodu: önce davetiye dili, dil eşlemesi yoksa cihaz bölgesi (UX #6)', () {
+      expect(defaultDial(deviceCountry: 'DE', lang: 'tr'), '90');
       expect(defaultDial(deviceCountry: 'BR', lang: 'ar'), '966');
       expect(defaultDial(lang: 'de'), '49');
       expect(defaultDial(lang: 'en'), '44');
+      expect(defaultDial(deviceCountry: 'kz', lang: 'xx'), '7');
+      expect(defaultDial(deviceCountry: 'CA', lang: 'xx'), '1');
+      expect(defaultDial(lang: 'xx'), '90');
+      expect(dialForCountry('at'), '43');
+      expect(dialForCountry('BR'), isNull);
+    });
+
+    test('cihaz bölgesi seçili koddan farklıysa seçici öne çıkarılır', () {
+      expect(deviceDialHint(deviceCountry: 'DE', currentDial: '90'), '49');
+      expect(deviceDialHint(deviceCountry: 'TR', currentDial: '90'), isNull);
+      expect(deviceDialHint(deviceCountry: 'BR', currentDial: '90'), isNull);
+      expect(deviceDialHint(currentDial: '90'), isNull);
+    });
+
+    test('başka ülkenin cep numarası kalıbı: satır içi öneri', () {
+      // +49 seçiliyken 10 haneli 5XX numarası → Türkiye önerilir.
+      expect(suggestDial('532 123 45 67', '49'), '90');
+      expect(suggestDial('5321234567', '44'), '90');
+      // Seçili ülkenin kendi kalıbına uyuyorsa öneri yok.
+      expect(suggestDial('5321234567', '90'), isNull);
+      expect(suggestDial('151 23456789', '49'), isNull);
+      // +90 seçiliyken Alman / İngiliz cep numarası.
+      expect(suggestDial('15123456789', '90'), '49');
+      expect(suggestDial('7911123456', '90'), '44');
+      // Kısa / eksik numara, "diğer" ya da boş: öneri yok.
+      expect(suggestDial('532123', '49'), isNull);
+      expect(suggestDial('5321234567', ''), isNull);
+      expect(suggestDial('', '49'), isNull);
+      // Körfez numaraları (9 hane, 5 ile başlar) Türkiye sanılmaz.
+      expect(suggestDial('501234567', '971'), isNull);
+    });
+
+    test('canlı önizleme için numara biçimi', () {
+      expect(formatLocalNumber('90', '5321234567'), '532 123 45 67');
+      expect(formatLocalNumber('49', '1512345678'), '151 234 5678');
+      expect(formatLocalNumber('49', '15123456789'), '151 234 567 89');
+      expect(formatLocalNumber('44', '7911123456'), '791 112 3456');
+      expect(formatLocalNumber('90', ''), '');
+    });
+
+    test('ülke adları dört dilde, her ülke için', () {
+      for (final l in ['tr', 'en', 'de', 'ar']) {
+        for (final c in kCountries) {
+          expect(kCountryNamesByLang[l]![c.iso], isNotNull, reason: '$l/${c.iso}');
+        }
+      }
+      expect(countryNameIn(countryByDial('90')!, 'ar'), 'تركيا');
+      expect(countryNameIn(countryByDial('49')!, 'tr'), 'Almanya');
+      expect(countryByDial('000'), isNull);
     });
 
     test('ülke listesinde çevirme kodları benzersiz, bayrak 2 sembol', () {

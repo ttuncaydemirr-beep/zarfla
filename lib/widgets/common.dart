@@ -298,12 +298,15 @@ class ZBadge extends StatelessWidget {
 
 /// Form alanı etiketi + içerik + ipucu + hata.
 class FieldBlock extends StatelessWidget {
-  const FieldBlock({super.key, this.label, required this.child, this.hint, this.error});
+  const FieldBlock({super.key, this.label, required this.child, this.hint, this.error, this.requiredLabel});
 
   final String? label;
   final Widget child;
   final String? hint;
   final String? error;
+
+  /// Zorunlu alanlarda etiketin yanında yazıyla "zorunlu" (yalnız renk/yıldız değil).
+  final String? requiredLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -315,7 +318,16 @@ class FieldBlock extends StatelessWidget {
           if (label != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: Text(label!, style: bodyStyle(13, weight: FontWeight.w600)),
+              child: requiredLabel == null
+                  ? Text(label!, style: bodyStyle(13, weight: FontWeight.w600))
+                  : Wrap(
+                      spacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(label!, style: bodyStyle(13, weight: FontWeight.w600)),
+                        RequiredTag(requiredLabel!),
+                      ],
+                    ),
             ),
           child,
           if (hint != null)
@@ -329,6 +341,98 @@ class FieldBlock extends StatelessWidget {
               child: Semantics(liveRegion: true, child: Text(error!, style: bodyStyle(13, color: AppColors.err))),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// "zorunlu" etiketi (küçük, çerçeveli; renk tek başına anlam taşımaz).
+class RequiredTag extends StatelessWidget {
+  const RequiredTag(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.field),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(text, style: bodyStyle(11, weight: FontWeight.w600, color: AppColors.muted)),
+    );
+  }
+}
+
+/// Kalıcı bilgi/hata kartı (toast yerine): metin + isteğe bağlı eylem düğmeleri + kapatma.
+class ActionCard extends StatelessWidget {
+  const ActionCard({
+    super.key,
+    required this.text,
+    this.title,
+    this.icon = Icons.info_outline,
+    this.error = false,
+    this.actions = const [],
+    this.onClose,
+    this.closeTooltip,
+  });
+
+  final String text;
+  final String? title;
+  final IconData icon;
+  final bool error;
+  final List<Widget> actions;
+  final VoidCallback? onClose;
+  final String? closeTooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = error ? AppColors.err : AppColors.primary;
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 4, 10),
+        decoration: BoxDecoration(
+          color: error ? AppColors.surface : AppColors.sand,
+          border: Border.all(color: error ? AppColors.err : AppColors.line, width: error ? 1.5 : 1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(padding: const EdgeInsets.only(top: 2), child: Icon(icon, size: 18, color: fg)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (title != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(title!, style: bodyStyle(14.5, weight: FontWeight.w700, color: AppColors.ink)),
+                    ),
+                  Text(text, style: bodyStyle(13.5, color: AppColors.ink, height: 1.45)),
+                  if (actions.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(spacing: 8, runSpacing: 8, children: actions),
+                  ],
+                ],
+              ),
+            ),
+            if (onClose != null)
+              IconButton(
+                tooltip: closeTooltip,
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: onClose,
+              )
+            else
+              const SizedBox(width: 8),
+          ],
+        ),
       ),
     );
   }

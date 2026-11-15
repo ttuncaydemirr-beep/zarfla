@@ -15,9 +15,12 @@ import '../theme/app_theme.dart';
 /// assets/invite/invite.html (tek kaynak) yüklenir; veri window.renderInvite(json) ile verilir.
 /// Dış bağlantılar (harita, takvim, WhatsApp) cihazın kendi uygulamasında açılır.
 class InviteView extends StatefulWidget {
-  const InviteView({super.key, required this.inv});
+  const InviteView({super.key, required this.inv, this.showSkip = false});
 
   final Invitation inv;
+
+  /// Editör önizlemesi: "Açılışı atla" düğmesi (kapı/zarf animasyonunu beklemeden içeriği gösterir).
+  final bool showSkip;
 
   @override
   State<InviteView> createState() => _InviteViewState();
@@ -27,6 +30,14 @@ class _InviteViewState extends State<InviteView> {
   late final WebViewController _c;
   bool _rendered = false;
   bool _failed = false;
+  bool _skipped = false;
+
+  Future<void> _skip() async {
+    setState(() => _skipped = true);
+    try {
+      await _c.runJavaScript('window.zfSkipOpening && window.zfSkipOpening();');
+    } catch (_) {}
+  }
 
   @override
   void initState() {
@@ -47,6 +58,8 @@ class _InviteViewState extends State<InviteView> {
     if (!mounted) return;
     if (m.message == 'rendered') {
       setState(() => _rendered = true);
+    } else if (m.message == 'opened') {
+      setState(() => _skipped = true); // kullanıcı kendisi açtı: "Açılışı atla" gereksiz
     } else if (m.message.startsWith('error')) {
       setState(() => _failed = true);
     }
@@ -81,6 +94,29 @@ class _InviteViewState extends State<InviteView> {
         WebViewWidget(controller: _c),
         if (!_rendered && !_failed)
           const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        if (widget.showSkip && _rendered && !_skipped && !_failed)
+          PositionedDirectional(
+            top: 10,
+            end: 10,
+            child: Material(
+              color: AppColors.surface,
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: AppColors.line)),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: _skip,
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.skip_next, size: 18, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(context.t('skipOpening'), style: bodyStyle(14, weight: FontWeight.w600, color: AppColors.primary)),
+                  ]),
+                ),
+              ),
+            ),
+          ),
         if (_failed)
           Center(
             child: Padding(

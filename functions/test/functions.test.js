@@ -221,6 +221,46 @@ describe('redeem (sahte Play API)', () => {
     await assert.rejects(S.redeem(deps, 'alice', input({ purchaseToken: 'tok2xxxxxxxx' })), (e) => e.reason === 'already-paid');
   });
 
+  test('süresi dolmuş ücretsiz davetiye (belge deleteAt\'e kadar durur) aynı kimlikle ücretliye geçer, süre yeniden 1 yıl', async () => {
+    const db = new FakeDb();
+    db.put('invites', ID, {
+      ownerUid: 'alice',
+      plan: 'free',
+      status: 'live',
+      createdAt: new Ts(NOW - 3 * D),
+      expiresAt: new Ts(NOW - 2 * D), // 2 gün önce doldu
+      deleteAt: new Ts(NOW + 28 * D),
+    });
+    const deps = makeDeps({ db, publisher: fakePublisher({ [TOKEN]: purchased() }), now: () => NOW });
+    const r = await S.redeem(deps, 'alice', input({ data: dataJson({ theme: 'papatya' }) }));
+    assert.equal(r.ok, true);
+    assert.equal(r.alreadyGranted, false);
+    assert.equal(r.inviteId, ID);
+    const doc = db.data('invites', ID);
+    assert.equal(doc.plan, 'paid');
+    assert.equal(doc.status, 'live');
+    assert.equal(doc.expiresAt.toMillis(), NOW + L.PAID_LIFE_MS);
+    assert.equal(doc.deleteAt.toMillis(), NOW + L.PAID_LIFE_MS + L.TTL_GRACE_MS);
+    assert.equal(doc.createdAt.toMillis(), NOW - 3 * D); // oluşturma anı korunur
+    assert.equal(r.expiresAt, NOW + L.PAID_LIFE_MS);
+    assert.ok(doc.data.includes('"plan":"premium"'));
+    assert.equal(db.data('purchases', L.sha256(TOKEN)).upgrade, true);
+    // Aynı jetonla tekrar (istemci tüketmeden çöktüyse): idempotent başarı, belge değişmez.
+    const again = await S.redeem(deps, 'alice', input({ data: dataJson({ theme: 'papatya' }) }));
+    assert.equal(again.alreadyGranted, true);
+    assert.equal(db.data('invites', ID).expiresAt.toMillis(), NOW + L.PAID_LIFE_MS);
+  });
+
+  test('TTL ile silinmiş (belgesi kalmamış) ücretsiz davetiye de aynı kimlikle yeniden ücretli yazılır', async () => {
+    const db = new FakeDb();
+    const deps = makeDeps({ db, publisher: fakePublisher({ [TOKEN]: purchased() }), now: () => NOW });
+    await S.redeem(deps, 'alice', input());
+    const doc = db.data('invites', ID);
+    assert.equal(doc.plan, 'paid');
+    assert.equal(doc.ownerUid, 'alice');
+    assert.equal(db.data('purchases', L.sha256(TOKEN)).upgrade, false);
+  });
+
   test('onaylanmış alım yeniden onaylanmaz; oturumsuz ret', async () => {
     const pub = fakePublisher({ [TOKEN]: purchased({ acknowledgementState: 1 }) });
     const deps = makeDeps({ publisher: pub, now: () => NOW });

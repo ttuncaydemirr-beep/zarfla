@@ -24,17 +24,70 @@ String? matchDial(String digits) {
   return best;
 }
 
-/// Varsayılan ülke kodu: önce cihazın ülkesi (ISO), sonra dil, en sonda +90.
-String defaultDial({String? deviceCountry, String lang = 'tr'}) {
-  final cc = (deviceCountry ?? '').toUpperCase();
-  if (cc.isNotEmpty) {
-    final mapped = kIsoToDial[cc];
-    if (mapped != null) return mapped;
-    for (final c in kCountries) {
-      if (c.iso == cc) return c.dial;
-    }
+/// ISO ülke kodu → listedeki çevirme kodu (yoksa null).
+String? dialForCountry(String? iso) {
+  final cc = (iso ?? '').toUpperCase();
+  if (cc.isEmpty) return null;
+  final mapped = kIsoToDial[cc];
+  if (mapped != null) return mapped;
+  for (final c in kCountries) {
+    if (c.iso == cc) return c.dial;
   }
-  return kLangDefaultDial[lang] ?? '90';
+  return null;
+}
+
+/// Varsayılan ülke kodu: önce davetiye dilinin ülkesi (tr→+90, de→+49, ar→+966, en→+44), dil eşlemesi
+/// yoksa cihazın ülkesi, en sonda +90. Cihaz bölgesi farklıysa seçici [deviceDialHint] ile öne çıkarılır.
+String defaultDial({String? deviceCountry, String lang = 'tr'}) {
+  return kLangDefaultDial[lang] ?? dialForCountry(deviceCountry) ?? '90';
+}
+
+/// Cihaz bölgesinin çevirme kodu seçili koddan farklıysa o kod (seçici öne çıkarılır ve tek dokunuşla
+/// değiştirme önerilir), aynıysa ya da bölge bilinmiyorsa null.
+String? deviceDialHint({String? deviceCountry, required String currentDial}) {
+  final d = dialForCountry(deviceCountry);
+  if (d == null || d == currentDial) return null;
+  return d;
+}
+
+/// Ülkelerin cep telefonu numarası kalıpları (ülke kodsuz, başında 0 olmadan). Yalnız birbirine karışmayan,
+/// diasporada en sık görülen üç kalıp: Türkiye 5XX XXX XX XX, Almanya 15x/16x/17x, Birleşik Krallık 7XXX.
+const Map<String, String> kMobilePatterns = {
+  '90': r'^5\d{9}$',
+  '49': r'^1[5-7]\d{8,9}$',
+  '44': r'^7\d{9}$',
+};
+
+/// Yazılan yerel numara seçili ülkeden çok başka bir ülkenin cep numarasına benziyorsa o ülkenin kodu.
+/// Seçili ülkenin kendi kalıbına uyuyorsa, numara boşsa ya da "diğer" seçiliyse null (öneri yok).
+String? suggestDial(String local, String currentDial) {
+  if (currentDial.isEmpty) return null;
+  final d = _stripLeadingZeros(_digits(local));
+  if (d.isEmpty) return null;
+  final own = kMobilePatterns[currentDial];
+  if (own != null && RegExp(own).hasMatch(d)) return null;
+  for (final e in kMobilePatterns.entries) {
+    if (e.key != currentDial && RegExp(e.value).hasMatch(d)) return e.key;
+  }
+  return null;
+}
+
+/// Yerel numarayı okunur gruplar (yalnız gösterim): Türkiye 3-3-2-2, diğerleri 3'erli (son grup en az 2 rakam).
+String formatLocalNumber(String dial, String local) {
+  final d = _digits(local);
+  if (d.isEmpty) return '';
+  if (dial == '90' && d.length == 10) {
+    return '${d.substring(0, 3)} ${d.substring(3, 6)} ${d.substring(6, 8)} ${d.substring(8)}';
+  }
+  final g = <String>[];
+  for (var i = 0; i < d.length; i += 3) {
+    g.add(d.substring(i, i + 3 > d.length ? d.length : i + 3));
+  }
+  if (g.length > 1 && g.last.length < 2) {
+    final last = g.removeLast();
+    g[g.length - 1] = g.last + last;
+  }
+  return g.join(' ');
 }
 
 /// Kayıtlı değeri (örn. "905321234567", "+49 151 2345678") seçici + yerel numaraya ayırır.

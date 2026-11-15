@@ -172,7 +172,9 @@ class CloudService {
       'data': data,
     });
     final exp = res['expiresAt'];
-    final sameDoc = inv.cloudId == inviteId;
+    // Ücretsizden yükseltme (aynı kimlik): Storage'daki fotoğraflar korunur; ancak süresi çoktan dolmuş belgenin
+    // dosyaları temizlenmiş olabilir (deleteAt) → eşleme sıfırlanır, fotoğraflar yeniden yüklenir.
+    final sameDoc = inv.cloudId == inviteId && !cloudFilesMayBeGone(inv.expiresAt, DateTime.now());
     inv
       ..cloudId = inviteId
       ..expiresAt = exp is num ? exp.toInt() : expiresAtFor('paid', DateTime.now()).millisecondsSinceEpoch

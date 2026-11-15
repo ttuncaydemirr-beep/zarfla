@@ -70,6 +70,11 @@ DateTime expiresAtFor(String cloudPlan, DateTime publishedAt) =>
 
 DateTime deleteAtFor(DateTime expiresAt) => expiresAt.toUtc().add(kTtlGrace);
 
+/// Süresi dolmuş ücretsiz davetiye yükseltilirken buluttaki fotoğraflar hâlâ duruyor mu? deleteAt'ten bir gün
+/// öncesinden itibaren (TTL + günlük Storage temizliği) dosyalar silinmiş sayılır ve yeniden yüklenir.
+bool cloudFilesMayBeGone(int? expiresAtMs, DateTime now) =>
+    expiresAtMs != null && now.millisecondsSinceEpoch > expiresAtMs + kTtlGrace.inMilliseconds - const Duration(days: 1).inMilliseconds;
+
 /// Kurallar isimlerde çift tırnak, ters bölü ve kontrol karakterlerine izin vermez
 /// (JSON içindeki kaçışsız değerle birebir karşılaştırma yapılabilsin diye).
 final RegExp kCloudNameForbidden = RegExp(r'["\\\x00-\x1f]');

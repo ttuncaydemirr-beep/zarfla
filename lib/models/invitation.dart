@@ -174,11 +174,12 @@ class Invitation {
   /// Yeni taslak (önizlemedeki newInvite + REC ilk tasarım).
   factory Invitation.create({required String id, required String type, required String lang, required int now}) {
     final msgs = kMessages[lang]?[type] ?? const <String>[];
-    final rec = kRecommended[type];
+    // Varsayılan tasarım ücretsiz Papatya: fiyat yayın anında sürpriz olmasın (UX #12). Ücretli tasarımlar
+    // galeride önerilen sırayla durur; kullanıcı seçerse rozet ve fiyat editörde de görünür.
     return Invitation(
       id: id,
       type: type,
-      theme: (rec != null && rec.isNotEmpty) ? rec.first : 'papatya',
+      theme: 'papatya',
       lang: lang,
       created: now,
       msg: msgs.isNotEmpty ? msgs.first : '',

@@ -34,7 +34,7 @@ void main() {
       ..photos.add('p1.jpg');
     final back = Invitation.fromJson(inv.toJson());
     expect(back.toJson(), inv.toJson());
-    expect(back.theme, 'kemer'); // REC.dugun[0]
+    expect(back.theme, 'papatya'); // varsayılan tasarım ücretsiz (UX #12)
     final bad = Invitation.fromJson({'id': 'x', 'type': '??', 'layout': 'yok', 'opening': 'yok', 'theme': 'yok'});
     expect(bad.type, 'diger');
     expect(bad.layout, 'klasik');

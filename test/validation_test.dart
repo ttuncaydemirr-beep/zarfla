@@ -42,7 +42,7 @@ void main() {
       final inv = _inv('nisan')
         ..n1 = 'Test A'
         ..n2 = 'Test B'
-        ..date = '2027-06-12'
+        ..date = '2099-06-12'
         ..time = '19:00'
         ..venue = 'Test Venue'
         ..wa = '905551112233';
@@ -53,7 +53,7 @@ void main() {
     Invitation full() => _inv('nisan')
       ..n1 = 'Test A'
       ..n2 = 'Test B'
-      ..date = '2027-06-12'
+      ..date = '2099-06-12'
       ..venue = 'Test Venue'
       ..wa = '905551112233';
 
@@ -86,6 +86,46 @@ void main() {
         ..giftIban = 'bozuk';
       e = validateInvitation(live);
       expect(e['giftIban'], 'giftErrIban');
+    });
+  });
+
+  group('geçmiş tarih (UX B2/#7)', () {
+    final today = DateTime(2026, 11, 15);
+    Invitation full(String date) => _inv('nisan')
+      ..n1 = 'Test A'
+      ..n2 = 'Test B'
+      ..date = date
+      ..venue = 'Test Venue'
+      ..wa = '905551112233';
+
+    test('dün geçmiş, bugün ve yarın geçerli', () {
+      expect(isPastIsoDate('2026-11-14', today), isTrue);
+      expect(isPastIsoDate('2026-11-15', today), isFalse);
+      expect(isPastIsoDate('2026-11-16', today), isFalse);
+      expect(isPastIsoDate('bozuk', today), isFalse);
+    });
+
+    test('taslakta geçmiş tarih yayını engeller (datePast), bugün serbest', () {
+      expect(validateInvitation(full('2025-06-12'), today: today)['date'], 'datePast');
+      expect(validateInvitation(full('2026-11-15'), today: today), isEmpty);
+    });
+
+    test('tarih/saat boşsa önce reqDate', () {
+      expect(validateInvitation(full('')..time = '', today: today)['date'], 'reqDate');
+    });
+
+    test('yayındaki davetiyede geçmiş tarih kontrolü yok (kilit kuralları geçerli)', () {
+      final live = full('2025-06-12')
+        ..status = 'live'
+        ..plan = 'free';
+      expect(validateInvitation(live, today: today).containsKey('date'), isFalse);
+    });
+
+    test('ilk hata sırası: isimler, tarih, mekân, WhatsApp…', () {
+      final e = validateInvitation(_inv('dugun')..time = '', today: today);
+      expect(firstErrorKey(e), 'names');
+      expect(firstErrorKey({'wa': 'reqWa', 'venue': 'reqVenue'}), 'venue');
+      expect(firstErrorKey(const {}), isNull);
     });
   });
 }

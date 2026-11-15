@@ -5,6 +5,8 @@ import '../ads/ad_service.dart';
 import '../data/catalog.dart';
 import '../l10n/strings.dart';
 import '../logic/date_utils.dart';
+import '../logic/lock_rules.dart';
+import '../logic/progress.dart';
 import '../logic/text_utils.dart';
 import '../models/invitation.dart';
 import '../state/app_state.dart';
@@ -134,45 +136,101 @@ class _InvItem extends StatelessWidget {
     final th = kThemes[inv.theme] ?? kThemes['papatya']!;
     final dateTxt = inv.date.isEmpty ? '' : ' · ${formatShortDate(inv.date, st.lang)}';
     final live = inv.isLive;
+    final expired = live && st.isExpired(inv);
+    final now = DateTime.now();
+    // Taslakta tamamlanma: "%75 hazır · Eksik: WhatsApp numarası" (yarım kalan taslak kolay tamamlansın).
+    final missing = live ? const <String>[] : missingRequired(inv);
+    final pct = live ? 100 : readyPercent(inv);
+    final days = live && !expired ? daysUntil(inv.date, now) : null;
+    void openEditor() => Navigator.of(context).push(MaterialPageRoute(builder: (_) => EditorScreen(invId: inv.id)));
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadii.md),
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => EditorScreen(invId: inv.id))),
+          onTap: openEditor,
           child: ZCard(
             margin: EdgeInsets.zero,
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: th.colors.bg,
-                    border: Border.all(color: th.colors.line),
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                  ),
-                  child: Ornament(th.orn, size: 38),
+                Row(
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: th.colors.bg,
+                        border: Border.all(color: th.colors.line),
+                        borderRadius: BorderRadius.circular(AppRadii.md),
+                      ),
+                      child: Ornament(th.orn, size: 38),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(invitationTitle(inv, context.t('untitled')),
+                              maxLines: 1, overflow: TextOverflow.ellipsis, style: bodyStyle(16, weight: FontWeight.w700)),
+                          Text('${context.t('type_${inv.type}')}$dateTxt', maxLines: 1, overflow: TextOverflow.ellipsis, style: bodyStyle(13, color: AppColors.muted)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    expired
+                        ? ZBadge(label: context.t('expired'), bg: AppColors.sand, fg: AppColors.err, icon: Icons.timer_off_outlined)
+                        : live
+                            ? ZBadge(label: context.t('live'), bg: AppColors.tint, fg: AppColors.ok, icon: Icons.check)
+                            : ZBadge(label: context.t('draft'), bg: AppColors.sand, fg: AppColors.draftInk),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(invitationTitle(inv, context.t('untitled')),
-                          maxLines: 1, overflow: TextOverflow.ellipsis, style: bodyStyle(16, weight: FontWeight.w700)),
-                      Text('${context.t('type_${inv.type}')}$dateTxt', maxLines: 1, overflow: TextOverflow.ellipsis, style: bodyStyle(13, color: AppColors.muted)),
-                    ],
+                if (!live) ...[
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: pct / 100,
+                      minHeight: 6,
+                      color: pct == 100 ? AppColors.ok : AppColors.primary,
+                      backgroundColor: AppColors.sand,
+                      semanticsLabel: context.t('readyPct', {'n': pct}),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                live && st.isExpired(inv)
-                    ? ZBadge(label: context.t('expired'), bg: AppColors.sand, fg: AppColors.err, icon: Icons.timer_off_outlined)
-                    : live
-                        ? ZBadge(label: context.t('live'), bg: AppColors.tint, fg: AppColors.ok, icon: Icons.check)
-                        : ZBadge(label: context.t('draft'), bg: AppColors.sand, fg: AppColors.draftInk),
+                  const SizedBox(height: 6),
+                  Text(
+                    [
+                      context.t('readyPct', {'n': pct}),
+                      missing.isEmpty ? context.t('readyDone') : context.t('readyMissing', {'a': missing.map((k) => context.t('errPart_$k')).join(', ')}),
+                    ].join(' · '),
+                    style: bodyStyle(12.5, color: AppColors.muted, height: 1.35),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(context.t('draftContinue'), style: bodyStyle(13, weight: FontWeight.w600, color: AppColors.primary)),
+                ],
+                if (expired && canUpgradeToPaid(inv)) ...[
+                  const SizedBox(height: 10),
+                  PrimaryButton(
+                    label: context.t('upExpiredBtn', {'p': st.playPrice ?? context.t('price')}),
+                    block: true,
+                    onPressed: openEditor,
+                  ),
+                ],
+                if (days != null && days >= 0 && days <= 7) ...[
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    const Icon(Icons.notifications_active_outlined, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        days == 0 ? context.t('remindToday') : context.t('remindT', {'n': days}),
+                        style: bodyStyle(13, weight: FontWeight.w600, color: AppColors.primary),
+                      ),
+                    ),
+                  ]),
+                ],
               ],
             ),
           ),
