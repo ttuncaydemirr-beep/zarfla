@@ -11,6 +11,7 @@ import '../logic/text_utils.dart';
 import '../models/invitation.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/about_dialog.dart';
 import '../widgets/ad_slot.dart';
 import '../widgets/common.dart';
 import '../widgets/ornament.dart';
@@ -53,6 +54,7 @@ class HomeScreen extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                 children: [
+                  const SafeModeBanner(),
                   const PayVerifyBanner(),
                   H2(context.t('myInv')),
                   if (list.isEmpty) const _Empty() else ...list.map((inv) => _InvItem(inv: inv)),
@@ -73,7 +75,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-/// Başlıktaki "⋯" menüsü: satın alımı geri yükle.
+/// Başlıktaki "⋯" menüsü: satın alımı geri yükle, hakkında (sürüm).
 class _HomeMenu extends StatelessWidget {
   const _HomeMenu();
 
@@ -83,6 +85,7 @@ class _HomeMenu extends StatelessWidget {
       tooltip: context.t('more'),
       onSelected: (v) {
         if (v == 'restore') runRestorePurchases(context);
+        if (v == 'about') showZarflaAbout(context);
       },
       itemBuilder: (_) => [
         PopupMenuItem<String>(
@@ -91,6 +94,14 @@ class _HomeMenu extends StatelessWidget {
             const ZGlyph(ZGlyphs.retry, size: 20, color: AppColors.primary),
             const SizedBox(width: 10),
             Flexible(child: Text(context.t('restoreBtn'), style: bodyStyle(15))),
+          ]),
+        ),
+        PopupMenuItem<String>(
+          value: 'about',
+          child: Row(children: [
+            const Icon(Icons.info_outline, size: 20, color: AppColors.primary),
+            const SizedBox(width: 10),
+            Flexible(child: Text(context.t('aboutBtn'), style: bodyStyle(15))),
           ]),
         ),
       ],

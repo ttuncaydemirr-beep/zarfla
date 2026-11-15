@@ -15,17 +15,19 @@ class PhotoStore {
   Future<void> init() async {
     final docs = await getApplicationDocumentsDirectory();
     final d = Directory('${docs.path}/photos');
-    if (!await d.exists()) await d.create(recursive: true);
     _dir = d;
+    if (!await d.exists()) await d.create(recursive: true);
   }
 
-  Directory get dir {
-    final d = _dir;
-    if (d == null) throw StateError('PhotoStore.init was not called');
-    return d;
-  }
+  /// Fotoğraf klasörü. init başarısız olduysa (ör. eklenti hatası) geçici klasöre düşülür: uygulama çökmez,
+  /// fotoğraf dosyaları bulunamazsa önizleme boş gösterilir.
+  Directory get dir => _dir ??= Directory('${Directory.systemTemp.path}/zarfla_photos');
 
-  File fileFor(String name) => File('${dir.path}/$name');
+  File fileFor(String name) {
+    // Eski/bozuk kayıttaki ad yol içeremez (../ ya da / ile klasör dışına çıkılmasın).
+    final safe = name.replaceAll(RegExp(r'[/\\]'), '_');
+    return File('${dir.path}/$safe');
+  }
 
   /// Baytları kaydeder, dosya adını döner. Yer yoksa FileSystemException fırlatır.
   Future<String> saveBytes(Uint8List bytes) async {
@@ -36,6 +38,7 @@ class PhotoStore {
     final name = '${DateTime.now().microsecondsSinceEpoch}_${_rnd.nextInt(1 << 30).toRadixString(36)}.$ext';
     final f = fileFor(name);
     try {
+      if (!await f.parent.exists()) await f.parent.create(recursive: true);
       await f.writeAsBytes(bytes, flush: true);
     } catch (e) {
       if (await f.exists()) {

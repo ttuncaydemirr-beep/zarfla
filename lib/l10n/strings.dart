@@ -22,17 +22,23 @@ class AppStrings {
   static Future<AppStrings> load() async {
     final maps = <String, Map<String, String>>{};
     for (final lang in kLangs) {
-      final raw = await rootBundle.loadString('assets/l10n/app_$lang.arb');
-      maps[lang] = parseArb(raw);
+      // Bir dil dosyası okunamazsa o dil Türkçe yedeğe düşer; açılış asla durmaz.
+      try {
+        final raw = await rootBundle.loadString('assets/l10n/app_$lang.arb');
+        maps[lang] = parseArb(raw);
+      } catch (e) {
+        debugPrint('zarfla: l10n $lang failed: $e');
+      }
     }
     return AppStrings(maps);
   }
 
   static Map<String, String> parseArb(String raw) {
-    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    final decoded = jsonDecode(raw);
     final out = <String, String>{};
+    if (decoded is! Map) return out;
     decoded.forEach((k, v) {
-      if (!k.startsWith('@')) out[k] = v.toString();
+      if (k is String && !k.startsWith('@') && v is String) out[k] = v;
     });
     return out;
   }
@@ -41,10 +47,13 @@ class AppStrings {
   bool has(String lang, String key) => (_maps[lang]?.containsKey(key) ?? false) || (_maps['tr']?.containsKey(key) ?? false);
 
   String get(String lang, String key, [Map<String, Object> args = const {}]) {
-    var s = _maps[lang]?[key] ?? _maps['tr']?[key] ?? key;
-    args.forEach((k, v) {
-      s = s.replaceAll('{$k}', '$v');
-    });
+    // Eksik anahtar (eski/yeni sürüm farkı): önce Türkçe yedek, o da yoksa anahtarın kendisi — asla hata yok.
+    var s = _maps[lang]?[key] ?? _maps['tr']?[key] ?? _maps['en']?[key] ?? key;
+    try {
+      args.forEach((k, v) {
+        s = s.replaceAll('{$k}', '$v');
+      });
+    } catch (_) {}
     return s;
   }
 }

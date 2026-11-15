@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../billing/billing_logic.dart';
@@ -16,18 +17,43 @@ class InvitationStore {
 
   Future<SharedPreferences> _p() async => _prefs ??= await SharedPreferences.getInstance();
 
+  /// Okunamayan (bozuk) kayıtların ham kopyası: bir sonraki kaydetmede kaybolmasın diye ayrı anahtarda saklanır.
+  static const _kInvsBad = 'zarfla_invs_unreadable_v1';
+
+  /// Tüm davetiyeler. ASLA istisna fırlatmaz: bozuk tek kayıt atlanır (ham hali [_kInvsBad]'a yedeklenir),
+  /// diğerleri yüklenir. Tümü okunamazsa boş liste döner ve ham metin yedeklenir.
   Future<List<Invitation>> loadAll() async {
-    final p = await _p();
-    final raw = p.getString(_kInvs);
-    if (raw == null || raw.isEmpty) return <Invitation>[];
     try {
-      final list = jsonDecode(raw);
-      if (list is! List) return <Invitation>[];
-      return [
-        for (final e in list)
-          if (e is Map) Invitation.fromJson(Map<String, dynamic>.from(e)),
-      ];
-    } catch (_) {
+      final p = await _p();
+      Object? raw;
+      try {
+        raw = p.get(_kInvs);
+      } catch (e) {
+        debugPrint('zarfla: invitations key unreadable: $e');
+        return <Invitation>[];
+      }
+      final r = decodeInvitations(raw);
+      if (r.unreadable.isNotEmpty) {
+        debugPrint('zarfla: ${r.unreadable.length} unreadable invitation record(s) backed up');
+        try {
+          final prev = p.getString(_kInvsBad);
+          final all = <Object?>[];
+          if (prev != null && prev.isNotEmpty) {
+            try {
+              final d = jsonDecode(prev);
+              if (d is List) all.addAll(d);
+            } catch (_) {}
+          }
+          final known = {for (final x in all) jsonEncode(x)};
+          for (final x in r.unreadable) {
+            if (known.add(jsonEncode(x))) all.add(x);
+          }
+          await p.setString(_kInvsBad, jsonEncode(all.length > 50 ? all.sublist(all.length - 50) : all));
+        } catch (_) {}
+      }
+      return r.invitations;
+    } catch (e) {
+      debugPrint('zarfla: loadAll failed: $e');
       return <Invitation>[];
     }
   }
@@ -41,29 +67,61 @@ class InvitationStore {
     }
   }
 
-  Future<String?> loadLang() async => (await _p()).getString(_kLang);
+  Future<String?> loadLang() async {
+    try {
+      final v = (await _p()).get(_kLang);
+      return v is String ? v : null;
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<void> saveLang(String lang) async {
-    await (await _p()).setString(_kLang, lang);
+    try {
+      await (await _p()).setString(_kLang, lang);
+    } catch (e) {
+      debugPrint('zarfla: saveLang failed: $e');
+    }
   }
 
-  Future<bool> loadFlag(String key) async => (await _p()).getBool(key) ?? false;
+  Future<bool> loadFlag(String key) async => _bool(key);
+
+  /// Tür uyuşmazlığına dayanıklı bool okuma (eski sürüm farklı türde yazmış olabilir).
+  Future<bool> _bool(String key) async {
+    try {
+      final v = (await _p()).get(key);
+      if (v is bool) return v;
+      if (v is String) return v == 'true' || v == '1';
+      if (v is int) return v != 0;
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<void> saveFlag(String key, bool v) async {
-    await (await _p()).setBool(key, v);
+    try {
+      await (await _p()).setBool(key, v);
+    } catch (e) {
+      debugPrint('zarfla: saveFlag failed: $e');
+    }
   }
 
-  Future<bool> loadPremiumUser() async => (await _p()).getBool(_kPrem) ?? false;
+  Future<bool> loadPremiumUser() async => _bool(_kPrem);
 
   Future<void> savePremiumUser(bool v) async {
-    await (await _p()).setBool(_kPrem, v);
+    try {
+      await (await _p()).setBool(_kPrem, v);
+    } catch (e) {
+      debugPrint('zarfla: savePremiumUser failed: $e');
+    }
   }
 
   /// Satın alma bağlamı (ücretli yayın sürerken; bkz. PendingPaid). null = temizle.
   Future<PendingPaid?> loadPendingPaid() async {
-    final raw = (await _p()).getString(_kPendingPaid);
-    if (raw == null || raw.isEmpty) return null;
     try {
+      final raw = (await _p()).get(_kPendingPaid);
+      if (raw is! String || raw.isEmpty) return null;
       return PendingPaid.fromJson(jsonDecode(raw));
     } catch (_) {
       return null;
@@ -71,11 +129,71 @@ class InvitationStore {
   }
 
   Future<void> savePendingPaid(PendingPaid? v) async {
-    final p = await _p();
-    if (v == null) {
-      await p.remove(_kPendingPaid);
-    } else {
-      await p.setString(_kPendingPaid, jsonEncode(v.toJson()));
+    try {
+      final p = await _p();
+      if (v == null) {
+        await p.remove(_kPendingPaid);
+      } else {
+        await p.setString(_kPendingPaid, jsonEncode(v.toJson()));
+      }
+    } catch (e) {
+      debugPrint('zarfla: savePendingPaid failed: $e');
     }
   }
+}
+
+/// Kayıtlı davetiye listesinin çözümlenmesi (saf işlev; test edilebilir).
+/// [raw]: SharedPreferences'taki değer (normalde JSON metni). Her kayıt ayrı ayrı çözülür:
+/// bozuk olanlar [unreadable]'a ham haliyle konur, kimliği boş/yinelenen kayıtlara benzersiz kimlik verilir.
+({List<Invitation> invitations, List<Object?> unreadable}) decodeInvitations(Object? raw) {
+  final out = <Invitation>[];
+  final bad = <Object?>[];
+  if (raw == null) return (invitations: out, unreadable: bad);
+  Object? list;
+  if (raw is String) {
+    if (raw.trim().isEmpty) return (invitations: out, unreadable: bad);
+    try {
+      list = jsonDecode(raw);
+    } catch (_) {
+      return (invitations: out, unreadable: [raw]);
+    }
+  } else {
+    list = raw;
+  }
+  if (list is Map) list = [list]; // çok eski/elle bozulmuş tek kayıt
+  if (list is! List) return (invitations: out, unreadable: [raw is String ? raw : '$raw']);
+  final seen = <String>{};
+  var i = 0;
+  for (final e in list) {
+    i++;
+    if (e is! Map) {
+      if (e != null) bad.add(e);
+      continue;
+    }
+    try {
+      final m = <String, dynamic>{};
+      e.forEach((k, v) => m['$k'] = v);
+      final inv = Invitation.fromJson(m);
+      if (inv.id.trim().isEmpty || seen.contains(inv.id)) {
+        var n = 1;
+        final base = inv.id.trim().isEmpty ? 'r${inv.created.abs().toRadixString(36)}$i' : inv.id;
+        var id = inv.id.trim().isEmpty ? base : '${base}_$n';
+        while (seen.contains(id)) {
+          n++;
+          id = '${base}_$n';
+        }
+        inv.id = id;
+      }
+      seen.add(inv.id);
+      out.add(inv);
+    } catch (err) {
+      debugPrint('zarfla: invitation record $i unreadable: $err');
+      try {
+        bad.add(jsonDecode(jsonEncode(e)));
+      } catch (_) {
+        bad.add('$e');
+      }
+    }
+  }
+  return (invitations: out, unreadable: bad);
 }

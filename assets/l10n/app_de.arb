@@ -391,5 +391,12 @@
   "guestLinkReady": "{n} persönliche(r) Link(s) bereit",
   "guestLinkMax": "Es können höchstens {n} Namen hinzugefügt werden; der Rest wurde übersprungen.",
   "guestLinkEdit": "Namen bearbeiten",
-  "guestShareHi": "Hallo {g},"
+  "guestShareHi": "Hallo {g},",
+  "aboutBtn": "Über die App",
+  "versionLbl": "Version {v}",
+  "errLogTitle": "Fehlerprotokoll",
+  "errLogHint": "Falls ein Problem aufgetreten ist, kopieren Sie diesen Text und senden Sie ihn an unsere Support-Adresse.",
+  "errLogClear": "Leeren",
+  "errLogDetails": "Details",
+  "safeModeNote": "Die App wurde beim letzten Start unerwartet beendet. Werbung und Zahlungen wurden in dieser Sitzung nicht gestartet."
 }

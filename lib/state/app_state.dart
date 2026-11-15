@@ -14,6 +14,7 @@ import '../l10n/strings.dart';
 import '../logic/lock_rules.dart';
 import '../logic/sample_names.dart';
 import '../models/invitation.dart';
+import '../startup/startup_log.dart';
 import '../storage/invitation_store.dart';
 import '../storage/photo_store.dart';
 
@@ -48,39 +49,62 @@ class AppState extends ChangeNotifier {
   /// Silinmek üzere gizlenen davetiyeler ("Geri al" süresi dolana kadar listede görünmez, cihazda durur).
   final Set<String> _hidden = {};
 
+  /// Açılış yüklemesi. Her adım ayrı korunur: biri başarısız olursa (eski sürümün verisi, eklenti hatası)
+  /// kaydedilir ve diğerleri yine çalışır; bu işlev hiçbir koşulda istisna fırlatmaz.
   Future<void> init() async {
-    await _photos.init();
-    final l = await _store.loadLang();
-    if (l != null && kLangs.contains(l)) lang = l;
-    premiumUser = await _store.loadPremiumUser();
-    invitations
-      ..clear()
-      ..addAll(await _store.loadAll());
+    Future<void> step(String name, Future<void> Function() fn) async {
+      try {
+        await fn();
+      } catch (e, st) {
+        StartupLog.record('init.$name', e, st);
+      }
+    }
+
+    await step('photos', _photos.init);
+    await step('lang', () async {
+      final l = await _store.loadLang();
+      if (l != null && kLangs.contains(l)) lang = l;
+    });
+    await step('premium', () async => premiumUser = await _store.loadPremiumUser());
+    await step('invitations', () async {
+      final loaded = await _store.loadAll();
+      invitations
+        ..clear()
+        ..addAll(loaded);
+    });
+    var migrated = false;
     // Aşama 1'de "yayınlanan" davetiyeler yalnız cihazdaydı (bağlantı çalışmıyordu, ödeme sahteydi):
     // bulut kimliği olmayan yayındakiler taslağa döner, hakları sıfırlanır.
-    var migrated = false;
-    for (final i in invitations) {
-      if (i.isLive && i.cloudId == null) {
-        i
-          ..status = 'draft'
-          ..plan = null
-          ..nameEditsLeft = kNameEdits
-          ..dateEditsLeft = kDateEdits
-          ..originalDate = null
-          ..expiresAt = null
-          ..cloudFiles = {};
-        migrated = true;
-      }
-    }
-    // Tek seferlik: eski sürümün otomatik doldurduğu örnek isimleri temizle.
-    const flag = 'zarfla_sample_names_cleared_v1';
-    if (!await _store.loadFlag(flag)) {
+    await step('migrateStage1', () async {
       for (final i in invitations) {
-        if (clearSampleNames(i)) migrated = true;
+        if (i.isLive && i.cloudId == null) {
+          i
+            ..status = 'draft'
+            ..plan = null
+            ..nameEditsLeft = kNameEdits
+            ..dateEditsLeft = kDateEdits
+            ..originalDate = null
+            ..expiresAt = null
+            ..cloudFiles = {};
+          migrated = true;
+        }
       }
-      await _store.saveFlag(flag, true);
-    }
-    if (migrated) await _store.saveAll(invitations);
+    });
+    // Tek seferlik: eski sürümün otomatik doldurduğu örnek isimleri temizle.
+    await step('migrateSampleNames', () async {
+      const flag = 'zarfla_sample_names_cleared_v1';
+      if (!await _store.loadFlag(flag)) {
+        for (final i in invitations) {
+          try {
+            if (clearSampleNames(i)) migrated = true;
+          } catch (e, st) {
+            StartupLog.record('init.sampleNames', e, st);
+          }
+        }
+        await _store.saveFlag(flag, true);
+      }
+    });
+    if (migrated) await step('save', () async => _store.saveAll(invitations));
   }
 
   /// Açılışta anonim oturumu arka planda hazırla (başarısızlık sessiz; yayınlarken yeniden denenir).
@@ -279,17 +303,21 @@ class AppState extends ChangeNotifier {
   Future<void> startBilling() async {
     final b = billing;
     if (b == null) return;
-    _pending = await _store.loadPendingPaid();
-    await b.init(_onPurchase);
-    notifyListeners(); // fiyat / kullanılabilirlik
-    if (!b.available) return;
-    final q = await b.query();
-    if (q == null) return;
-    final results = <String?>[];
-    for (final p in q.owned) {
-      results.add(await _handleBought(p));
+    try {
+      _pending = await _store.loadPendingPaid();
+      await b.init(_onPurchase);
+      notifyListeners(); // fiyat / kullanılabilirlik
+      if (!b.available) return;
+      final q = await b.query();
+      if (q == null) return;
+      final results = <String?>[];
+      for (final p in q.owned) {
+        results.add(await _handleBought(p));
+      }
+      _setVerifying(needsVerifyBanner(results, pending: q.pending));
+    } catch (e, st) {
+      StartupLog.record('billing.start', e, st);
     }
-    _setVerifying(needsVerifyBanner(results, pending: q.pending));
   }
 
   /// Ücretli yayın (yayınla ekranı). Dönen değer: null (yayında), 'paidPhotoErr' (yayında, fotoğraf eksik)
@@ -348,6 +376,15 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _onPurchase(BillingPurchase p) async {
+    try {
+      await _onPurchaseInner(p);
+    } catch (e, st) {
+      StartupLog.record('billing.purchase', e, st);
+      _finishWait('payErr');
+    }
+  }
+
+  Future<void> _onPurchaseInner(BillingPurchase p) async {
     final b = billing;
     if (b == null) return;
     if (p.productId != kInviteProductId) {

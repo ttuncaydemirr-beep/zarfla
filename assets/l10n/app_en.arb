@@ -391,5 +391,12 @@
   "guestLinkReady": "{n} personal link(s) ready",
   "guestLinkMax": "Up to {n} names can be added; the rest were skipped.",
   "guestLinkEdit": "Edit names",
-  "guestShareHi": "Dear {g},"
+  "guestShareHi": "Dear {g},",
+  "aboutBtn": "About",
+  "versionLbl": "Version {v}",
+  "errLogTitle": "Error log",
+  "errLogHint": "If you ran into a problem, copy this text and send it to our support address.",
+  "errLogClear": "Clear",
+  "errLogDetails": "Details",
+  "safeModeNote": "The app closed unexpectedly last time. Ads and payments were not started for this session."
 }

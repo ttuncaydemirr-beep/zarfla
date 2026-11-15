@@ -72,7 +72,7 @@ jobs:
         run: flutter test
 
       - name: Debug APK
-        run: flutter build apk --debug
+        run: flutter build apk --debug --build-name=1.0.$((GITHUB_RUN_NUMBER + 100)) --build-number=$((GITHUB_RUN_NUMBER + 100)) --dart-define=ZARFLA_BUILD=$((GITHUB_RUN_NUMBER + 100))
 
       - name: İmza anahtarı (secret varsa)
         id: signing
@@ -97,18 +97,19 @@ jobs:
           echo "signed=true" >> "$GITHUB_OUTPUT"
           echo "Yükleme anahtarı çözüldü."
 
-      # versionName 1.0.0 (pubspec), versionCode = çalışma no + 100 (her derlemede artar).
+      # versionCode = çalışma no + 100 (her derlemede artar); versionName = "1.0.<versionCode>" (Play'de ve uygulamanın
+      # Hakkında ekranında hangi derlemenin yüklü olduğu görünsün). ZARFLA_BUILD aynı kodu Dart tarafına verir.
       # R8 küçültme + gizleme açık (patch_android.py: isMinifyEnabled/isShrinkResources, proguard-rules.pro).
       # Dart gizleme: --obfuscate + --split-debug-info (semboller artifact olarak saklanır, çökme izi için gerekir).
       - name: Release AAB
-        run: flutter build appbundle --release --obfuscate --split-debug-info=build/symbols --build-name=1.0.0 --build-number=$((GITHUB_RUN_NUMBER + 100))
+        run: flutter build appbundle --release --obfuscate --split-debug-info=build/symbols --build-name=1.0.$((GITHUB_RUN_NUMBER + 100)) --build-number=$((GITHUB_RUN_NUMBER + 100)) --dart-define=ZARFLA_BUILD=$((GITHUB_RUN_NUMBER + 100))
 
       - name: İmzayı doğrula
         env:
           SIGNED: ${{ steps.signing.outputs.signed }}
         run: |
           AAB=build/app/outputs/bundle/release/app-release.aab
-          echo "versionCode: $((GITHUB_RUN_NUMBER + 100))"
+          echo "versionCode: $((GITHUB_RUN_NUMBER + 100))  versionName: 1.0.$((GITHUB_RUN_NUMBER + 100))"
           keytool -printcert -jarfile "$AAB" | tee /tmp/cert.txt
           grep -E 'SHA1:|SHA256:' /tmp/cert.txt || true
           jarsigner -verify "$AAB" | head -3

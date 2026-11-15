@@ -9,6 +9,10 @@
 - Firebase: com.google.gms.google-services Gradle eklentisi (Kotlin DSL ve Groovy şablonlarının ikisi de)
   android/app/google-services.json depoda durur; eklenti onu derlemede okur.
 - Uygulama simgesi: assets/branding/android/res/ → android/app/src/main/res/ (Flutter varsayılanının üzerine)
+- ZarflaApplication (Kotlin): yerel (Java/Kotlin) çökmeleri files/zarfla_last_crash.txt'e yazar; Dart tarafı bir sonraki
+  açılışta okur, o açılışı "güvenli kip"te yapar (reklam/ödeme başlatılmaz) ve ayrıntıyı Hakkında'da gösterir.
+- Yedekleme: yalnız uygulamanın kendi verisi (FlutterSharedPreferences.xml) yedeklenir/aktarılır. Reklam/WorkManager/
+  Firebase/UMP gibi SDK durumları geri yüklenmez (eski, uyumsuz SDK verisinin yeni sürümde açılışı bozmasını önler).
 """
 import pathlib
 import re
@@ -254,8 +258,117 @@ def patch_manifest() -> None:
         s, n = re.subn(r"(<application\b)", lambda mm: perm + mm.group(1), s, count=1)
         if n == 0:
             sys.exit("AndroidManifest.xml: <application> bulunamadı; AD_ID izni eklenemedi.")
+    s = patch_application_tag(s)
     m.write_text(s, encoding="utf-8")
-    print(f"AndroidManifest.xml: label=Zarfla, icon/roundIcon, AdMob app id={app_id}, AD_ID izni")
+    print(f"AndroidManifest.xml: name=.ZarflaApplication, yedekleme kuralları, label=Zarfla, icon/roundIcon, AdMob app id={app_id}, AD_ID izni")
+
+
+KOTLIN_PKG_DIR = APP / "src" / "main" / "kotlin" / "com" / "demirgamesstudio" / "zarfla"
+APPLICATION_KT = """package com.demirgamesstudio.zarfla
+
+import android.app.Application
+import android.content.Context
+import android.os.Build
+import java.io.File
+import java.io.PrintWriter
+import java.io.StringWriter
+
+/**
+ * Yerel çökme kaydedici: yakalanmamış Java/Kotlin istisnasını files/zarfla_last_crash.txt dosyasına yazar,
+ * sonra önceki işleyiciye (sistem) devreder. Dart tarafı (lib/startup/startup_log.dart) bir sonraki açılışta
+ * dosyayı okur. scripts/patch_android.py tarafından üretilir; elle düzenlemeyin.
+ */
+class ZarflaApplication : Application() {
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        installCrashRecorder(base)
+    }
+
+    private fun installCrashRecorder(ctx: Context) {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, error ->
+            try {
+                val sw = StringWriter()
+                error.printStackTrace(PrintWriter(sw))
+                val text = StringBuilder()
+                    .append("time=").append(System.currentTimeMillis()).append('\\n')
+                    .append("thread=").append(thread.name).append('\\n')
+                    .append("device=").append(Build.MANUFACTURER).append(' ').append(Build.MODEL)
+                    .append(" sdk=").append(Build.VERSION.SDK_INT).append('\\n')
+                    .append("app=").append(versionOf(ctx)).append('\\n')
+                    .append(sw.toString().take(16000))
+                    .toString()
+                File(ctx.filesDir, "zarfla_last_crash.txt").writeText(text)
+            } catch (t: Throwable) {
+            }
+            previous?.uncaughtException(thread, error)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun versionOf(ctx: Context): String = try {
+        val pi = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
+        val code = if (Build.VERSION.SDK_INT >= 28) pi.longVersionCode else pi.versionCode.toLong()
+        "${pi.versionName} ($code)"
+    } catch (t: Throwable) {
+        "?"
+    }
+}
+"""
+
+BACKUP_RULES = """<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 ve öncesi: yalnız uygulamanın kendi ayar/taslak dosyası yedeklenir (SDK durumları hariç). -->
+<full-backup-content>
+    <include domain="sharedpref" path="FlutterSharedPreferences.xml"/>
+</full-backup-content>
+"""
+
+DATA_EXTRACTION_RULES = """<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: bulut yedeği ve cihazdan cihaza aktarımda yalnız uygulamanın kendi ayar/taslak dosyası. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="FlutterSharedPreferences.xml"/>
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="FlutterSharedPreferences.xml"/>
+    </device-transfer>
+</data-extraction-rules>
+"""
+
+
+def write_native_files() -> None:
+    KOTLIN_PKG_DIR.mkdir(parents=True, exist_ok=True)
+    (KOTLIN_PKG_DIR / "ZarflaApplication.kt").write_text(APPLICATION_KT, encoding="utf-8")
+    xml = APP / "src" / "main" / "res" / "xml"
+    xml.mkdir(parents=True, exist_ok=True)
+    (xml / "zarfla_backup_rules.xml").write_text(BACKUP_RULES, encoding="utf-8")
+    (xml / "zarfla_data_extraction_rules.xml").write_text(DATA_EXTRACTION_RULES, encoding="utf-8")
+    print("ZarflaApplication.kt + yedekleme kuralları yazıldı")
+
+
+def patch_application_tag(s: str) -> str:
+    """<application>: android:name=.ZarflaApplication, yalnız kendi verimizi yedekleyen kurallar (idempotent)."""
+    m = re.search(r"<application\b[^>]*>", s, flags=re.S)
+    if not m:
+        sys.exit("AndroidManifest.xml: <application> etiketi bulunamadı.")
+    tag = m.group(0)
+    new = tag
+    if 'android:name="${applicationName}"' in new:
+        new = new.replace('android:name="${applicationName}"', 'android:name=".ZarflaApplication"')
+    elif ".ZarflaApplication" not in new:
+        new2, n = re.subn(r'android:name="[^"]*"', 'android:name=".ZarflaApplication"', new, count=1)
+        new = new2 if n else new.replace("<application", '<application\n        android:name=".ZarflaApplication"', 1)
+    attrs = {
+        "android:allowBackup": "true",
+        "android:fullBackupContent": "@xml/zarfla_backup_rules",
+        "android:dataExtractionRules": "@xml/zarfla_data_extraction_rules",
+    }
+    for k, v in attrs.items():
+        if re.search(k + r'="[^"]*"', new):
+            new = re.sub(k + r'="[^"]*"', f'{k}="{v}"', new)
+        else:
+            new = new.replace("<application", f'<application\n        {k}="{v}"', 1)
+    return s.replace(tag, new, 1)
 
 
 def copy_icons() -> None:
@@ -279,5 +392,6 @@ if __name__ == "__main__":
     patch_signing()
     patch_r8()
     patch_settings()
+    write_native_files()
     patch_manifest()
     copy_icons()

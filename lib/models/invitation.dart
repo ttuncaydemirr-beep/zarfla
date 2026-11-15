@@ -1,6 +1,8 @@
 import '../data/catalog.dart';
+import '../data/countries.dart';
 import '../data/music.dart';
 import '../logic/iban.dart';
+import '../logic/phone.dart';
 import '../logic/url_check.dart';
 
 /// Program satırı (saat + açıklama). Önizlemedeki {t, x}.
@@ -12,8 +14,49 @@ class ProgramStep {
 
   Map<String, dynamic> toJson() => {'t': t, 'x': x};
 
-  factory ProgramStep.fromJson(Map<String, dynamic> j) =>
-      ProgramStep(t: (j['t'] ?? '').toString(), x: (j['x'] ?? '').toString());
+  factory ProgramStep.fromJson(Map<String, dynamic> j) => ProgramStep(
+        t: jsonStr(j['t'] ?? j['time']),
+        x: jsonStr(j['x'] ?? j['text'] ?? j['desc']),
+      );
+
+  /// Kayıtlı herhangi bir biçimden (harita / düz metin / bozuk) güvenle program satırı; kurtarılamazsa null.
+  static ProgramStep? tryParse(Object? e) {
+    if (e is String) return e.trim().isEmpty ? null : ProgramStep(x: e);
+    if (e is! Map) return null;
+    final m = <String, dynamic>{};
+    e.forEach((k, v) => m['$k'] = v);
+    return ProgramStep.fromJson(m);
+  }
+}
+
+/// Kayıtlı JSON değeri → metin: yalnız metin ve sayı kabul edilir (harita/liste/bool → [d]).
+String jsonStr(Object? v, [String d = '']) {
+  if (v is String) return v;
+  if (v is num) return v is int || v != v.truncateToDouble() ? '$v' : '${v.toInt()}';
+  return d;
+}
+
+/// Kayıtlı JSON değeri → tam sayı (int, double, "12" kabul; değilse null).
+int? jsonInt(Object? v) {
+  if (v is int) return v;
+  if (v is double) return v.isFinite ? v.toInt() : null;
+  if (v is String) return int.tryParse(v.trim()) ?? double.tryParse(v.trim())?.toInt();
+  return null;
+}
+
+/// Eski sürümlerin WhatsApp biçimleri ("0532…", "+90 532 …", "0090…") → "905321234567".
+/// Rakam dışı karakter ya da baştaki 0 yoksa değer olduğu gibi kalır.
+String normalizeStoredWa(String wa, String lang) {
+  final t = wa.trim();
+  if (t.isEmpty) return '';
+  if (RegExp(r'^[1-9]\d*$').hasMatch(t)) return t;
+  try {
+    final parts = parsePhone(t, fallbackDial: kLangDefaultDial[lang] ?? '90');
+    final c = composeWa(parts.dial, parts.local);
+    return c.isEmpty ? t : c;
+  } catch (_) {
+    return t;
+  }
 }
 
 /// "Ricalarımız" notları: en çok [kMaxNotes] satır, her biri en çok [kNoteLen] karakter.
@@ -224,37 +267,52 @@ class Invitation {
         'cloudFiles': cloudFiles.map((k, v) => MapEntry(k, v.toJson())),
       };
 
+  /// Kayıtlı (eski sürümler dahil) JSON'dan davetiye. ASLA istisna fırlatmaz: her alan tür denetimli ve
+  /// varsayılanlı; bilinmeyen tür/tasarım/düzen/açılış kimlikleri güvenli varsayılana çevrilir.
+  /// Eski biçimler: notes/live/gift/music/cloud alanları yok, wa "0532…"/"+90 5…", program {time,text} ya da düz metin,
+  /// sayılar metin/ondalık olarak, fotoğraf listesinde null.
   factory Invitation.fromJson(Map<String, dynamic> j) {
-    String s(String k, [String d = '']) => j[k] == null ? d : j[k].toString();
-    int n(String k, int d) => j[k] is int ? j[k] as int : int.tryParse('${j[k]}') ?? d;
-    final type = kEventTypes.contains(s('type')) ? s('type') : 'diger';
-    final theme = kThemes.containsKey(s('theme')) ? s('theme') : 'papatya';
-    final lang = kLangs.contains(s('lang')) ? s('lang') : 'tr';
-    final layout = kLayouts.contains(s('layout')) ? s('layout') : 'klasik';
-    final opening = kOpenings.contains(s('opening')) ? s('opening') : 'door';
+    String s(String k, [String d = '']) => jsonStr(j[k], d);
+    int n(String k, int d) => jsonInt(j[k]) ?? d;
+    String pick(String k, Iterable<String> allowed, String d) {
+      final v = s(k).trim();
+      return allowed.contains(v) ? v : d;
+    }
+
+    final type = pick('type', kEventTypes, 'diger');
+    final theme = pick('theme', kThemes.keys, 'papatya');
+    final lang = pick('lang', kLangs, 'tr');
+    final layout = pick('layout', kLayouts, 'klasik');
+    final opening = pick('opening', kOpenings, 'door');
     final prog = <ProgramStep>[];
-    if (j['program'] is List) {
-      for (final e in j['program'] as List) {
-        if (e is Map) prog.add(ProgramStep.fromJson(Map<String, dynamic>.from(e)));
+    final rawProg = j['program'];
+    if (rawProg is List) {
+      for (final e in rawProg) {
+        final st = ProgramStep.tryParse(e);
+        if (st != null && prog.length < kMaxSteps) prog.add(st);
       }
     }
     final notes = sanitizeNotes(j['notes'], trim: false);
     final photos = <String>[];
-    if (j['photos'] is List) {
-      for (final e in j['photos'] as List) {
-        if (e is String && e.isNotEmpty) photos.add(e);
+    final rawPhotos = j['photos'];
+    if (rawPhotos is List) {
+      for (final e in rawPhotos) {
+        if (e is String && e.isNotEmpty && !photos.contains(e) && photos.length < kMaxGallery) photos.add(e);
       }
     }
-    final plan = j['plan'] == null ? null : j['plan'].toString();
+    final plan = j['plan'] is String ? j['plan'] as String : null;
     final files = <String, CloudFile>{};
-    if (j['cloudFiles'] is Map) {
-      (j['cloudFiles'] as Map).forEach((k, v) {
+    final rawFiles = j['cloudFiles'];
+    if (rawFiles is Map) {
+      rawFiles.forEach((k, v) {
         final f = CloudFile.fromJson(v);
         if (k is String && f != null) files[k] = f;
       });
     }
-    final cloudId = j['cloudId'] is String && (j['cloudId'] as String).isNotEmpty ? j['cloudId'] as String : null;
-    final expiresAt = j['expiresAt'] is int ? j['expiresAt'] as int : null;
+    final rawCloud = j['cloudId'];
+    final cloudId = rawCloud is String && rawCloud.isNotEmpty ? rawCloud : null;
+    final rawOrig = j['originalDate'];
+    final status = s('status') == 'live' ? 'live' : 'draft';
     return Invitation(
       id: s('id'),
       type: type,
@@ -267,12 +325,12 @@ class Invitation {
       n2: s('n2'),
       host: s('host'),
       msg: s('msg'),
-      date: s('date'),
-      time: s('time', '19:00'),
+      date: s('date').trim(),
+      time: j['time'] == null ? '19:00' : s('time').trim(),
       end: s('end'),
       venue: s('venue'),
       address: s('address'),
-      wa: s('wa'),
+      wa: normalizeStoredWa(s('wa'), lang),
       program: prog,
       notes: notes,
       liveUrl: s('liveUrl'),
@@ -283,13 +341,13 @@ class Invitation {
       music: cleanMusicId(j['music']),
       cover: s('cover'),
       photos: photos,
-      status: s('status') == 'live' ? 'live' : 'draft',
+      status: status,
       plan: (plan == 'free' || plan == 'premium') ? plan : null,
-      nameEditsLeft: n('nameEditsLeft', 3),
-      dateEditsLeft: n('dateEditsLeft', 2),
-      originalDate: j['originalDate']?.toString(),
+      nameEditsLeft: n('nameEditsLeft', 3).clamp(0, 3),
+      dateEditsLeft: n('dateEditsLeft', 2).clamp(0, 2),
+      originalDate: rawOrig is String && rawOrig.isNotEmpty ? rawOrig : null,
       cloudId: cloudId,
-      expiresAt: expiresAt,
+      expiresAt: jsonInt(j['expiresAt']),
       cloudFiles: files,
     );
   }

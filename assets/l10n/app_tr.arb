@@ -391,5 +391,12 @@
   "guestLinkReady": "{n} kişiye özel bağlantı hazır",
   "guestLinkMax": "En fazla {n} isim eklenebilir; fazlası alınmadı.",
   "guestLinkEdit": "İsimleri düzenle",
-  "guestShareHi": "Sevgili {g},"
+  "guestShareHi": "Sevgili {g},",
+  "aboutBtn": "Hakkında",
+  "versionLbl": "Sürüm {v}",
+  "errLogTitle": "Hata kaydı",
+  "errLogHint": "Uygulamada bir sorun yaşadıysanız bu metni kopyalayıp destek adresine gönderin.",
+  "errLogClear": "Temizle",
+  "errLogDetails": "Ayrıntılar",
+  "safeModeNote": "Uygulama önceki açılışta beklenmedik şekilde kapandı. Bu açılışta reklam ve ödeme hizmetleri başlatılmadı."
 }
