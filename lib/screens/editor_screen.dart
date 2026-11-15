@@ -566,7 +566,7 @@ class _DetailsFormState extends State<DetailsForm> {
                   width: 46,
                   height: 46,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(color: AppColors.tint, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: kTypeIconDark.contains(inv.type) ? AppColors.primary : AppColors.tint, borderRadius: BorderRadius.circular(12)),
                   child: Ornament(kTypeIcon[inv.type] ?? 'o-papatya', size: 32),
                 ),
                 small: context.t('evType'),
@@ -1123,7 +1123,7 @@ class _DetailsFormState extends State<DetailsForm> {
       child: Row(
         children: [
           SizedBox(
-            width: 104,
+            width: 128,
             child: PickerField(
               text: s.t,
               placeholder: context.t('stepTime'),

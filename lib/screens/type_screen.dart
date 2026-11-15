@@ -59,12 +59,13 @@ class TypeScreen extends StatelessWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
-                    childAspectRatio: 1.45,
+                    childAspectRatio: 1.3,
                     children: [
                       for (final ty in kEventTypes)
                         _Tile(
                           label: context.t('type_$ty'),
                           orn: kTypeIcon[ty] ?? 'o-papatya',
+                          dark: kTypeIconDark.contains(ty),
                           selected: retype?.type == ty,
                           onTap: () => _pick(context, ty),
                         ),
@@ -81,10 +82,11 @@ class TypeScreen extends StatelessWidget {
 }
 
 class _Tile extends StatelessWidget {
-  const _Tile({required this.label, required this.orn, required this.selected, required this.onTap});
+  const _Tile({required this.label, required this.orn, required this.selected, required this.onTap, this.dark = false});
 
   final String label;
   final String orn;
+  final bool dark;
   final bool selected;
   final VoidCallback onTap;
 
@@ -99,7 +101,7 @@ class _Tile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppRadii.md),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             decoration: BoxDecoration(
               color: AppColors.surface,
               border: Border.all(color: selected ? AppColors.primary : AppColors.line, width: 1.5),
@@ -109,9 +111,32 @@ class _Tile extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Ornament(orn, size: 34),
+                // Simge, kendi dairesinde: açık zeminde beyaz/altın simgeler kaybolmasın.
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(color: dark ? AppColors.primary : AppColors.tint, shape: BoxShape.circle),
+                  child: Ornament(orn, size: 32),
+                ),
                 const SizedBox(height: 8),
-                Text(label, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: bodyStyle(15, weight: FontWeight.w600)),
+                // Uzun (özellikle Almanca) etiketler: en uzun sözcük sığmıyorsa yazı küçülür, sonra satıra sarılır.
+                Flexible(
+                  child: LayoutBuilder(
+                    builder: (context, c) {
+                      const base = 14.5;
+                      final style = bodyStyle(base, weight: FontWeight.w600, height: 1.2);
+                      final scaler = MediaQuery.textScalerOf(context);
+                      var widest = 0.0;
+                      for (final w in label.split(RegExp(r'\s+'))) {
+                        final tp = TextPainter(text: TextSpan(text: w, style: style), textDirection: Directionality.of(context), textScaler: scaler)..layout();
+                        if (tp.width > widest) widest = tp.width;
+                      }
+                      final k = widest > c.maxWidth && widest > 0 ? (c.maxWidth / widest).clamp(0.78, 1.0).toDouble() : 1.0;
+                      return Text(label, textAlign: TextAlign.center, maxLines: 3, overflow: TextOverflow.ellipsis, style: bodyStyle(base * k, weight: FontWeight.w600, height: 1.2));
+                    },
+                  ),
+                ),
               ],
             ),
           ),

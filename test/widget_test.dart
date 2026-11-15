@@ -59,6 +59,12 @@ void main() {
     }
   });
 
+  test('her etkinlik türünün simgesi benzersiz; koyu daire kümesi geçerli türlerden oluşur', () {
+    final icons = [for (final ty in kEventTypes) kTypeIcon[ty]];
+    expect(icons.toSet().length, kEventTypes.length, reason: 'iki tür aynı simgeyi paylaşıyor: $icons');
+    expect(kTypeIconDark.difference(kEventTypes.toSet()), isEmpty);
+  });
+
   test('her tasarımda tüm renk alanları, 4 dilde ad ve süs dosyaları var', () {
     for (final th in kThemes.values) {
       expect(th.css.keys.toSet(), colorKeys.toSet(), reason: th.id);

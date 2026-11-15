@@ -163,7 +163,7 @@ class _InvItem extends StatelessWidget {
                     children: [
                       Text(invitationTitle(inv, context.t('untitled')),
                           maxLines: 1, overflow: TextOverflow.ellipsis, style: bodyStyle(16, weight: FontWeight.w700)),
-                      Text('${context.t('type_${inv.type}')}$dateTxt', style: bodyStyle(13, color: AppColors.muted)),
+                      Text('${context.t('type_${inv.type}')}$dateTxt', maxLines: 1, overflow: TextOverflow.ellipsis, style: bodyStyle(13, color: AppColors.muted)),
                     ],
                   ),
                 ),
