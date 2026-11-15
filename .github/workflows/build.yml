@@ -89,10 +89,10 @@ jobs:
           echo "Yükleme anahtarı çözüldü."
 
       # versionName 1.0.0 (pubspec), versionCode = çalışma no + 100 (her derlemede artar).
-      # --no-shrink: R8/küçültme kapalı. Firebase/Flutter için keep kuralı yazmak yerine güvenli yol
-      # seçildi; kapalıyken yansıma/serileştirme kaynaklı çalışma zamanı çökmesi riski yok.
+      # R8 küçültme + gizleme açık (patch_android.py: isMinifyEnabled/isShrinkResources, proguard-rules.pro).
+      # Dart gizleme: --obfuscate + --split-debug-info (semboller artifact olarak saklanır, çökme izi için gerekir).
       - name: Release AAB
-        run: flutter build appbundle --release --no-shrink --build-name=1.0.0 --build-number=$((GITHUB_RUN_NUMBER + 100))
+        run: flutter build appbundle --release --obfuscate --split-debug-info=build/symbols --build-name=1.0.0 --build-number=$((GITHUB_RUN_NUMBER + 100))
 
       - name: İmzayı doğrula
         env:
@@ -120,6 +120,22 @@ jobs:
           name: zarfla-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 14
+
+      - name: R8 mapping dosyasını yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: zarfla-r8-mapping
+          path: build/app/outputs/mapping/release/mapping.txt
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Dart sembollerini yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: zarfla-dart-symbols
+          path: build/symbols
+          if-no-files-found: warn
+          retention-days: 90
 
       - name: İmzalı AAB'yi yükle
         if: steps.signing.outputs.signed == 'true'
@@ -175,12 +191,17 @@ jobs:
         with:
           name: zarfla-release-aab-signed
           path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: zarfla-r8-mapping
+          path: dist-mapping
       - name: Play'e yükle (alpha)
         uses: r0adkll/upload-google-play@v1.1.3
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.demirgamesstudio.zarfla
           releaseFiles: dist/app-release.aab
+          mappingFile: dist-mapping/mapping.txt
           track: alpha
           status: completed
           whatsNewDirectory: distribution/whatsnew
