@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: rid
-        run: echo "id=$(cat .github/crashcheck_run_id)" >> $GITHUB_OUTPUT
+        run: echo "id=$(head -1 .github/crashcheck_run_id)" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@v4
         with:
           name: zarfla-release-aab-signed
