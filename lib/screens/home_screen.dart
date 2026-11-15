@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../ads/ad_service.dart';
 import '../data/catalog.dart';
 import '../l10n/strings.dart';
 import '../logic/date_utils.dart';
@@ -30,7 +31,19 @@ class HomeScreen extends StatelessWidget {
               title: context.t('app'),
               subtitle: context.t('by'),
               leading: const BrandMark(),
-              actions: [_LangSelect(value: st.lang, onChanged: (l) => st.setLang(l))],
+              actions: [
+                ValueListenableBuilder<bool>(
+                  valueListenable: AdService.privacyOptionsRequired,
+                  builder: (context, required, _) => required
+                      ? ZIconButton(
+                          icon: Icons.privacy_tip_outlined,
+                          tooltip: context.t('privacyOptions'),
+                          onPressed: AdService.showPrivacyOptions,
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                _LangSelect(value: st.lang, onChanged: (l) => st.setLang(l)),
+              ],
             ),
             Expanded(
               child: ListView(
@@ -44,7 +57,7 @@ class HomeScreen extends StatelessWidget {
                     block: true,
                     onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TypeScreen())),
                   ),
-                  if (!st.premiumUser) AdSlot(label: context.t('ad')),
+                  if (!st.premiumUser) const AdSlot(),
                 ],
               ),
             ),

@@ -1,27 +1,95 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-import '../theme/app_theme.dart';
+import '../ads/ad_config.dart';
+import '../ads/ad_service.dart';
 
-/// Banner reklam yer tutucusu: sabit 50dp yükseklik (ekran zıplamaz).
+/// Banner reklam: uyarlanabilir (adaptive) sabit-alt (anchored) banner.
 /// Yalnız Davetiyelerim ve Tasarım galerisinde; ödeme yapmış kullanıcıda gösterilmez.
-/// Aşama 3'te AdMob banner (320x50) ile değiştirilecek.
-class AdSlot extends StatelessWidget {
-  const AdSlot({super.key, required this.label});
+/// Rıza alınmadan (AdService.ready) istek yapılmaz; reklam yüklenmezse yer kaplamaz.
+class AdSlot extends StatefulWidget {
+  const AdSlot({super.key});
 
-  final String label;
+  @override
+  State<AdSlot> createState() => _AdSlotState();
+}
+
+class _AdSlotState extends State<AdSlot> {
+  BannerAd? _ad;
+  AdSize? _size;
+  int _loadedWidth = 0;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AdService.ready.addListener(_maybeLoad);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _maybeLoad();
+  }
+
+  @override
+  void dispose() {
+    AdService.ready.removeListener(_maybeLoad);
+    _ad?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _maybeLoad() async {
+    if (!mounted || _loading || !AdService.supported || !AdService.ready.value) return;
+    // Liste kenar boşlukları: 16 + 16.
+    final width = (MediaQuery.of(context).size.width - 32).truncate();
+    if (width <= 0 || (_ad != null && width == _loadedWidth)) return;
+    _loading = true;
+    final size = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
+    if (!mounted) return;
+    if (size == null) {
+      _loading = false;
+      return;
+    }
+    final old = _ad;
+    final ad = BannerAd(
+      adUnitId: kBannerAdUnitId,
+      size: size,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (loaded) {
+          if (!mounted) {
+            loaded.dispose();
+            return;
+          }
+          setState(() {
+            _ad = loaded as BannerAd;
+            _size = size;
+            _loadedWidth = width;
+            _loading = false;
+          });
+          old?.dispose();
+        },
+        onAdFailedToLoad: (failed, error) {
+          failed.dispose();
+          if (mounted) setState(() => _loading = false);
+        },
+      ),
+    );
+    await ad.load();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final ad = _ad;
+    final size = _size;
+    if (ad == null || size == null) return const SizedBox.shrink();
     return Container(
-      height: 50,
       margin: const EdgeInsets.only(top: 24, bottom: 4),
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.sand,
-        border: Border.all(color: AppColors.field),
-        borderRadius: BorderRadius.circular(AppRadii.sm),
-      ),
-      child: Text(label, style: bodyStyle(12, color: AppColors.muted)),
+      width: size.width.toDouble(),
+      height: size.height.toDouble(),
+      child: AdWidget(ad: ad),
     );
   }
 }

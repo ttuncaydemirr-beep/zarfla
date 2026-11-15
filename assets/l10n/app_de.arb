@@ -212,5 +212,6 @@
   "delCloudErr": "Die Einladung konnte nicht gelöscht werden. Bitte prüfe deine Verbindung und versuche es erneut.",
   "paidSoon": "Die kostenpflichtige Veröffentlichung (1 Einladungsrecht) kommt bald mit Google-Play-Zahlung. Bis dahin kannst du kostenlos veröffentlichen.",
   "paidSoonBtn": "Bald verfügbar",
-  "untilDate": "Der Link ist bis {d} geöffnet."
+  "untilDate": "Der Link ist bis {d} geöffnet.",
+  "privacyOptions": "Datenschutzoptionen"
 }
