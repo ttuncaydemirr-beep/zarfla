@@ -9,6 +9,11 @@ on:
         description: "Google Play kapalı teste (alpha) yükle"
         type: boolean
         default: false
+      track:
+        description: "Play kanalı (internal = dahili test, alpha = kapalı test)"
+        type: choice
+        options: [internal, alpha]
+        default: alpha
       play_check:
         description: "Yalnızca Play API erişimini sına (yükleme yapmaz)"
         type: boolean
@@ -230,7 +235,7 @@ jobs:
           packageName: com.demirgamesstudio.zarfla
           releaseFiles: dist/app-release.aab
           mappingFile: dist-mapping/mapping.txt
-          track: alpha
+          track: ${{ inputs.track }}
           status: completed
           whatsNewDirectory: distribution/whatsnew
 
