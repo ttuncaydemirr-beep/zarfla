@@ -20,5 +20,5 @@ String invitationTitle(Invitation inv, String untitled) {
   return a.isEmpty ? untitled : a;
 }
 
-/// Hazır metin çipi etiketi: 48 karakterden uzunsa 46 + '…'.
-String chipLabel(String m) => m.length > 48 ? '${m.substring(0, 46)}…' : m;
+/// Hazır metin çipi etiketi: 96 karakterden uzunsa 94 + '…' (çip en çok 2 satır gösterir).
+String chipLabel(String m) => m.length > 96 ? '${m.substring(0, 94)}…' : m;

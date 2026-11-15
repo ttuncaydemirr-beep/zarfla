@@ -27,6 +27,16 @@ class ZarflaApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+        // Arapça: Naskh x-yüksekliği küçük olduğundan metinler biraz büyütülür (tasarım incelemesi #24).
+        builder: (context, child) {
+          final c = child ?? const SizedBox.shrink();
+          if (st.lang != 'ar') return c;
+          final mq = MediaQuery.of(context);
+          return MediaQuery(
+            data: mq.copyWith(textScaler: TextScaler.linear(mq.textScaler.scale(100) / 100 * kArabicTextScale)),
+            child: c,
+          );
+        },
         home: const HomeScreen(),
       ),
     );

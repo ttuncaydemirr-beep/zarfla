@@ -21,17 +21,27 @@ class Ornament extends StatelessWidget {
   }
 }
 
-/// Uygulama amblemi (önizlemedeki .brandmark).
+/// Uygulama amblemi: uygulama simgesiyle aynı figür (zümrüt zemin, krem zarf, altın mühür).
+/// Tasarım incelemesi #7: eski daire+çizgi işareti yerine tek marka dili.
 class BrandMark extends StatelessWidget {
-  const BrandMark({super.key, this.size = 30});
+  const BrandMark({super.key, this.size = 36, this.round = false});
 
   final double size;
+  /// true: daire zemin (boş durum figürü), false: yuvarlatılmış kare (uygulama simgesi gibi).
+  final bool round;
 
-  static const _svg =
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><circle cx="15" cy="15" r="14" fill="#1F3D36"/><circle cx="15" cy="15" r="11.2" fill="none" stroke="#AD7F2E" stroke-width="1.2"/><path d="M9 11.5h12v8H9z M9 11.5l6 4.2 6-4.2" fill="none" stroke="#E3C58A" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+  static String svg({bool round = false}) =>
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">'
+      '${round ? '<circle cx="18" cy="18" r="18" fill="#1F3D36"/><circle cx="18" cy="18" r="15.6" fill="none" stroke="#AD7F2E" stroke-width=".7"/>' : '<rect width="36" height="36" rx="9" fill="#1F3D36"/>'}'
+      '<rect x="8.2" y="10.6" width="19.6" height="13.8" rx="1.6" fill="#FFFCF7"/>'
+      '<path d="M9.3 11.8 18 19 26.7 11.8" fill="none" stroke="#1F3D36" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>'
+      '<circle cx="21.4" cy="19.9" r="3.5" fill="#AD7F2E"/>'
+      '<circle cx="21.4" cy="19.9" r="2.3" fill="none" stroke="#E3C58A" stroke-width=".55"/>'
+      '<path d="M21.4 18.7 22.2 19.9 21.4 21.1 20.6 19.9z" fill="#E3C58A"/>'
+      '</svg>';
 
   @override
-  Widget build(BuildContext context) => SvgPicture.string(_svg, width: size, height: size, excludeFromSemantics: true);
+  Widget build(BuildContext context) => SvgPicture.string(svg(round: round), width: size, height: size, excludeFromSemantics: true);
 }
 
 /// WhatsApp simgesi.

@@ -3,6 +3,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../ads/ad_config.dart';
 import '../ads/ad_service.dart';
+import '../l10n/strings.dart';
+import '../theme/app_theme.dart';
 
 /// Banner reklam: uyarlanabilir (adaptive) sabit-alt (anchored) banner.
 /// Yalnız Davetiyelerim ve Tasarım galerisinde; ödeme yapmış kullanıcıda gösterilmez.
@@ -84,12 +86,27 @@ class _AdSlotState extends State<AdSlot> {
     final ad = _ad;
     final size = _size;
     if (ad == null || size == null) return const SizedBox.shrink();
-    return Container(
-      margin: const EdgeInsets.only(top: 24, bottom: 4),
-      alignment: Alignment.center,
-      width: size.width.toDouble(),
-      height: size.height.toDouble(),
-      child: AdWidget(ad: ad),
+    // Tasarım incelemesi #27: üstte küçük "Reklam" etiketi, birincil düğmeden en az 24 px uzak.
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpace.x6, bottom: AppSpace.x1),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpace.x1),
+              child: Text(context.t('adTag'), style: bodyStyle(AppType.min, weight: FontWeight.w500, color: AppColors.muted)),
+            ),
+          ),
+          Container(
+            alignment: Alignment.center,
+            width: size.width.toDouble(),
+            height: size.height.toDouble(),
+            child: AdWidget(ad: ad),
+          ),
+        ],
+      ),
     );
   }
 }

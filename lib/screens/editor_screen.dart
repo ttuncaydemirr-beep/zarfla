@@ -26,6 +26,7 @@ import '../widgets/common.dart';
 import '../widgets/invite_view.dart';
 import '../widgets/layout_thumb.dart';
 import '../widgets/music_picker.dart';
+import '../widgets/opening_picker.dart';
 import '../widgets/ornament.dart';
 import 'done_screen.dart';
 import 'publish_screen.dart';
@@ -1610,18 +1611,8 @@ class _DetailsFormState extends State<DetailsForm> {
       ),
       FieldBlock(
         label: context.t('opening'),
-        child: GridView.count(
-          crossAxisCount: 3,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          childAspectRatio: 2.0,
-          children: [
-            for (final k in kOpenings)
-              _SegButton(label: context.t('opn_$k'), on: inv.opening == k, onTap: () => _set(() => inv.opening = k)),
-          ],
-        ),
+        // Tasarım #15: her açılış için minik görsel.
+        child: OpeningPicker(value: inv.opening, theme: kThemes[inv.theme] ?? kThemes['papatya']!, onChanged: (k) => _set(() => inv.opening = k)),
       ),
       // Kapak
       FieldBlock(
@@ -2000,19 +1991,20 @@ class _Chip extends StatelessWidget {
       child: Material(
         color: selected ? AppColors.tint : AppColors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           side: BorderSide(color: selected ? AppColors.primary : AppColors.field, width: selected ? 1.5 : 1),
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           child: Container(
             constraints: const BoxConstraints(minHeight: 48),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Align(
               widthFactor: 1,
               alignment: AlignmentDirectional.centerStart,
-              child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: bodyStyle(12.5, height: 1.35)),
+              // Tasarım #16: çip metni kesilmez, en çok 2 satır.
+              child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: bodyStyle(12.5, height: 1.3)),
             ),
           ),
         ),
@@ -2053,39 +2045,6 @@ class _LayoutTile extends StatelessWidget {
                 Text(label, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: bodyStyle(12.5, weight: FontWeight.w600, height: 1.25)),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SegButton extends StatelessWidget {
-  const _SegButton({required this.label, required this.on, required this.onTap});
-
-  final String label;
-  final bool on;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: on,
-      child: Material(
-        color: on ? AppColors.tint : AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.sm),
-          side: BorderSide(color: on ? AppColors.primary : AppColors.field, width: on ? 2 : 1.5),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadii.sm),
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 48),
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(label, textAlign: TextAlign.center, style: bodyStyle(14, weight: FontWeight.w600)),
           ),
         ),
       ),

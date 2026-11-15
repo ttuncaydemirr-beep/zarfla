@@ -25,7 +25,8 @@ void main() {
     expect(invitationTitle(inv, 'İsimsiz'), 'Test A');
     inv.n2 = 'Test B';
     expect(invitationTitle(inv, 'İsimsiz'), 'Test A & Test B');
-    expect(chipLabel('a' * 50).length, 47);
+    expect(chipLabel('a' * 50), 'a' * 50);
+    expect(chipLabel('a' * 100).length, 95);
   });
 
   test('Invitation JSON gidiş-dönüş ve normalleştirme', () {
