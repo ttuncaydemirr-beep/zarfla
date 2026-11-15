@@ -82,7 +82,7 @@ def patch_signing() -> None:
 
     if is_kts:
         props = (
-            f"val {KEYPROPS_MARK} = java.util.Properties().also {{ p ->\n"
+            f"val {KEYPROPS_MARK} = Properties().also {{ p ->\n"
             '    val f = rootProject.file("key.properties")\n'
             "    if (f.exists()) f.inputStream().use { p.load(it) }\n"
             "}\n\n"
@@ -123,6 +123,8 @@ def patch_signing() -> None:
         sign_ref = (f"signingConfig = {KEYPROPS_MARK}.isEmpty() ? signingConfigs.debug : signingConfigs.release")
         minify = "            minifyEnabled false\n            shrinkResources false\n"
 
+    if is_kts and "import java.util.Properties" not in s:
+        s = "import java.util.Properties\n\n" + s  # KTS'te `java` uzantısı paket adını gölgeler; import şart
     # 1) Properties okuyucu: android { bloğundan önce
     s, n1 = re.subn(r"^android\s*\{", lambda m: props + m.group(0), s, count=1, flags=re.M)
     # 2) signingConfigs: buildTypes'tan önce
