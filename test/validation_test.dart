@@ -75,7 +75,9 @@ void main() {
         ..giftIban = 'TR330006100519786457841326'
         ..giftHolder = 'Ali Demir';
       expect(validateInvitation(paid), isEmpty);
-      final free = full()..giftIban = 'bozuk';
+      final free = full()
+        ..theme = 'papatya'
+        ..giftIban = 'bozuk';
       expect(validateInvitation(free), isEmpty);
       // yayındaki ücretli davetiye
       final live = full()
