@@ -60,8 +60,54 @@ jobs:
       - name: Debug APK
         run: flutter build apk --debug
 
-      - name: Release AAB (şimdilik debug imzalı; gerçek imza Aşama 3)
-        run: flutter build appbundle --release
+      - name: İmza anahtarı (secret varsa)
+        id: signing
+        env:
+          SIGNING_PASSPHRASE: ${{ secrets.SIGNING_PASSPHRASE }}
+        run: |
+          if [ -z "$SIGNING_PASSPHRASE" ]; then
+            echo "::warning::SIGNING_PASSPHRASE secret'ı yok (fork?). Release AAB debug imzayla derlenecek; Play'e yüklenemez."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "::add-mask::$SIGNING_PASSPHRASE"
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -in android-signing/upload.jks.enc -out android/app/upload.jks \
+            -pass env:SIGNING_PASSPHRASE
+          {
+            echo "storeFile=upload.jks"
+            echo "storePassword=$SIGNING_PASSPHRASE"
+            echo "keyAlias=zarfla"
+            echo "keyPassword=$SIGNING_PASSPHRASE"
+          } > android/key.properties
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+          echo "Yükleme anahtarı çözüldü."
+
+      # versionName 1.0.0 (pubspec), versionCode = çalışma no + 100 (her derlemede artar).
+      # --no-shrink: R8/küçültme kapalı. Firebase/Flutter için keep kuralı yazmak yerine güvenli yol
+      # seçildi; kapalıyken yansıma/serileştirme kaynaklı çalışma zamanı çökmesi riski yok.
+      - name: Release AAB
+        run: flutter build appbundle --release --no-shrink --build-name=1.0.0 --build-number=$((GITHUB_RUN_NUMBER + 100))
+
+      - name: İmzayı doğrula
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
+        run: |
+          AAB=build/app/outputs/bundle/release/app-release.aab
+          echo "versionCode: $((GITHUB_RUN_NUMBER + 100))"
+          keytool -printcert -jarfile "$AAB" | tee /tmp/cert.txt
+          grep -E 'SHA1:|SHA256:' /tmp/cert.txt || true
+          jarsigner -verify "$AAB" | head -3
+          if [ "$SIGNED" = "true" ]; then
+            grep -q 'CN=Demir Games Studio' /tmp/cert.txt || { echo "::error::AAB sahibi CN=Demir Games Studio değil"; exit 1; }
+            echo "İmza doğrulandı: CN=Demir Games Studio"
+          else
+            echo "::warning::İmzasız/debug imzalı derleme; sahip doğrulaması atlandı."
+          fi
+
+      - name: Anahtar dosyalarını sil
+        if: always()
+        run: rm -f android/app/upload.jks android/key.properties
 
       - name: APK'yı yükle
         uses: actions/upload-artifact@v4
@@ -70,10 +116,19 @@ jobs:
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 14
 
-      - name: AAB'yi yükle
+      - name: İmzalı AAB'yi yükle
+        if: steps.signing.outputs.signed == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: zarfla-release-aab
+          name: zarfla-release-aab-signed
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14
+
+      - name: Debug imzalı AAB'yi yükle (secret yok)
+        if: steps.signing.outputs.signed != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: zarfla-release-aab-debugsigned
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 7
 

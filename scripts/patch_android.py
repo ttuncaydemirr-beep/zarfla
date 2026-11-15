@@ -63,6 +63,84 @@ def patch_gradle() -> None:
     print(f"{path.relative_to(ROOT)} güncellendi")
 
 
+KEYPROPS_MARK = "zarflaKeyProps"
+
+
+def patch_signing() -> None:
+    """Release imzası: android/key.properties varsa signingConfigs.release, yoksa debug imza (idempotent).
+
+    key.properties alanları: storeFile (android/app'e göre), storePassword, keyAlias, keyPassword.
+    R8/küçültme bilerek kapalı tutulur (bkz. README \"İmzalı sürüm\"): Firebase/Flutter için keep kuralı
+    gerektirmeyen güvenli yol; AAB boyutu Play'in kendi sıkıştırmasıyla yine küçülür.
+    """
+    path = _app_gradle()
+    s = path.read_text(encoding="utf-8")
+    if KEYPROPS_MARK in s:
+        print(f"{path.name}: imza yapılandırması zaten var")
+        return
+    is_kts = path.suffix == ".kts"
+
+    if is_kts:
+        props = (
+            f"val {KEYPROPS_MARK} = java.util.Properties().also {{ p ->\n"
+            '    val f = rootProject.file("key.properties")\n'
+            "    if (f.exists()) f.inputStream().use { p.load(it) }\n"
+            "}\n\n"
+        )
+        signing = (
+            "    signingConfigs {\n"
+            f"        if ({KEYPROPS_MARK}.isNotEmpty()) {{\n"
+            '            create("release") {\n'
+            f'                storeFile = file({KEYPROPS_MARK}.getProperty("storeFile"))\n'
+            f'                storePassword = {KEYPROPS_MARK}.getProperty("storePassword")\n'
+            f'                keyAlias = {KEYPROPS_MARK}.getProperty("keyAlias")\n'
+            f'                keyPassword = {KEYPROPS_MARK}.getProperty("keyPassword")\n'
+            "            }\n"
+            "        }\n"
+            "    }\n\n"
+        )
+        sign_ref = (f'signingConfig = if ({KEYPROPS_MARK}.isNotEmpty()) signingConfigs.getByName("release") '
+                    'else signingConfigs.getByName("debug")')
+        minify = "            isMinifyEnabled = false\n            isShrinkResources = false\n"
+    else:
+        props = (
+            f"def {KEYPROPS_MARK} = new Properties()\n"
+            "def zarflaKeyFile = rootProject.file('key.properties')\n"
+            f"if (zarflaKeyFile.exists()) {{ zarflaKeyFile.withInputStream {{ {KEYPROPS_MARK}.load(it) }} }}\n\n"
+        )
+        signing = (
+            "    signingConfigs {\n"
+            f"        if (!{KEYPROPS_MARK}.isEmpty()) {{\n"
+            "            release {\n"
+            f"                storeFile file({KEYPROPS_MARK}['storeFile'])\n"
+            f"                storePassword {KEYPROPS_MARK}['storePassword']\n"
+            f"                keyAlias {KEYPROPS_MARK}['keyAlias']\n"
+            f"                keyPassword {KEYPROPS_MARK}['keyPassword']\n"
+            "            }\n"
+            "        }\n"
+            "    }\n\n"
+        )
+        sign_ref = (f"signingConfig = {KEYPROPS_MARK}.isEmpty() ? signingConfigs.debug : signingConfigs.release")
+        minify = "            minifyEnabled false\n            shrinkResources false\n"
+
+    # 1) Properties okuyucu: android { bloğundan önce
+    s, n1 = re.subn(r"^android\s*\{", lambda m: props + m.group(0), s, count=1, flags=re.M)
+    # 2) signingConfigs: buildTypes'tan önce
+    s, n2 = re.subn(r"^([ \t]*)buildTypes\s*\{", lambda m: signing + m.group(0), s, count=1, flags=re.M)
+    # 3) release buildType'ı bağla
+    s, n3 = re.subn(r"signingConfig\s*=?\s*signingConfigs\.(?:getByName\(\"debug\"\)|debug)", sign_ref, s, count=1)
+    if n3 == 0:
+        s, n3 = re.subn(r"(buildTypes\s*\{\s*\n\s*(?:getByName\(\"release\"\)|release)\s*\{\s*\n)",
+                        lambda m: m.group(1) + "            " + sign_ref + "\n", s, count=1)
+    # 4) R8 kapalı
+    if "isMinifyEnabled" not in s and "minifyEnabled" not in s:
+        s = re.sub(r"(signingConfig\s*=[^\n]*\n)", lambda m: m.group(1) + minify, s, count=1)
+    if not (n1 and n2 and n3):
+        sys.exit(f"{path.name}: imza yaması uygulanamadı (props={n1}, signingConfigs={n2}, release={n3}).")
+    path.write_text(s, encoding="utf-8")
+    print(f"{path.name}: signingConfigs.release + release bağlandı (key.properties yoksa debug imza)")
+
+
 def patch_settings() -> None:
     """google-services eklentisinin sürümünü kök düzeyde bildirir (apply false)."""
     kts = ANDROID / "settings.gradle.kts"
@@ -138,6 +216,7 @@ def copy_icons() -> None:
 if __name__ == "__main__":
     check_google_services()
     patch_gradle()
+    patch_signing()
     patch_settings()
     patch_manifest()
     copy_icons()

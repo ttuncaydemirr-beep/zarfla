@@ -50,10 +50,20 @@ uygulama simgesi).
 
 1. GitHub uygulamasında ya da tarayıcıda depoyu açın → **Actions** sekmesi.
 2. En üstteki yeşil (✓) **Derleme** çalışmasına dokunun.
-3. Sayfanın altındaki **Artifacts** bölümünden `zarfla-debug-apk` dosyasını indirin.
+3. Sayfanın altındaki **Artifacts** bölümünden `zarfla-debug-apk` dosyasını indirin (imzalı AAB için aşağıdaki "İmzalı sürüm" bölümüne bakın).
 4. İnen ZIP'i açın, `app-debug.apk` dosyasını kurun (bilinmeyen kaynaklara izin vermeniz istenebilir).
 
 Elle derleme başlatmak için: Actions → Derleme → **Run workflow**.
+
+## İmzalı sürüm
+
+- **Anahtar şifreli depoda:** Yükleme anahtarı `android-signing/upload.jks.enc` olarak durur (AES-256-CBC, PBKDF2 200000 tur; takma ad `zarfla`, sahip `CN=Demir Games Studio`). Düz `.jks` ve `key.properties` asla depoya girmez (`.gitignore`).
+- **Parola secret'ta:** GitHub Actions secret'ı `SIGNING_PASSPHRASE` (hem şifre çözme hem keystore/key parolası). CI anahtarı geçici olarak çözer, `android/key.properties` yazar, derlemeden sonra siler. Secret yoksa (ör. fork) debug imzayla derler ve uyarır; bu AAB Play'e yüklenemez.
+- **Sürüm:** `versionName` 1.0.0 (`pubspec.yaml`), `versionCode` = `github.run_number + 100` (her derlemede artar).
+- **Çıktı:** Actions → Derleme → Artifacts → `zarfla-release-aab-signed` (14 gün). CI imza sahibini ve SHA-1/SHA-256 parmak izlerini loga yazar; parmak izleri gizli değildir.
+- **R8/küçültme kapalı** (`--no-shrink`, Gradle'da da `false`): Firebase ve Flutter için keep kuralı yazmak yerine güvenli yol seçildi; yansıma kaynaklı çalışma zamanı çökmesi riski yok. İleride açılırsa keep kuralları ve gerçek cihaz testi şart.
+- **Play App Signing kullanılacak:** Play Console'a bu anahtarla imzalı AAB yüklenir; Google uygulama imza anahtarını kendisi tutar, bizim anahtarımız yalnızca *yükleme anahtarı*dır.
+- **Anahtar kaybı:** Parola ya da anahtar kaybolursa Play Console → Uygulama bütünlüğü → Uygulama imzalama → **Yükleme anahtarını sıfırla** ile yeni yükleme anahtarı tanımlanır (uygulama imzası etkilenmez). Parolayı güvenli bir yerde yedekleyin.
 
 ## Yerelde derleme (bilgisayar varsa)
 

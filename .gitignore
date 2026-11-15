@@ -16,6 +16,7 @@ build/
 android/.gradle/
 android/local.properties
 android/key.properties
+key.properties
 android/app/upload-keystore.jks
 *.jks
 *.keystore
@@ -31,3 +32,8 @@ ios/
 rules-test/node_modules/
 rules-test/package-lock.json
 *-debug.log
+
+# İmza: yalnızca ŞİFRELİ anahtar (android-signing/upload.jks.enc) depoda durur; düz anahtar asla.
+*.jks
+*.keystore
+android/app/upload.jks
