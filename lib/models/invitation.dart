@@ -1,4 +1,6 @@
 import '../data/catalog.dart';
+import '../logic/iban.dart';
+import '../logic/url_check.dart';
 
 /// Program satırı (saat + açıklama). Önizlemedeki {t, x}.
 class ProgramStep {
@@ -73,6 +75,11 @@ class Invitation {
     this.wa = '',
     List<ProgramStep>? program,
     List<String>? notes,
+    this.liveUrl = '',
+    this.liveNote = '',
+    this.giftHolder = '',
+    this.giftIban = '',
+    this.giftBank = '',
     this.cover = '',
     List<String>? photos,
     this.status = 'draft',
@@ -112,6 +119,15 @@ class Invitation {
 
   /// Davetlilerden ricalar (en çok 4 not, her biri en çok 140 karakter). Editörde boş satır olabilir.
   List<String> notes;
+
+  /// Canlı yayın bağlantısı (https) ve kısa notu; ücretsiz ve ücretli davetiyede kullanılabilir. '' = yok.
+  String liveUrl;
+  String liveNote;
+
+  /// Hediye IBAN'ı (YALNIZ ücretli davetiye): hesap sahibi, IBAN (boşluksuz, büyük harf), banka adı. '' = yok.
+  String giftHolder;
+  String giftIban;
+  String giftBank;
 
   /// Kapak fotoğrafının uygulama belgeler klasöründeki dosya adı ('' = yok).
   String cover;
@@ -183,6 +199,11 @@ class Invitation {
         'wa': wa,
         'program': program.map((e) => e.toJson()).toList(),
         'notes': sanitizeNotes(notes, trim: false),
+        'liveUrl': liveUrl,
+        'liveNote': liveNote,
+        'giftHolder': giftHolder,
+        'giftIban': giftIban,
+        'giftBank': giftBank,
         'cover': cover,
         'photos': photos,
         'status': status,
@@ -247,6 +268,11 @@ class Invitation {
       wa: s('wa'),
       program: prog,
       notes: notes,
+      liveUrl: s('liveUrl'),
+      liveNote: s('liveNote'),
+      giftHolder: s('giftHolder'),
+      giftIban: s('giftIban'),
+      giftBank: s('giftBank'),
       cover: s('cover'),
       photos: photos,
       status: s('status') == 'live' ? 'live' : 'draft',
@@ -264,7 +290,19 @@ class Invitation {
   /// Fotoğraflar çağıran tarafından data URI (önizleme) ya da URL (Aşama 2) olarak verilir.
   /// ANAHTAR SIRASI SÖZLEŞMEDİR: Firestore kuralları JSON'un `{"id":…,"type":…,"theme":…,`
   /// ile başladığını denetler (bkz. firestore.rules). [publicId] verilirse id yerine o yazılır.
-  Map<String, dynamic> toInviteData({required String coverSrc, required List<String> photoSrcs, String? publicId}) => {
+  Map<String, dynamic> toInviteData({
+    required String coverSrc,
+    required List<String> photoSrcs,
+    String? publicId,
+    String? planOverride,
+  }) {
+    final effPlan = planOverride ?? plan;
+    final liveClean = cleanLiveUrl(liveUrl);
+    final giftIbanN = normalizeIban(giftIban);
+    final giftHolderC = cleanGiftText(giftHolder, kGiftHolderMax);
+    // IBAN yalnız ücretli planda ve geçerliyse yazılır (ücretsizde asla; kurallar da reddeder).
+    final giftOk = effPlan == 'premium' && giftHolderC.isNotEmpty && isValidIban(giftIbanN);
+    return {
         'id': publicId ?? id,
         'type': type,
         'theme': theme,
@@ -283,9 +321,12 @@ class Invitation {
         'wa': wa,
         'program': program.map((e) => e.toJson()).toList(),
         'notes': sanitizeNotes(notes),
+        if (liveClean.isNotEmpty) 'live': {'url': liveClean, 'note': cleanGiftText(liveNote, kLiveNoteMax)},
+        if (giftOk) 'gift': {'holder': giftHolderC, 'iban': giftIbanN, 'bank': cleanGiftText(giftBank, kGiftBankMax)},
         'cover': coverSrc,
         'photos': photoSrcs,
         'status': status,
-        'plan': plan,
+        'plan': effPlan,
       };
+  }
 }

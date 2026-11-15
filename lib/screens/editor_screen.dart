@@ -10,9 +10,11 @@ import '../data/catalog.dart';
 import '../data/countries.dart';
 import '../l10n/strings.dart';
 import '../logic/date_utils.dart';
+import '../logic/iban.dart';
 import '../logic/lock_rules.dart';
 import '../logic/phone.dart';
 import '../logic/text_utils.dart';
+import '../logic/url_check.dart';
 import '../logic/validation.dart';
 import '../models/invitation.dart';
 import '../state/app_state.dart';
@@ -218,6 +220,7 @@ class DetailsForm extends StatefulWidget {
 
 class _DetailsFormState extends State<DetailsForm> {
   late final TextEditingController _n1, _n2, _host, _msg, _venue, _address, _wa;
+  late final TextEditingController _liveUrl, _liveNote, _giftHolder, _giftIban, _giftBank;
   late String _dial; // WhatsApp ülke kodu (artısız); boş = "diğer"
   late final FocusNode _n1Focus, _n2Focus;
   final Map<ProgramStep, TextEditingController> _stepCtl = {};
@@ -253,6 +256,11 @@ class _DetailsFormState extends State<DetailsForm> {
       final composed = composeWa(_dial, parts.local);
       if (composed.isNotEmpty && composed != inv.wa) inv.wa = composed;
     }
+    _liveUrl = TextEditingController(text: inv.liveUrl);
+    _liveNote = TextEditingController(text: inv.liveNote);
+    _giftHolder = TextEditingController(text: inv.giftHolder);
+    _giftIban = TextEditingController(text: formatIban(inv.giftIban));
+    _giftBank = TextEditingController(text: inv.giftBank);
     for (final n in inv.notes) {
       _noteCtl.add(TextEditingController(text: n));
     }
@@ -267,7 +275,7 @@ class _DetailsFormState extends State<DetailsForm> {
       _commitName(true, silent: true);
       _commitName(false, silent: true);
     }
-    for (final c in [_n1, _n2, _host, _msg, _venue, _address, _wa, ..._stepCtl.values, ..._noteCtl]) {
+    for (final c in [_n1, _n2, _host, _msg, _venue, _address, _wa, _liveUrl, _liveNote, _giftHolder, _giftIban, _giftBank, ..._stepCtl.values, ..._noteCtl]) {
       c.dispose();
     }
     _n1Focus.dispose();
@@ -850,6 +858,36 @@ class _DetailsFormState extends State<DetailsForm> {
             ],
           ),
         ),
+        // Canlı yayın bağlantısı (ücretsiz ve ücretli)
+        FieldBlock(
+          label: context.t('streamSec'),
+          hint: context.t('streamHint'),
+          error: err('live'),
+          child: Column(
+            children: [
+              TextField(
+                controller: _liveUrl,
+                keyboardType: TextInputType.url,
+                autocorrect: false,
+                inputFormatters: [LengthLimitingTextInputFormatter(kLiveUrlMax + 40), FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                decoration: fieldDecoration(hint: context.t('streamPh')),
+                style: bodyStyle(16),
+                onChanged: (v) => _set(() => inv.liveUrl = v.trim()),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _liveNote,
+                maxLength: kLiveNoteMax,
+                inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'[\r\n]'))],
+                decoration: fieldDecoration(hint: context.t('streamNotePh')),
+                style: bodyStyle(16),
+                onChanged: (v) => _set(() => inv.liveNote = v),
+              ),
+            ],
+          ),
+        ),
+        // Hediye için IBAN (yalnız ücretli)
+        _giftBlock(err),
         // Görünüm
         Container(
           margin: const EdgeInsets.only(top: 8, bottom: 10),
@@ -957,6 +995,79 @@ class _DetailsFormState extends State<DetailsForm> {
         ),
         FieldBlock(label: context.t('music'), hint: context.t('musicSoonApp'), child: const SizedBox.shrink()),
       ],
+    );
+  }
+
+  /// Hediye IBAN'ı bölümü. Ücretsiz davetiyede kilitli (alanlar kapalı, "1 Davetiye Hakkı ile" rozeti).
+  Widget _giftBlock(String? Function(String) err) {
+    final open = isPaidInvite(inv);
+    return Opacity(
+      opacity: open ? 1 : 0.6,
+      child: FieldBlock(
+        label: context.t('giftSec'),
+        hint: open ? null : context.t('giftLockHint'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!open)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.lock_outline, size: 16, color: AppColors.muted),
+                    const SizedBox(width: 6),
+                    Flexible(child: Text(context.t('giftLockBadge'), style: bodyStyle(12, weight: FontWeight.w600, color: AppColors.primary))),
+                  ],
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(context.t('giftHostNote'), style: bodyStyle(12, color: AppColors.muted, height: 1.4)),
+            ),
+            Text(context.t('giftHolderL'), style: bodyStyle(12, weight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: _giftHolder,
+              enabled: open,
+              maxLength: kGiftHolderMax,
+              inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'[\r\n]'))],
+              decoration: fieldDecoration(hint: context.t('giftHolderPh')),
+              style: bodyStyle(16),
+              onChanged: (v) => _set(() => inv.giftHolder = v),
+            ),
+            if (err('giftHolder') != null)
+              Text(err('giftHolder')!, style: bodyStyle(13, color: AppColors.err)),
+            const SizedBox(height: 8),
+            Text(context.t('giftIbanL'), style: bodyStyle(12, weight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: _giftIban,
+              enabled: open,
+              autocorrect: false,
+              textCapitalization: TextCapitalization.characters,
+              keyboardType: TextInputType.visiblePassword,
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9 ]')), LengthLimitingTextInputFormatter(42)],
+              decoration: fieldDecoration(hint: context.t('giftIbanPh')),
+              style: bodyStyle(16),
+              onChanged: (v) => _set(() => inv.giftIban = normalizeIban(v)),
+            ),
+            if (err('giftIban') != null)
+              Text(err('giftIban')!, style: bodyStyle(13, color: AppColors.err)),
+            const SizedBox(height: 8),
+            Text(context.t('giftBankL'), style: bodyStyle(12, weight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: _giftBank,
+              enabled: open,
+              maxLength: kGiftBankMax,
+              inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'[\r\n]'))],
+              decoration: fieldDecoration(hint: context.t('giftBankPh')),
+              style: bodyStyle(16),
+              onChanged: (v) => _set(() => inv.giftBank = v),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

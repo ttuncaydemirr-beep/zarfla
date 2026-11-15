@@ -49,4 +49,41 @@ void main() {
       expect(validateInvitation(inv), isEmpty);
     });
   });
+  group('canlı yayın ve hediye IBAN doğrulaması', () {
+    Invitation full() => _inv('nisan')
+      ..n1 = 'Test A'
+      ..n2 = 'Test B'
+      ..date = '2027-06-12'
+      ..venue = 'Test Venue'
+      ..wa = '905551112233';
+
+    test('geçersiz canlı yayın bağlantısı hata verir, boş serbest', () {
+      expect(validateInvitation(full()..liveUrl = 'http://x.com/a')['live'], 'streamErr');
+      expect(validateInvitation(full()..liveUrl = 'javascript:alert(1)')['live'], 'streamErr');
+      expect(validateInvitation(full()..liveUrl = 'https://youtu.be/abc'), isEmpty);
+      expect(validateInvitation(full()), isEmpty);
+    });
+
+    test('IBAN: ücretli taslakta (ücretli tasarım) doğrulanır; ücretsizde yok sayılır', () {
+      final paid = full()
+        ..theme = 'altin'
+        ..giftIban = 'TR330006100519786457841327';
+      var e = validateInvitation(paid);
+      expect(e['giftIban'], 'giftErrIban');
+      expect(e['giftHolder'], 'giftErrHolder');
+      paid
+        ..giftIban = 'TR330006100519786457841326'
+        ..giftHolder = 'Ali Demir';
+      expect(validateInvitation(paid), isEmpty);
+      final free = full()..giftIban = 'bozuk';
+      expect(validateInvitation(free), isEmpty);
+      // yayındaki ücretli davetiye
+      final live = full()
+        ..plan = 'premium'
+        ..status = 'live'
+        ..giftIban = 'bozuk';
+      e = validateInvitation(live);
+      expect(e['giftIban'], 'giftErrIban');
+    });
+  });
 }

@@ -84,7 +84,7 @@ String inviteDataJson(
   required String coverUrl,
   required List<String> photoUrls,
 }) {
-  final m = inv.toInviteData(coverSrc: coverUrl, photoSrcs: photoUrls, publicId: publicId);
+  final m = inv.toInviteData(coverSrc: coverUrl, photoSrcs: photoUrls, publicId: publicId, planOverride: localPlan);
   m['status'] = 'live';
   m['plan'] = localPlan; // davetli sayfası 'premium' görünce "Zarfla ile hazırlandı" yazısını gizler
   return jsonEncode(m);

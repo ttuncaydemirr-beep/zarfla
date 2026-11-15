@@ -10,6 +10,7 @@ rules_version = '2';
 // düzenli ifadelerle bağlanır: JSON {"id":<belge kimliği>,"type":<type>,"theme":<theme>, ile başlamalı;
 // id/type/theme/plan/status/n1/n2/date anahtarları birer kez geçmeli ve üst düzey alanlarla aynı olmalı;
 // harf/rakam/tırnak için \u00XX kaçışı yasak (anahtar gizleme hilesine karşı).
+// Hediye IBAN'ı ("gift":{"iban":…}) yalnız plan "paid" iken yazılabilir (ücretsizde "iban": anahtarı reddedilir).
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -63,7 +64,11 @@ service cloud.firestore {
             && d.data.matches('(?s).*"n2":"\\Q' + d.n2 + '\\E".*')
             && d.data.matches('(?s).*"date":"' + d.date + '".*')
             && d.data.matches('(?s).*"status":"live".*')
-            && d.data.matches('(?s).*"plan":"' + (d.plan == 'paid' ? 'premium' : 'free') + '".*');
+            && d.data.matches('(?s).*"plan":"' + (d.plan == 'paid' ? 'premium' : 'free') + '".*')
+            // Hediye IBAN'ı YALNIZ ücretli planda: ücretsiz belgenin data JSON'unda "iban": anahtarı olamaz.
+            // (Anahtar \u0069 gibi kaçışla gizlenemez: yukarıda \u00XX harf kaçışı yasak. Kullanıcı metnindeki
+            // tırnaklar JSON'da \" olarak kaçışlı olduğundan metin içinden sahte "iban": üretilemez.)
+            && (d.plan == 'paid' || !d.data.matches('(?s).*"iban"\\s*:.*'));
       }
 
       // Her yazmada (create + update) geçerli alan denetimi.

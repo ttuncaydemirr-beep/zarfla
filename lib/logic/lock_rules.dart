@@ -1,3 +1,4 @@
+import '../data/catalog.dart';
 import '../models/invitation.dart';
 import 'date_utils.dart';
 
@@ -10,6 +11,12 @@ const int kDateEdits = 2;
 const int kDateWindowDays = 60;
 
 bool isLocked(Invitation inv) => inv.status == 'live' && inv.plan == 'premium';
+
+/// Bu davetiye ücretli olacak/ücretli mi? (Hediye IBAN'ı bölümü yalnız bunlarda açıktır.)
+/// Yayındaysa plan belirler; taslakta ücretli tasarım seçilmişse ücretli sayılır (ücretli tasarım zaten
+/// ücretsiz yayınlanamaz). Ücretsiz tasarımlı taslakta plan yayın ekranında seçildiği için bölüm kilitli görünür.
+bool isPaidInvite(Invitation inv) =>
+    inv.plan == 'premium' || (inv.status != 'live' && (kThemes[inv.theme]?.premium ?? false));
 
 bool canChangeTypeOrTheme(Invitation inv) => !isLocked(inv);
 

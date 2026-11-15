@@ -57,6 +57,19 @@ describe('logic', () => {
     assert.equal(L.ruleDataOk(data, { ...lock, plan: 'free' }, ID), false);
   });
 
+  test('buildPaidData: live ve gift alanları aynen geçer (IBAN ücretli planda serbest, ücretsiz kuralda reddedilir)', () => {
+    const live = { url: 'https://youtu.be/abc', note: 'Yayın 19:00' };
+    const gift = { holder: 'Ali Demir', iban: 'TR330006100519786457841326', bank: 'Banka' };
+    const { data, lock } = L.buildPaidData(dataJson({ extra: { live, gift } }), ID);
+    const o = JSON.parse(data);
+    assert.deepEqual(o.live, live);
+    assert.deepEqual(o.gift, gift);
+    assert.ok(L.ruleDataOk(data, { ...lock, plan: 'paid' }, ID));
+    assert.equal(L.ruleDataOk(data.replace('"plan":"premium"', '"plan":"free"'), { ...lock, plan: 'free' }, ID), false);
+    // eski davetiye (live/gift yok) sorunsuz
+    assert.equal(JSON.parse(L.buildPaidData(dataJson(), ID).data).gift, undefined);
+  });
+
   test('buildPaidData: geçersiz veri reddedilir', () => {
     const bad = (s) => assert.throws(() => L.buildPaidData(s, ID), (e) => e instanceof L.RedeemError && e.code === 'invalid-argument');
     bad('not json');

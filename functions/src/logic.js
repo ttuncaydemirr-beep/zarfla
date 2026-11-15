@@ -91,6 +91,8 @@ function ruleDataOk(json, f, id) {
   if (!json.includes('"date":"' + f.date + '"')) return false;
   if (!json.includes('"status":"live"')) return false;
   if (!json.includes('"plan":"' + (f.plan === 'paid' ? 'premium' : 'free') + '"')) return false;
+  // Hediye IBAN'ı yalnız ücretli planda (kurallardaki dataOk ile aynı).
+  if (f.plan !== 'paid' && /"iban"\s*:/.test(json)) return false;
   return true;
 }
 

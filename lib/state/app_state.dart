@@ -454,6 +454,7 @@ class AppState extends ChangeNotifier {
       final d = await _photos.dataUri(p);
       if (d.isNotEmpty) photos.add(d);
     }
-    return inv.toInviteData(coverSrc: cover, photoSrcs: photos);
+    // Önizlemede ücretli olacak taslak da ücretli görünsün (hediye IBAN'ı kartı için).
+    return inv.toInviteData(coverSrc: cover, photoSrcs: photos, planOverride: isPaidInvite(inv) ? 'premium' : inv.plan);
   }
 }

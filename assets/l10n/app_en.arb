@@ -228,5 +228,22 @@
   "payDataErr": "The invitation details were not accepted. Check the names and date and try again; your payment is kept.",
   "payUnavailable": "Google Play payments are not available right now. Make sure the Play Store is up to date and you are signed in.",
   "paidPhotoErr": "Your invitation is live, but some photos could not be uploaded. Edit it and tap Update to try again.",
-  "payNote": "One-time payment through Google Play. Not a subscription."
+  "payNote": "One-time payment through Google Play. Not a subscription.",
+  "streamSec": "Live stream link (optional)",
+  "streamHint": "YouTube, Instagram, Facebook, Zoom, Google Meet, TikTok… Only links starting with https:// are accepted (up to 300 characters). Also available on free invitations.",
+  "streamPh": "Paste the stream link",
+  "streamNotePh": "Short note, e.g. The stream starts at 7 PM",
+  "streamErr": "The link must start with https:// and be at most 300 characters.",
+  "giftSec": "IBAN for gifts (optional)",
+  "giftHostNote": "Your IBAN is visible to everyone who receives the link. Only add the account you want to receive gifts on.",
+  "giftHolderL": "Account holder name",
+  "giftHolderPh": "Full name",
+  "giftIbanL": "IBAN number",
+  "giftIbanPh": "e.g. DE89 3704 0044 0532 …",
+  "giftBankL": "Bank name (optional)",
+  "giftBankPh": "e.g. Example Bank",
+  "giftErrHolder": "The account holder name is required for an IBAN.",
+  "giftErrIban": "Invalid IBAN. Please check it.",
+  "giftLockBadge": "With a 1 Invitation Pass",
+  "giftLockHint": "Gift IBAN is only available on paid invitations."
 }

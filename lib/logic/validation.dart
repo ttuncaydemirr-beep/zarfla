@@ -1,5 +1,8 @@
 import '../data/catalog.dart';
 import '../models/invitation.dart';
+import 'iban.dart';
+import 'lock_rules.dart';
+import 'url_check.dart';
 
 /// Yalnız rakamlar.
 String digitsOnly(String s) => s.replaceAll(RegExp(r'\D'), '');
@@ -11,7 +14,7 @@ bool isValidWhatsApp(String s) {
 }
 
 /// Yayın öncesi doğrulama. Dönen harita: alan → metin anahtarı (ARB).
-/// Alanlar: names, date, venue, wa.
+/// Alanlar: names, date, venue, wa, live, giftHolder, giftIban.
 Map<String, String> validateInvitation(Invitation inv) {
   final e = <String, String>{};
   final couple = kCoupleTypes.contains(inv.type);
@@ -22,5 +25,11 @@ Map<String, String> validateInvitation(Invitation inv) {
   if (inv.date.isEmpty || inv.time.isEmpty) e['date'] = 'reqDate';
   if (inv.venue.trim().isEmpty) e['venue'] = 'reqVenue';
   if (!isValidWhatsApp(inv.wa)) e['wa'] = 'reqWa';
+  if (inv.liveUrl.trim().isNotEmpty && !isValidLiveUrl(inv.liveUrl)) e['live'] = 'streamErr';
+  // Hediye IBAN'ı yalnız ücretli davetiyede; IBAN girildiyse sahibi adı zorunlu ve IBAN geçerli olmalı.
+  if (isPaidInvite(inv) && inv.giftIban.trim().isNotEmpty) {
+    if (cleanGiftText(inv.giftHolder, kGiftHolderMax).isEmpty) e['giftHolder'] = 'giftErrHolder';
+    if (!isValidIban(inv.giftIban)) e['giftIban'] = 'giftErrIban';
+  }
   return e;
 }

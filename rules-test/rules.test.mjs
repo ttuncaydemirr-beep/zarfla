@@ -2,6 +2,7 @@
 // Çalıştırma (depo kökünden):
 //   npx firebase-tools emulators:exec --project demo-zarfla --only firestore,storage \
 //     "node --test rules-test/rules.test.mjs"
+import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { after, before, beforeEach, describe, test } from 'node:test';
@@ -61,6 +62,8 @@ function dataJson(o = {}) {
     wa: '905551112233',
     program: [{ t: '19:00', x: 'Karşılama' }],
     notes: o.notes ?? [],
+    ...(o.live ? { live: o.live } : {}),
+    ...(o.gift ? { gift: o.gift } : {}),
     cover: o.cover ?? '',
     photos: o.photos ?? [],
     status: 'live',
@@ -285,6 +288,61 @@ describe('Firestore · okuma', () => {
     await seed(ID, seededFree('alice'));
     await assertFails(getDocs(collection(db(null), 'invites')));
     await assertFails(getDocs(collection(db('alice'), 'invites')));
+  });
+});
+
+// ============================================================================
+describe('Firestore · canlı yayın bağlantısı ve hediye IBAN\'ı', () => {
+  const GIFT = { holder: 'Ali Demir', iban: 'TR330006100519786457841326', bank: 'Örnek Banka' };
+  const LIVE = { url: 'https://youtu.be/abc123', note: 'Yayın 19:00\'da başlar' };
+  const premiumGift = (o = {}) => dataJson({ theme: 'altin', plan: 'premium', gift: GIFT, ...o });
+
+  test('G1 ücretsiz oluşturma: data içinde "iban" anahtarı reddedilir', async () => {
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { data: dataJson({ gift: GIFT }) })));
+  });
+  test('G2 ücretsiz oluşturma: canlı yayın bağlantısı serbest', async () => {
+    await assertSucceeds(setDoc(inv('alice'), freeDoc('alice', { data: dataJson({ live: LIVE }) })));
+  });
+  test('G3 ücretsiz güncelleme: IBAN eklenemez', async () => {
+    await seed(ID, seededFree('alice'));
+    await assertFails(updateDoc(inv('alice'), { data: dataJson({ gift: GIFT }) }));
+  });
+  test('G4 ücretsiz güncelleme: canlı yayın bağlantısı eklenebilir', async () => {
+    await seed(ID, seededFree('alice'));
+    await assertSucceeds(updateDoc(inv('alice'), { data: dataJson({ live: LIVE }) }));
+  });
+  test('G5 ücretsiz: not metninde "iban" sözcüğü geçmesi sorun değil (anahtar değil)', async () => {
+    await assertSucceeds(setDoc(inv('alice'), freeDoc('alice', { data: dataJson({ notes: ['IBAN için bize yazın'] }) })));
+  });
+  test('G6 ücretsiz: "iban" anahtarı \\u0069ban kaçışıyla gizlenemez', async () => {
+    const d = dataJson({}).replace('"status":"live"', '"\\u0069ban":"TR330006100519786457841326","status":"live"');
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { data: d })));
+  });
+  test('G7 ücretsiz: "iban" anahtarı boşluklu yazılsa da (\"iban\" :) reddedilir', async () => {
+    const d = dataJson({}).replace('"status":"live"', '"gift":{"iban" : "TR330006100519786457841326"},"status":"live"');
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { data: d })));
+  });
+  test('G8 ücretli güncelleme: IBAN + canlı yayın eklenebilir', async () => {
+    await seed(ID, seededPaid('alice'));
+    await assertSucceeds(updateDoc(inv('alice'), { data: premiumGift({ live: LIVE }) }));
+  });
+  test('G9 ücretli: IBAN sonradan kaldırılabilir', async () => {
+    await seed(ID, { ...seededPaid('alice'), data: premiumGift() });
+    await assertSucceeds(updateDoc(inv('alice'), { data: dataJson({ theme: 'altin', plan: 'premium' }) }));
+  });
+  test('G10 sunucunun (redeemPurchase) kurduğu ücretli belge live+gift alanlarını aynen korur ve sahibi güncelleyebilir', async () => {
+    const built = serverLogic.buildPaidData(premiumGift({ live: LIVE }), ID);
+    const o = JSON.parse(built.data);
+    assert.deepEqual(o.gift, GIFT);
+    assert.deepEqual(o.live, LIVE);
+    const t = serverLogic.paidTimes(Date.now());
+    await seed(ID, {
+      ownerUid: 'alice', schema: 1, data: built.data, plan: 'paid', status: 'live',
+      createdAt: Timestamp.fromMillis(Date.now()), expiresAt: Timestamp.fromMillis(t.expiresAtMs),
+      deleteAt: Timestamp.fromMillis(t.deleteAtMs), ...built.lock,
+    });
+    const next = { ...o, gift: { ...GIFT, bank: 'Başka Banka' } };
+    await assertSucceeds(updateDoc(inv('alice'), { data: JSON.stringify(next) }));
   });
 });
 

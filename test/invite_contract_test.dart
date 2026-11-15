@@ -121,6 +121,58 @@ void main() {
       expect(jsonDecode(jsonEncode(Invitation.fromJson(inv.toJson()).toJson()))['notes'], hasLength(4));
     });
 
+    test('live: geçerli https bağlantı her planda yazılır, geçersiz bağlantı yazılmaz', () {
+      final inv = _inv()
+        ..liveUrl = ' https://youtu.be/abc '
+        ..liveNote = 'Yayın 19:00\'da';
+      for (final plan in ['free', 'premium']) {
+        final m = jsonDecode(inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: plan, coverUrl: '', photoUrls: [])) as Map<String, dynamic>;
+        expect(m['live'], {'url': 'https://youtu.be/abc', 'note': 'Yayın 19:00\'da'});
+      }
+      inv.liveUrl = 'javascript:alert(1)';
+      final m2 = jsonDecode(inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'premium', coverUrl: '', photoUrls: [])) as Map<String, dynamic>;
+      expect(m2.containsKey('live'), isFalse);
+    });
+
+    test('gift: YALNIZ ücretli planda, geçerli IBAN + hesap sahibiyle yazılır; ücretsizde asla', () {
+      final inv = _inv()
+        ..giftHolder = 'Ali Demir'
+        ..giftIban = 'tr33 0006 1005 1978 6457 8413 26'
+        ..giftBank = 'Örnek Banka';
+      final paid = inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'premium', coverUrl: '', photoUrls: []);
+      final pm = jsonDecode(paid) as Map<String, dynamic>;
+      expect(pm['gift'], {'holder': 'Ali Demir', 'iban': 'TR330006100519786457841326', 'bank': 'Örnek Banka'});
+      final keys = pm.keys.toList();
+      expect(keys.indexOf('gift'), keys.indexOf('notes') + 1);
+      final free = inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'free', coverUrl: '', photoUrls: []);
+      expect(free.contains('iban'), isFalse, reason: free);
+      expect(RegExp(r'"iban"\s*:').hasMatch(free), isFalse);
+      // geçersiz IBAN ya da boş hesap sahibi: ücretli planda bile yazılmaz
+      inv.giftIban = 'TR330006100519786457841327';
+      expect(jsonDecode(inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'premium', coverUrl: '', photoUrls: [])).containsKey('gift'), isFalse);
+      inv
+        ..giftIban = 'TR330006100519786457841326'
+        ..giftHolder = '  ';
+      expect(jsonDecode(inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'premium', coverUrl: '', photoUrls: [])).containsKey('gift'), isFalse);
+    });
+
+    test('gift/live: tırnaklı metin anahtar sahteciliği yapmaz; eski kayıtta alanlar boş', () {
+      final inv = _inv()
+        ..giftHolder = '"theme":"altin"'
+        ..giftIban = 'TR330006100519786457841326'
+        ..liveUrl = 'https://youtu.be/a'
+        ..liveNote = '"plan":"premium"';
+      final j = inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'premium', coverUrl: '', photoUrls: []);
+      expect('"theme"'.allMatches(j).length, 1);
+      expect('"plan"'.allMatches(j).length, 1);
+      expect(RegExp(r'\\u00[2-7][0-9a-fA-F]').hasMatch(j), isFalse);
+      final old = Invitation.fromJson({'id': 'x'});
+      expect([old.liveUrl, old.liveNote, old.giftHolder, old.giftIban, old.giftBank], everyElement(''));
+      final rt = Invitation.fromJson(inv.toJson());
+      expect(rt.giftIban, 'TR330006100519786457841326');
+      expect(rt.liveUrl, 'https://youtu.be/a');
+    });
+
     test('notes: boşsa [] gider; sahte tırnaklı not anahtar sahteciliği yapmaz', () {
       var j = inviteDataJson(_inv(), publicId: 'AbCdEf123456', localPlan: 'free', coverUrl: '', photoUrls: []);
       expect(jsonDecode(j)['notes'], isEmpty);

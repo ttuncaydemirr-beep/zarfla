@@ -228,5 +228,22 @@
   "payDataErr": "Davetiye bilgileri kabul edilmedi. İsimleri ve tarihi kontrol edip tekrar deneyin; ödemeniz korunuyor.",
   "payUnavailable": "Google Play ödemesi şu an kullanılamıyor. Play Store'un güncel olduğundan ve oturum açık olduğundan emin olun.",
   "paidPhotoErr": "Davetiye yayınlandı ama bazı fotoğraflar yüklenemedi. Düzenleyip Güncelle'ye dokunarak tekrar deneyin.",
-  "payNote": "Tek seferlik ödeme, Google Play üzerinden alınır. Abonelik değildir."
+  "payNote": "Tek seferlik ödeme, Google Play üzerinden alınır. Abonelik değildir.",
+  "streamSec": "Canlı yayın bağlantısı (isteğe bağlı)",
+  "streamHint": "YouTube, Instagram, Facebook, Zoom, Google Meet, TikTok… Yalnızca https:// ile başlayan bağlantılar kabul edilir (en çok 300 karakter). Ücretsiz davetiyede de kullanılabilir.",
+  "streamPh": "Yayın bağlantısını yapıştırın",
+  "streamNotePh": "Kısa not, örn. Yayın 19:00'da başlar",
+  "streamErr": "Bağlantı https:// ile başlamalı ve en fazla 300 karakter olmalı.",
+  "giftSec": "Hediye için IBAN (isteğe bağlı)",
+  "giftHostNote": "IBAN'ınız bağlantıyı alan herkese görünür. Yalnızca hediye almak istediğiniz hesabı ekleyin.",
+  "giftHolderL": "Hesap sahibi adı",
+  "giftHolderPh": "Ad Soyad",
+  "giftIbanL": "IBAN numarası",
+  "giftIbanPh": "Örn. TR33 0006 1005 1978 …",
+  "giftBankL": "Banka adı (isteğe bağlı)",
+  "giftBankPh": "Örn. Ziraat Bankası",
+  "giftErrHolder": "IBAN için hesap sahibi adı gerekli.",
+  "giftErrIban": "Geçersiz IBAN. Lütfen kontrol edin.",
+  "giftLockBadge": "1 Davetiye Hakkı ile",
+  "giftLockHint": "Hediye IBAN'ı yalnızca ücretli davetiyelerde kullanılabilir."
 }

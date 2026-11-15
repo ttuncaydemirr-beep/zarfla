@@ -228,5 +228,22 @@
   "payDataErr": "Die Einladungsdaten wurden nicht angenommen. Prüfe Namen und Datum und versuche es erneut; deine Zahlung bleibt erhalten.",
   "payUnavailable": "Google-Play-Zahlungen sind gerade nicht verfügbar. Stelle sicher, dass der Play Store aktuell ist und du angemeldet bist.",
   "paidPhotoErr": "Deine Einladung ist online, aber einige Fotos konnten nicht hochgeladen werden. Bearbeite sie und tippe auf Aktualisieren.",
-  "payNote": "Einmalige Zahlung über Google Play. Kein Abo."
+  "payNote": "Einmalige Zahlung über Google Play. Kein Abo.",
+  "streamSec": "Livestream-Link (optional)",
+  "streamHint": "YouTube, Instagram, Facebook, Zoom, Google Meet, TikTok… Es werden nur Links mit https:// akzeptiert (max. 300 Zeichen). Auch in kostenlosen Einladungen verfügbar.",
+  "streamPh": "Streaming-Link einfügen",
+  "streamNotePh": "Kurze Notiz, z. B. Der Stream beginnt um 19 Uhr",
+  "streamErr": "Der Link muss mit https:// beginnen und darf höchstens 300 Zeichen lang sein.",
+  "giftSec": "IBAN für Geschenke (optional)",
+  "giftHostNote": "Ihre IBAN ist für jeden sichtbar, der den Link erhält. Fügen Sie nur das Konto hinzu, auf dem Sie Geschenke erhalten möchten.",
+  "giftHolderL": "Name des Kontoinhabers",
+  "giftHolderPh": "Vor- und Nachname",
+  "giftIbanL": "IBAN-Nummer",
+  "giftIbanPh": "z. B. DE89 3704 0044 0532 …",
+  "giftBankL": "Name der Bank (optional)",
+  "giftBankPh": "z. B. Beispielbank",
+  "giftErrHolder": "Für eine IBAN ist der Name des Kontoinhabers erforderlich.",
+  "giftErrIban": "Ungültige IBAN. Bitte prüfen.",
+  "giftLockBadge": "Mit 1 Einladungsrecht",
+  "giftLockHint": "Die Geschenk-IBAN ist nur in bezahlten Einladungen verfügbar."
 }
