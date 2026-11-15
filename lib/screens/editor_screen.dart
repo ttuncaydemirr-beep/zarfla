@@ -7,9 +7,11 @@ import 'package:provider/provider.dart';
 
 import '../cloud/invite_contract.dart';
 import '../data/catalog.dart';
+import '../data/countries.dart';
 import '../l10n/strings.dart';
 import '../logic/date_utils.dart';
 import '../logic/lock_rules.dart';
+import '../logic/phone.dart';
 import '../logic/text_utils.dart';
 import '../logic/validation.dart';
 import '../models/invitation.dart';
@@ -216,6 +218,7 @@ class DetailsForm extends StatefulWidget {
 
 class _DetailsFormState extends State<DetailsForm> {
   late final TextEditingController _n1, _n2, _host, _msg, _venue, _address, _wa;
+  late String _dial; // WhatsApp ülke kodu (artısız); boş = "diğer"
   late final FocusNode _n1Focus, _n2Focus;
   final Map<ProgramStep, TextEditingController> _stepCtl = {};
   final List<TextEditingController> _noteCtl = [];
@@ -241,7 +244,15 @@ class _DetailsFormState extends State<DetailsForm> {
     _msg = TextEditingController(text: inv.msg);
     _venue = TextEditingController(text: inv.venue);
     _address = TextEditingController(text: inv.address);
-    _wa = TextEditingController(text: inv.wa);
+    final deviceCountry = WidgetsBinding.instance.platformDispatcher.locale.countryCode;
+    final parts = parsePhone(inv.wa, fallbackDial: defaultDial(deviceCountry: deviceCountry, lang: inv.lang));
+    _dial = parts.dial;
+    _wa = TextEditingController(text: parts.local);
+    // Eski kayıtta başında 0 / artı / boşluk varsa bozuk wa.me bağlantısı olmasın: tek biçime çevir.
+    if (inv.wa.isNotEmpty) {
+      final composed = composeWa(_dial, parts.local);
+      if (composed.isNotEmpty && composed != inv.wa) inv.wa = composed;
+    }
     for (final n in inv.notes) {
       _noteCtl.add(TextEditingController(text: n));
     }
@@ -262,6 +273,16 @@ class _DetailsFormState extends State<DetailsForm> {
     _n1Focus.dispose();
     _n2Focus.dispose();
     super.dispose();
+  }
+
+  /// Numara alanı: başta +/00 ile yapıştırılan uluslararası numarada ülkeyi seç, başta 0'ı at; saklanan değer yalnız rakamdır.
+  void _onWaChanged(String v) {
+    final r = normalizeLocalInput(v, _dial);
+    if (r.changed) {
+      setState(() => _dial = r.parts.dial);
+      _wa.value = TextEditingValue(text: r.parts.local, selection: TextSelection.collapsed(offset: r.parts.local.length));
+    }
+    _set(() => inv.wa = composeWa(_dial, _wa.text));
   }
 
   void _onNameFocus(bool first) {
@@ -732,13 +753,60 @@ class _DetailsFormState extends State<DetailsForm> {
           error: err('wa'),
           child: Directionality(
             textDirection: TextDirection.ltr,
-            child: TextField(
-              controller: _wa,
-              keyboardType: TextInputType.phone,
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9 +()-]')), LengthLimitingTextInputFormatter(24)],
-              decoration: fieldDecoration(hint: context.t('phWa')),
-              style: bodyStyle(16),
-              onChanged: (v) => _set(() => inv.wa = v),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Semantics(
+                    label: context.t('waCode'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        border: Border.all(color: AppColors.field),
+                        borderRadius: BorderRadius.circular(AppRadii.sm),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _dial,
+                          menuMaxHeight: 360,
+                          items: [
+                            for (final c in kCountries)
+                              DropdownMenuItem<String>(
+                                value: c.dial,
+                                child: Text('${c.flag} +${c.dial}  ${c.name}', style: bodyStyle(15)),
+                              ),
+                            DropdownMenuItem<String>(
+                              value: '',
+                              child: Text('\u{1F310} +  ${context.t('waCodeOther')}', style: bodyStyle(15)),
+                            ),
+                          ],
+                          selectedItemBuilder: (_) => [
+                            for (final c in kCountries) Center(child: Text('${c.flag} +${c.dial}', style: bodyStyle(16))),
+                            Center(child: Text('\u{1F310} +', style: bodyStyle(16))),
+                          ],
+                          onChanged: (v) {
+                            if (v == null) return;
+                            setState(() => _dial = v);
+                            _set(() => inv.wa = composeWa(_dial, _wa.text));
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _wa,
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9 +()-]')), LengthLimitingTextInputFormatter(24)],
+                      decoration: fieldDecoration(hint: context.t('phWa')),
+                      style: bodyStyle(16),
+                      onChanged: _onWaChanged,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

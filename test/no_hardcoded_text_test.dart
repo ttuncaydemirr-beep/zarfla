@@ -10,6 +10,7 @@ import 'package:zarfla/models/invitation.dart';
 /// AÇIK İSTİSNALAR (bilinçli):
 ///  - lib/data/catalog.dart: çok dilli veri katalogları (tasarım adları, hazır davet mesajları, dil adları)
 ///  - lib/logic/text_utils.dart: Türkçe büyük harf mantığı (i→İ, ı→I), metin değil
+///  - lib/data/countries.dart: ülkelerin kendi dilindeki adları (Türkiye, Österreich...), arayüz metni değil
 ///  - lib/logic/sample_names.dart: eski örnek isimleri temizleyen tek seferlik geçiş listesi
 ///  - yorum satırları (// ve ///)
 void main() {
@@ -17,6 +18,7 @@ void main() {
     'lib/data/catalog.dart',
     'lib/logic/text_utils.dart',
     'lib/logic/sample_names.dart',
+    'lib/data/countries.dart',
   };
   final turkish = RegExp('[ğüşıöçİĞÜŞÖÇ]');
 
