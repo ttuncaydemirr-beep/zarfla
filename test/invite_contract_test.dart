@@ -156,6 +156,32 @@ void main() {
       expect(jsonDecode(inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'premium', coverUrl: '', photoUrls: [])).containsKey('gift'), isFalse);
     });
 
+    test('music: YALNIZ ücretli planda ve seçkideki parçaysa üst düzeyde yazılır; ücretsizde asla', () {
+      final inv = _inv()..music = 'dugun-wagner';
+      final pm = jsonDecode(inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'premium', coverUrl: '', photoUrls: [])) as Map<String, dynamic>;
+      expect(pm['music'], 'dugun-wagner');
+      final keys = pm.keys.toList();
+      expect(keys.indexOf('music'), keys.indexOf('notes') + 1); // live/gift yokken notes'tan hemen sonra
+      expect(keys.indexOf('music'), lessThan(keys.indexOf('cover')));
+      final free = inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'free', coverUrl: '', photoUrls: []);
+      expect(RegExp(r'"music"\s*:').hasMatch(free), isFalse, reason: free);
+      // bilinmeyen kimlik ücretli planda bile yazılmaz; yerel kayıtta da temizlenir
+      inv.music = '../x';
+      expect(jsonDecode(inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'premium', coverUrl: '', photoUrls: [])).containsKey('music'), isFalse);
+      expect(Invitation.fromJson({'id': 'x', 'music': '../x'}).music, '');
+      expect(Invitation.fromJson({'id': 'x', 'music': 5}).music, '');
+      expect(Invitation.fromJson({'id': 'x'}).music, '');
+      inv.music = 'kutlama-joplin';
+      expect(Invitation.fromJson(inv.toJson()).music, 'kutlama-joplin');
+      // müzik + IBAN + canlı yayın birlikte: sıra notes, live, gift, music
+      inv
+        ..liveUrl = 'https://youtu.be/a'
+        ..giftHolder = 'Ali Demir'
+        ..giftIban = 'TR330006100519786457841326';
+      final all = (jsonDecode(inviteDataJson(inv, publicId: 'AbCdEf123456', localPlan: 'premium', coverUrl: '', photoUrls: [])) as Map<String, dynamic>).keys.toList();
+      expect(all.sublist(all.indexOf('notes'), all.indexOf('notes') + 4), ['notes', 'live', 'gift', 'music']);
+    });
+
     test('gift/live: tırnaklı metin anahtar sahteciliği yapmaz; eski kayıtta alanlar boş', () {
       final inv = _inv()
         ..giftHolder = '"theme":"altin"'

@@ -64,6 +64,7 @@ function dataJson(o = {}) {
     notes: o.notes ?? [],
     ...(o.live ? { live: o.live } : {}),
     ...(o.gift ? { gift: o.gift } : {}),
+    ...(o.music !== undefined ? { music: o.music } : {}),
     cover: o.cover ?? '',
     photos: o.photos ?? [],
     status: 'live',
@@ -343,6 +344,53 @@ describe('Firestore · canlı yayın bağlantısı ve hediye IBAN\'ı', () => {
     });
     const next = { ...o, gift: { ...GIFT, bank: 'Başka Banka' } };
     await assertSucceeds(updateDoc(inv('alice'), { data: JSON.stringify(next) }));
+  });
+});
+
+// ============================================================================
+describe('Firestore · arka plan müziği (yalnız ücretli)', () => {
+  const premiumMusic = (o = {}) => dataJson({ theme: 'altin', plan: 'premium', music: 'dugun-wagner', ...o });
+
+  test('M1 ücretsiz oluşturma: data içinde "music" anahtarı reddedilir', async () => {
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { data: dataJson({ music: 'dugun-wagner' }) })));
+  });
+  test('M2 ücretsiz güncelleme: müzik eklenemez', async () => {
+    await seed(ID, seededFree('alice'));
+    await assertFails(updateDoc(inv('alice'), { data: dataJson({ music: 'kutlama-joplin' }) }));
+  });
+  test('M3 ücretsiz: not metninde "music" sözcüğü sorun değil (anahtar değil)', async () => {
+    await assertSucceeds(setDoc(inv('alice'), freeDoc('alice', { data: dataJson({ notes: ['"music": lütfen getirin'] }) })));
+  });
+  test('M4 ücretsiz: "music" anahtarı \\u006dusic kaçışıyla ya da boşlukla gizlenemez', async () => {
+    const d1 = dataJson({}).replace('"status":"live"', '"\\u006dusic":"dugun-wagner","status":"live"');
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { data: d1 })));
+    const d2 = dataJson({}).replace('"status":"live"', '"music" : "dugun-wagner","status":"live"');
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { data: d2 })));
+  });
+  test('M5 ücretli güncelleme: müzik eklenebilir, değiştirilebilir, kaldırılabilir', async () => {
+    await seed(ID, seededPaid('alice'));
+    await assertSucceeds(updateDoc(inv('alice'), { data: premiumMusic() }));
+    await assertSucceeds(updateDoc(inv('alice'), { data: premiumMusic({ music: 'klasik-grieg' }) }));
+    await assertSucceeds(updateDoc(inv('alice'), { data: dataJson({ theme: 'altin', plan: 'premium' }) }));
+  });
+  test('M6 ücretli: geçersiz müzik değeri (adres, büyük harf, boş, çift anahtar) reddedilir', async () => {
+    await seed(ID, seededPaid('alice'));
+    for (const m of ['https://evil.example/a.mp3', '../x', 'Dugun', '', 'a'.repeat(41)]) {
+      await assertFails(updateDoc(inv('alice'), { data: premiumMusic({ music: m }) }));
+    }
+    const dup = premiumMusic().replace('"status":"live"', '"music":"klasik-grieg","status":"live"');
+    await assertFails(updateDoc(inv('alice'), { data: dup }));
+  });
+  test('M7 sunucunun (redeemPurchase) kurduğu ücretli belge müziği aynen korur', async () => {
+    const built = serverLogic.buildPaidData(premiumMusic(), ID);
+    assert.equal(JSON.parse(built.data).music, 'dugun-wagner');
+    const t = serverLogic.paidTimes(Date.now());
+    await seed(ID, {
+      ownerUid: 'alice', schema: 1, data: built.data, plan: 'paid', status: 'live',
+      createdAt: Timestamp.fromMillis(Date.now()), expiresAt: Timestamp.fromMillis(t.expiresAtMs),
+      deleteAt: Timestamp.fromMillis(t.deleteAtMs), ...built.lock,
+    });
+    await assertSucceeds(updateDoc(inv('alice'), { data: built.data.replace('"dugun-wagner"', '"kutlama-funky"') }));
   });
 });
 

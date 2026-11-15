@@ -70,6 +70,18 @@ describe('logic', () => {
     assert.equal(JSON.parse(L.buildPaidData(dataJson(), ID).data).gift, undefined);
   });
 
+  test('buildPaidData + ruleDataOk: arka plan müziği yalnız ücretli planda ve kimlik biçiminde', () => {
+    const { data, lock } = L.buildPaidData(dataJson({ extra: { music: 'dugun-wagner' } }), ID);
+    assert.equal(JSON.parse(data).music, 'dugun-wagner');
+    assert.ok(L.ruleDataOk(data, { ...lock, plan: 'paid' }, ID));
+    assert.equal(L.ruleDataOk(data.replace('"plan":"premium"', '"plan":"free"'), { ...lock, plan: 'free' }, ID), false);
+    for (const bad of ['https://x.example/a.mp3', 'Dugun', '', 'a'.repeat(41)]) {
+      assert.throws(() => L.buildPaidData(dataJson({ extra: { music: bad } }), ID), (e) => e instanceof L.RedeemError, bad);
+    }
+    const dup = data.replace('"status":"live"', '"music":"klasik-grieg","status":"live"');
+    assert.equal(L.ruleDataOk(dup, { ...lock, plan: 'paid' }, ID), false);
+  });
+
   test('buildPaidData: geçersiz veri reddedilir', () => {
     const bad = (s) => assert.throws(() => L.buildPaidData(s, ID), (e) => e instanceof L.RedeemError && e.code === 'invalid-argument');
     bad('not json');

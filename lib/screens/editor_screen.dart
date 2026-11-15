@@ -22,6 +22,7 @@ import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/invite_view.dart';
 import '../widgets/layout_thumb.dart';
+import '../widgets/music_picker.dart';
 import '../widgets/ornament.dart';
 import 'done_screen.dart';
 import 'publish_screen.dart';
@@ -993,7 +994,12 @@ class _DetailsFormState extends State<DetailsForm> {
             ],
           ),
         ),
-        FieldBlock(label: context.t('music'), hint: context.t('musicSoonApp'), child: const SizedBox.shrink()),
+        MusicPicker(
+          selected: inv.music,
+          open: isPaidInvite(inv),
+          type: inv.type,
+          onChanged: (id) => setState(() => _set(() => inv.music = id)),
+        ),
       ],
     );
   }

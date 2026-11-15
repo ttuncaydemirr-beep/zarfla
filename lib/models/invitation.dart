@@ -1,4 +1,5 @@
 import '../data/catalog.dart';
+import '../data/music.dart';
 import '../logic/iban.dart';
 import '../logic/url_check.dart';
 
@@ -80,6 +81,7 @@ class Invitation {
     this.giftHolder = '',
     this.giftIban = '',
     this.giftBank = '',
+    this.music = '',
     this.cover = '',
     List<String>? photos,
     this.status = 'draft',
@@ -128,6 +130,9 @@ class Invitation {
   String giftHolder;
   String giftIban;
   String giftBank;
+
+  /// Arka plan müziği: kMusicTracks'teki parça kimliği ('' = müzik yok). YALNIZ ücretli davetiyede yayımlanır.
+  String music;
 
   /// Kapak fotoğrafının uygulama belgeler klasöründeki dosya adı ('' = yok).
   String cover;
@@ -204,6 +209,7 @@ class Invitation {
         'giftHolder': giftHolder,
         'giftIban': giftIban,
         'giftBank': giftBank,
+        'music': music,
         'cover': cover,
         'photos': photos,
         'status': status,
@@ -273,6 +279,7 @@ class Invitation {
       giftHolder: s('giftHolder'),
       giftIban: s('giftIban'),
       giftBank: s('giftBank'),
+      music: cleanMusicId(j['music']),
       cover: s('cover'),
       photos: photos,
       status: s('status') == 'live' ? 'live' : 'draft',
@@ -302,6 +309,8 @@ class Invitation {
     final giftHolderC = cleanGiftText(giftHolder, kGiftHolderMax);
     // IBAN yalnız ücretli planda ve geçerliyse yazılır (ücretsizde asla; kurallar da reddeder).
     final giftOk = effPlan == 'premium' && giftHolderC.isNotEmpty && isValidIban(giftIbanN);
+    // Müzik yalnız ücretli planda ve seçkideki bir parçaysa yazılır (ücretsizde asla; kurallar da reddeder).
+    final musicId = effPlan == 'premium' ? cleanMusicId(music) : '';
     return {
         'id': publicId ?? id,
         'type': type,
@@ -323,6 +332,7 @@ class Invitation {
         'notes': sanitizeNotes(notes),
         if (liveClean.isNotEmpty) 'live': {'url': liveClean, 'note': cleanGiftText(liveNote, kLiveNoteMax)},
         if (giftOk) 'gift': {'holder': giftHolderC, 'iban': giftIbanN, 'bank': cleanGiftText(giftBank, kGiftBankMax)},
+        if (musicId.isNotEmpty) 'music': musicId,
         'cover': coverSrc,
         'photos': photoSrcs,
         'status': status,

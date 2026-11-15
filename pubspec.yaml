@@ -17,6 +17,9 @@ dependencies:
   path_provider: ^2.1.4
   image_picker: ^1.1.2
   webview_flutter: ^4.9.0
+  # Editörde müzik önizlemesi: gizli WebView'de <audio> (yeni ses paketi yok). Android'e özgü
+  # setMediaPlaybackRequiresUserGesture için doğrudan bağımlılık (webview_flutter zaten bunu getiriyor).
+  webview_flutter_android: ">=3.16.0"
   url_launcher: ^6.3.0
   flutter_svg: ^2.0.10
   # Firebase (Aşama 2). Üst sınır bilerek açık: derleme makinesi pub.dev'e erişemediği için sürümler

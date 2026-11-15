@@ -93,6 +93,9 @@ function ruleDataOk(json, f, id) {
   if (!json.includes('"plan":"' + (f.plan === 'paid' ? 'premium' : 'free') + '"')) return false;
   // Hediye IBAN'ı yalnız ücretli planda (kurallardaki dataOk ile aynı).
   if (f.plan !== 'paid' && /"iban"\s*:/.test(json)) return false;
+  // Arka plan müziği yalnız ücretli planda; değer seçki kimliği biçiminde (kurallardaki dataOk ile aynı).
+  if (/"music"\s*:[\s\S]*"music"\s*:/.test(json)) return false;
+  if (/"music"\s*:/.test(json) && (f.plan !== 'paid' || !/"music":"[a-z0-9-]{1,40}"[,}]/.test(json))) return false;
   return true;
 }
 

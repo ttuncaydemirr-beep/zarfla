@@ -11,6 +11,7 @@ rules_version = '2';
 // id/type/theme/plan/status/n1/n2/date anahtarları birer kez geçmeli ve üst düzey alanlarla aynı olmalı;
 // harf/rakam/tırnak için \u00XX kaçışı yasak (anahtar gizleme hilesine karşı).
 // Hediye IBAN'ı ("gift":{"iban":…}) yalnız plan "paid" iken yazılabilir (ücretsizde "iban": anahtarı reddedilir).
+// Arka plan müziği ("music":"<parça kimliği>") de yalnız plan "paid" iken yazılabilir; kimlik [a-z0-9-]{1,40}.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -68,7 +69,12 @@ service cloud.firestore {
             // Hediye IBAN'ı YALNIZ ücretli planda: ücretsiz belgenin data JSON'unda "iban": anahtarı olamaz.
             // (Anahtar \u0069 gibi kaçışla gizlenemez: yukarıda \u00XX harf kaçışı yasak. Kullanıcı metnindeki
             // tırnaklar JSON'da \" olarak kaçışlı olduğundan metin içinden sahte "iban": üretilemez.)
-            && (d.plan == 'paid' || !d.data.matches('(?s).*"iban"\\s*:.*'));
+            && (d.plan == 'paid' || !d.data.matches('(?s).*"iban"\\s*:.*'))
+            // Arka plan müziği YALNIZ ücretli planda (aynı gerekçe: anahtar kaçışla gizlenemez, metinden sahtesi üretilemez).
+            // Ücretli planda değer yalnız seçki kimliği biçiminde olabilir (dosya yolu/adres değil).
+            && once(d, 'music')
+            && (d.plan == 'paid' || !d.data.matches('(?s).*"music"\\s*:.*'))
+            && (!d.data.matches('(?s).*"music"\\s*:.*') || d.data.matches('(?s).*"music":"[a-z0-9-]{1,40}"[,}].*'));
       }
 
       // Her yazmada (create + update) geçerli alan denetimi.
