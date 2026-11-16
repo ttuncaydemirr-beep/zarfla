@@ -112,7 +112,7 @@ jobs:
           chk() { # $1 yol, $2 beklenen başlık parçası
             local hdr; hdr=$(curl -fsSI --retry 5 --retry-delay 5 "$B$1")
             echo "$1 → $(echo "$hdr" | head -1)"
-            echo "$hdr" | grep -qi "$2" || { echo "::error::$1: '$2' yok"; echo "$hdr"; exit 1; }
+            grep -qi "$2" <<<"$hdr" || { echo "::error::$1: '$2' yok"; echo "$hdr"; exit 1; }
           }
           chk "/davetiye/?id=AbCdEf123456&g=Test" "x-robots-tag: noindex"
           chk "/davetiye/?id=AbCdEf123456" "content-security-policy:"
@@ -122,7 +122,7 @@ jobs:
           chk "/" "content-type: text/html"
           code=$(curl -s -o /dev/null -w '%{http_code}' "$B/yok-boyle-sayfa")
           test "$code" = "404" || { echo "::error::404 sayfası $code döndü"; exit 1; }
-          curl -fsS "$B/davetiye/?id=AbCdEf123456" | grep -q 'ZARFLA_MUSIC_BASE' || { echo "::error::yükleyici yok"; exit 1; }
+          curl -fsS "$B/davetiye/?id=AbCdEf123456" -o /tmp/page.html && grep -q 'ZARFLA_MUSIC_BASE' /tmp/page.html || { echo "::error::yükleyici yok"; exit 1; }
 
       - name: Fonksiyon listesi
         if: success() && contains(inputs.only, 'functions')
