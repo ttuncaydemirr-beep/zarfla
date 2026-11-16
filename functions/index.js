@@ -66,7 +66,8 @@ function deps() {
   };
 }
 
-/** Uygulama: satın alma → redeemPurchase → başarıda tüketme. Girdi: { inviteId, purchaseToken, productId, data }. */
+/** Uygulama: satın alma → redeemPurchase → başarıda tüketme. Girdi: { inviteId, purchaseToken, productId, data }.
+ *  productId zarfla_invite_1 (tek davetiye, doğrudan) ya da zarfla_invite_3 (3 hak → credits/{uid}; inviteId varsa 1'i hemen kullanılır). */
 exports.redeemPurchase = onCall({ timeoutSeconds: 60 }, async (req) => {
   const uid = req.auth && req.auth.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'no-auth');
@@ -75,6 +76,19 @@ exports.redeemPurchase = onCall({ timeoutSeconds: 60 }, async (req) => {
   } catch (e) {
     if (e instanceof L.RedeemError) throw new HttpsError(e.code, e.reason);
     logger.error('redeemPurchase failed', e);
+    throw new HttpsError('unavailable', 'server-error');
+  }
+});
+
+/** Paket hakkı kullan: { inviteId, data } → credits/{uid}'den 1 hak düşer, davetiye ücretli yazılır (Play'e gidilmez). */
+exports.useCredit = onCall({ timeoutSeconds: 30 }, async (req) => {
+  const uid = req.auth && req.auth.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'no-auth');
+  try {
+    return await S.useCredit(deps(), uid, req.data);
+  } catch (e) {
+    if (e instanceof L.RedeemError) throw new HttpsError(e.code, e.reason);
+    logger.error('useCredit failed', e);
     throw new HttpsError('unavailable', 'server-error');
   }
 });

@@ -8,9 +8,26 @@ library;
 
 const String kInviteProductId = 'zarfla_invite_1';
 
+/// "Düğün Zinciri": 3 Davetiye Hakkı (tüketilebilir). Sunucu 3 hakkı credits/{uid} defterine yazar;
+/// her ücretli yayın 1 hak kullanır (useCredit). Herhangi 3 davetiye için (kına + nişan + düğün gibi).
+const String kBundleProductId = 'zarfla_invite_3';
+
+/// Uygulamanın sattığı tüm ürünler.
+const Set<String> kProductIds = {kInviteProductId, kBundleProductId};
+
+/// Ürünün verdiği hak sayısı (functions/src/logic.js PRODUCT_RIGHTS ile aynı). Bilinmeyen ürün: 0.
+int rightsFor(String productId) => switch (productId) {
+      kInviteProductId => 1,
+      kBundleProductId => 3,
+      _ => 0,
+    };
+
+bool isBundleProduct(String productId) => rightsFor(productId) > 1;
+
 /// Cloud Functions bölgesi (functions/index.js ile aynı).
 const String kFunctionsRegion = 'europe-west3';
 const String kRedeemFunction = 'redeemPurchase';
+const String kUseCreditFunction = 'useCredit';
 
 /// Sunucu reddettiğinde alımla ne yapılacağı.
 enum RedeemAction {
@@ -43,14 +60,20 @@ RedeemFailure redeemFailureFor(String code, String? reason) {
       return const RedeemFailure('payUsed', RedeemAction.consume);
     case 'needs-invite':
       return const RedeemFailure('payCredit', RedeemAction.keep);
+    case 'no-credit':
+      // Sunucuda bakiye kalmamış (başka cihazda kullanıldı / iade): yeni satın almaya geçilir.
+      return const RedeemFailure('creditNone', RedeemAction.keep);
     case 'pending':
       return const RedeemFailure('payPending', RedeemAction.keep);
     case 'voided':
       return const RedeemFailure('payRefunded', RedeemAction.drop);
+    case 'bad-product':
+      // Sunucu ürünü tanımıyor (ör. paket ürünü sunucu yayınından önce satıldı): alım korunur,
+      // sunucu güncellenince açılışta / "Satın alımı geri yükle" ile tamamlanır.
+      return const RedeemFailure('payVerifyErr', RedeemAction.keep);
     case 'not-purchased':
     case 'consumed':
     case 'invalid-token':
-    case 'bad-product':
     case 'bad-token':
       return const RedeemFailure('payErr', RedeemAction.drop);
     case 'bad-data':
@@ -116,3 +139,56 @@ String restoreMessageKey(List<String?> results, {int pending = 0, bool queryFail
   if (results.any((r) => !settled.contains(r))) return 'restoreErr';
   return 'restoreNone';
 }
+
+// ---- "Düğün Zinciri" paketi: hak bakiyesi, yayın yolu, tasarruf rozeti ----
+
+/// Sunucu yanıtındaki (redeemPurchase / useCredit) güncel bakiye; yoksa null.
+int? creditsFromResponse(Map<String, dynamic> res) {
+  final c = res['credits'];
+  return c is num && c >= 0 ? c.toInt() : null;
+}
+
+/// credits/{uid} belgesinden bakiye (yoksa / bozuksa 0).
+int balanceFromDoc(Map<String, dynamic>? d) {
+  final b = d?['balance'];
+  return b is num && b > 0 ? b.toInt() : 0;
+}
+
+/// Ücretli yayında izlenecek yol.
+enum PaidRoute {
+  /// Sunucudaki paket hakkı kullanılır (useCredit) — yeni satın alma yok.
+  serverCredit,
+
+  /// Cihazda tüketilmemiş (sunucunun henüz işlemediği) alım var: önce o işlenir.
+  unconsumed,
+
+  /// Google Play satın alma penceresi açılır.
+  buy,
+}
+
+/// Öncelik: tüketilmemiş alım (Play yeni alımı engeller, para alınmış) > sunucu bakiyesi > satın alma.
+PaidRoute paidRouteFor({required int balance, required bool hasUnconsumed}) {
+  if (hasUnconsumed) return PaidRoute.unconsumed;
+  if (balance > 0) return PaidRoute.serverCredit;
+  return PaidRoute.buy;
+}
+
+/// Paketin tekli alıma göre tasarruf yüzdesi — Play'in yerelleştirilmiş fiyatlarından (sabit yazılmaz).
+/// Ör. 3 × 399 TL = 1197 TL yerine 899 TL → 25. Aynı para birimi değilse, fiyat yoksa ya da tasarruf
+/// %1'in altındaysa null (rozet gösterilmez).
+int? bundleSavingsPercent({
+  required double? single,
+  required double? bundle,
+  String? singleCurrency,
+  String? bundleCurrency,
+  int rights = 3,
+}) {
+  if (single == null || bundle == null || single <= 0 || bundle <= 0 || rights < 2) return null;
+  if (singleCurrency != null && bundleCurrency != null && singleCurrency != bundleCurrency) return null;
+  final full = single * rights;
+  final pct = ((full - bundle) / full * 100).round();
+  return pct >= 1 && pct < 100 ? pct : null;
+}
+
+/// "N hakkınız kaldı" metin anahtarı (Arapça ikil biçimi için 2 ayrı).
+String creditsLeftKey(int n) => n == 1 ? 'creditsLeft1' : (n == 2 ? 'creditsLeft2' : 'creditsLeftN');

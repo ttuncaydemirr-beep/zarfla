@@ -30,13 +30,25 @@ class BillingPurchase {
 /// Ürün tüketilebilir: `autoConsume: false` ile satın alınır, sunucu hak verdikten sonra [consume] çağrılır.
 class BillingService {
   StreamSubscription<List<PurchaseDetails>>? _sub;
-  ProductDetails? _product;
+  final Map<String, ProductDetails> _products = {};
   bool _available = false;
 
   bool get available => _available;
 
+  ProductDetails? get _product => _products[kInviteProductId];
+  ProductDetails? get _bundle => _products[kBundleProductId];
+
   /// Play'in yerelleştirilmiş fiyatı (ör. "₺399,00"); ürün yüklenmediyse null.
   String? get price => _product?.price;
+
+  /// "Düğün Zinciri" (3 hak) yerelleştirilmiş fiyatı; Play Console'da henüz yoksa null (kart gizlenir).
+  String? get bundlePrice => _bundle?.price;
+
+  /// Tasarruf rozeti için ham fiyatlar ve para birimleri (Play'den).
+  double? get singleRaw => _product?.rawPrice;
+  double? get bundleRaw => _bundle?.rawPrice;
+  String? get singleCurrency => _product?.currencyCode;
+  String? get bundleCurrency => _bundle?.currencyCode;
 
   bool get _supported => !kIsWeb && Platform.isAndroid;
 
@@ -56,34 +68,36 @@ class BillingService {
         onError: (Object e) => debugPrint('billing stream error: $e'),
       );
       _available = await InAppPurchase.instance.isAvailable();
-      if (_available) await loadProduct();
+      if (_available) await loadProducts();
     } catch (e) {
       _available = false;
       debugPrint('billing init failed: $e');
     }
   }
 
-  Future<ProductDetails?> loadProduct() async {
-    if (!_supported) return null;
+  /// Tek davetiye + paket ürünlerini yükler. Paket Play Console'da yoksa yalnız tekli satılır.
+  Future<void> loadProducts() async {
+    if (!_supported) return;
     try {
-      final r = await InAppPurchase.instance.queryProductDetails({kInviteProductId});
+      final r = await InAppPurchase.instance.queryProductDetails(kProductIds);
       for (final p in r.productDetails) {
-        if (p.id == kInviteProductId) _product = p;
+        if (kProductIds.contains(p.id)) _products[p.id] = p;
       }
       if (r.notFoundIDs.isNotEmpty) debugPrint('billing: product not found ${r.notFoundIDs}');
     } catch (e) {
       debugPrint('billing: queryProductDetails failed: $e');
     }
-    return _product;
   }
 
   /// Play satın alma penceresini açar. true: pencere açıldı (sonuç alım akışından gelir).
+  /// [productId]: kInviteProductId (varsayılan) ya da kBundleProductId.
   /// [accountId]: anonim Firebase uid (Play'e obfuscatedAccountId olarak gider; dolandırıcılık denetimi için).
-  Future<bool> buy({String? accountId}) async {
+  Future<bool> buy({String productId = kInviteProductId, String? accountId}) async {
     if (!_supported) return false;
     if (!_available) _available = await InAppPurchase.instance.isAvailable();
     if (!_available) return false;
-    final p = _product ?? await loadProduct();
+    if (_products[productId] == null) await loadProducts();
+    final p = _products[productId];
     if (p == null) return false;
     try {
       return await InAppPurchase.instance.buyConsumable(
@@ -96,14 +110,14 @@ class BillingService {
     }
   }
 
-  /// Sahip olunan (satın alınmış, henüz tüketilmemiş) Davetiye Hakkı alımları. Beklemedekiler hariç.
+  /// Sahip olunan (satın alınmış, henüz tüketilmemiş) Davetiye Hakkı / paket alımları. Beklemedekiler hariç.
   Future<List<BillingPurchase>> owned() async {
     if (!_supported || !_available) return const [];
     try {
       final r = await _android.queryPastPurchases();
       return [
         for (final p in r.pastPurchases)
-          if (p.productID == kInviteProductId &&
+          if (kProductIds.contains(p.productID) &&
               p is GooglePlayPurchaseDetails &&
               p.billingClientPurchase.purchaseState == PurchaseStateWrapper.purchased)
             BillingPurchase._(p, BillingStatus.purchased),
@@ -129,7 +143,7 @@ class BillingService {
       final owned = <BillingPurchase>[];
       var pending = 0;
       for (final p in r.pastPurchases) {
-        if (p.productID != kInviteProductId) continue;
+        if (!kProductIds.contains(p.productID)) continue;
         final state = p.billingClientPurchase.purchaseState;
         if (state == PurchaseStateWrapper.purchased) {
           owned.add(BillingPurchase._(p, BillingStatus.purchased));
@@ -150,7 +164,7 @@ class BillingService {
     if (_available) return true;
     try {
       _available = await InAppPurchase.instance.isAvailable();
-      if (_available && _product == null) await loadProduct();
+      if (_available && _products.length < kProductIds.length) await loadProducts();
     } catch (e) {
       debugPrint('billing: isAvailable failed: $e');
     }

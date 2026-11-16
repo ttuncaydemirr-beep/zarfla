@@ -203,11 +203,23 @@ idempotent: aynı jeton + aynı davetiye = yine başarı). Kod: `lib/billing/`, 
 | Fonksiyon | Tetik | İş |
 |---|---|---|
 | `redeemPurchase` | callable (oturum şart) | `purchases.products.get` ile doğrular (purchaseState 0, tüketilmemiş), `purchases/{sha256(jeton)}` kaydı (ham jeton saklanmaz), `invites/{id}` plan `paid`, +365 gün, deleteAt +395 gün, `users/{uid}.premium=true`, gerekirse acknowledge |
+| `useCredit` | callable (oturum şart) | `credits/{uid}`'den 1 hak düşer, `invites/{id}` ücretli yazılır (Play'e gidilmez; davetiye başına idempotent; bakiye yoksa `no-credit`) |
 | `voidedPurchases` | her gün 04:23 (İstanbul) | Son 30 günün iade/geri ödemeleri: alım `voided`, davetiye **en geç 24 saat içinde kapanır** (silinmez, plan/tasarım korunur), başka geçerli alım yoksa premium kalkar |
 | `enforceFreeLimit` | `invites/{id}` oluşturulunca | Aynı sahibin açık başka ücretsizi varsa yenisi hemen kapanır |
 | `cleanupStorage` | her gün 04:41 (İstanbul) | TTL ile silinmiş / deleteAt'i geçmiş davetiyelerin Storage dosyaları |
 
+**"Düğün Zinciri" paketi:** `zarfla_invite_3` — tüketilebilir, **3 Davetiye Hakkı** (herhangi 3 davetiye).
+`redeemPurchase` jetonu bir kez doğrular (`purchases/{sha256}` = idempotentlik), 3 hakkı **`credits/{uid}`**
+defterine yazar (`balance`, `lots[]` = paket başına kalan + kullanılan davetiyeler, `ledger[]`), davetiyeli çağrıda
+1'ini aynı işlemde kullanır; alım sonra istemcide tüketilir. Sonraki ücretli yayınlar **`useCredit`** (callable)
+ile: 1 hak düşer + davetiye ücretli yazılır, aynı davetiyeye ikinci kez düşmez. `zarfla_invite_1` akışı aynen
+korunur (deftere uğramaz). **İade politikası:** paket iade edilirse kalan hakları silinir ve o paketle yayınlanan
+tüm davetiyeler en geç 24 saatte kapanır; diğer paketler/tekli alımlar etkilenmez. **Sınır:** oturum anonim
+olduğundan bakiye yalnız aynı uid'de görünür (uygulama silinip kurulursa tüketilmiş paketin kalan hakları
+görünmez). Önce sunucu yayını, sonra uygulama sürümü (eski sunucu `zarfla_invite_3`'ü tanımaz).
+
 **Kurallar:** istemci `paid` oluşturamaz/yükseltemez (yalnız Admin SDK); ücretsiz süre en çok 24 saat + 10 dk.
+`credits/{uid}` yalnız sahibi okur, kimse yazamaz.
 **CI:** `functions` işi (`npm run verify`: sözdizimi + sahte Play API ile birim testleri + yükleme).
 **Yayın:** Actions → **Sunucu yayını (Functions + kurallar)** → Run workflow (secret `FIREBASE_DEPLOY_SA`).
 

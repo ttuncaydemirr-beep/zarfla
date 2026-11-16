@@ -7,6 +7,12 @@ const crypto = require('node:crypto');
 
 const PACKAGE_NAME = 'com.demirgamesstudio.zarfla';
 const PRODUCT_ID = 'zarfla_invite_1';
+/** "Düğün Zinciri": 3 Davetiye Hakkı (tüketilebilir). Haklar sunucudaki credits/{uid} defterine yazılır. */
+const BUNDLE_PRODUCT_ID = 'zarfla_invite_3';
+/** Ürün → verdiği hak sayısı. zarfla_invite_1 eski doğrudan akışta kalır (deftere uğramaz). */
+const PRODUCT_RIGHTS = Object.freeze({ [PRODUCT_ID]: 1, [BUNDLE_PRODUCT_ID]: 3 });
+/** credits/{uid}.ledger en çok bu kadar kayıt tutar (eskiler düşer; bakiye lots'tan hesaplanır). */
+const LEDGER_MAX = 200;
 
 const H = 3600 * 1000;
 const D = 24 * H;
@@ -55,12 +61,113 @@ function parseRedeemInput(raw) {
   if (typeof purchaseToken !== 'string' || purchaseToken.length < 10 || purchaseToken.length > 4096) {
     throw new RedeemError('invalid-argument', 'bad-token');
   }
-  if (productId !== PRODUCT_ID) throw new RedeemError('invalid-argument', 'bad-product');
+  if (!Object.prototype.hasOwnProperty.call(PRODUCT_RIGHTS, productId)) throw new RedeemError('invalid-argument', 'bad-product');
   const inviteId = r.inviteId == null || r.inviteId === '' ? null : r.inviteId;
   if (inviteId !== null && !isValidInviteId(inviteId)) throw new RedeemError('invalid-argument', 'bad-invite-id');
   const data = r.data == null ? null : r.data;
   if (inviteId !== null && typeof data !== 'string') throw new RedeemError('invalid-argument', 'bad-data');
   return { purchaseToken, productId, inviteId, data };
+}
+
+function rightsFor(productId) {
+  return Object.prototype.hasOwnProperty.call(PRODUCT_RIGHTS, productId) ? PRODUCT_RIGHTS[productId] : 0;
+}
+
+function isBundle(productId) {
+  return rightsFor(productId) > 1;
+}
+
+/** useCredit girdisi: { inviteId, data } ikisi de zorunlu. */
+function parseUseCreditInput(raw) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  if (!isValidInviteId(r.inviteId)) throw new RedeemError('invalid-argument', 'bad-invite-id');
+  if (typeof r.data !== 'string') throw new RedeemError('invalid-argument', 'bad-data');
+  return { inviteId: r.inviteId, data: r.data };
+}
+
+// ---------------------------------------------------------------------------
+// Hak defteri (credits/{uid}) — saf işlevler. Belge biçimi:
+//   { balance, lots: [{ h, productId, rights, left, at, invites: [inviteId], voided }], ledger: [{ t, n, h, inviteId?, at }] }
+//   h = sha256(satın alma jetonu) = purchases/{h}. balance her zaman iade edilmemiş lot'ların left toplamıdır.
+//   Zaman damgaları ms (dizi içinde serverTimestamp kullanılamaz).
+// ---------------------------------------------------------------------------
+
+function normCredits(c) {
+  const src = c && typeof c === 'object' ? c : {};
+  const lots = Array.isArray(src.lots)
+    ? src.lots.map((l) => ({
+        h: String(l.h),
+        productId: l.productId || null,
+        rights: Number(l.rights) || 0,
+        left: Math.max(0, Number(l.left) || 0),
+        at: Number(l.at) || 0,
+        invites: Array.isArray(l.invites) ? l.invites.slice() : [],
+        voided: l.voided === true,
+      }))
+    : [];
+  const ledger = Array.isArray(src.ledger) ? src.ledger.slice() : [];
+  return { balance: balanceOf(lots), lots, ledger };
+}
+
+function balanceOf(lots) {
+  return lots.reduce((s, l) => s + (l.voided ? 0 : l.left), 0);
+}
+
+function pushLedger(ledger, e) {
+  const out = [...ledger, e];
+  return out.length > LEDGER_MAX ? out.slice(out.length - LEDGER_MAX) : out;
+}
+
+/** Bu davetiye daha önce bir haktan ödendiyse o lot'un h'si (idempotentlik). */
+function lotForInvite(credits, inviteId) {
+  const c = normCredits(credits);
+  const lot = c.lots.find((l) => l.invites.includes(inviteId));
+  return lot ? lot.h : null;
+}
+
+/** Paket alımını deftere ekler (aynı h ikinci kez eklenmez). */
+function applyGrant(credits, { h, productId, rights, nowMs }) {
+  const c = normCredits(credits);
+  if (c.lots.some((l) => l.h === h)) return c;
+  const lots = [...c.lots, { h, productId, rights, left: rights, at: nowMs, invites: [], voided: false }];
+  return { balance: balanceOf(lots), lots, ledger: pushLedger(c.ledger, { t: 'grant', n: rights, h, at: nowMs }) };
+}
+
+/**
+ * Bir hak kullanır. [preferH] verilirse önce o lot (yeni alınan paket), yoksa en eski dolu lot (FIFO).
+ * Bakiye yoksa RedeemError('failed-precondition', 'no-credit').
+ */
+function applyUse(credits, { inviteId, nowMs, preferH = null }) {
+  const c = normCredits(credits);
+  const usable = (l) => !l.voided && l.left > 0;
+  let idx = preferH ? c.lots.findIndex((l) => l.h === preferH && usable(l)) : -1;
+  if (idx < 0) idx = c.lots.findIndex(usable);
+  if (idx < 0) throw new RedeemError('failed-precondition', 'no-credit');
+  const lots = c.lots.map((l, i) => (i === idx ? { ...l, left: l.left - 1, invites: [...l.invites, inviteId] } : l));
+  const h = lots[idx].h;
+  return {
+    credits: { balance: balanceOf(lots), lots, ledger: pushLedger(c.ledger, { t: 'use', n: -1, h, inviteId, at: nowMs }) },
+    h,
+  };
+}
+
+/**
+ * İade (voided) politikası: paketin KALAN hakları silinir (balance düşer), lot iade edildi işaretlenir.
+ * Paketle yayınlanmış davetiyeler ayrıca kapatılır (services.processVoided). Dönen değer: { credits, removed, invites }.
+ */
+function applyVoid(credits, h, nowMs) {
+  const c = normCredits(credits);
+  const idx = c.lots.findIndex((l) => l.h === h);
+  if (idx < 0) return { credits: c, removed: 0, invites: [] };
+  const lot = c.lots[idx];
+  if (lot.voided) return { credits: c, removed: 0, invites: lot.invites.slice() };
+  const removed = lot.left;
+  const lots = c.lots.map((l, i) => (i === idx ? { ...l, left: 0, voided: true } : l));
+  return {
+    credits: { balance: balanceOf(lots), lots, ledger: pushLedger(c.ledger, { t: 'void', n: -removed, h, at: nowMs }) },
+    removed,
+    invites: lot.invites.slice(),
+  };
 }
 
 /**
@@ -195,6 +302,17 @@ function isStaleInvite(exists, data, nowMs) {
 module.exports = {
   PACKAGE_NAME,
   PRODUCT_ID,
+  BUNDLE_PRODUCT_ID,
+  PRODUCT_RIGHTS,
+  LEDGER_MAX,
+  rightsFor,
+  isBundle,
+  parseUseCreditInput,
+  normCredits,
+  lotForInvite,
+  applyGrant,
+  applyUse,
+  applyVoid,
   PAID_LIFE_MS,
   TTL_GRACE_MS,
   VOIDED_GRACE_MS,

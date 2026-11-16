@@ -398,5 +398,17 @@
   "errLogHint": "Uygulamada bir sorun yaşadıysanız bu metni kopyalayıp destek adresine gönderin.",
   "errLogClear": "Temizle",
   "errLogDetails": "Ayrıntılar",
-  "safeModeNote": "Uygulama önceki açılışta beklenmedik şekilde kapandı. Bu açılışta reklam ve ödeme hizmetleri başlatılmadı."
+  "safeModeNote": "Uygulama önceki açılışta beklenmedik şekilde kapandı. Bu açılışta reklam ve ödeme hizmetleri başlatılmadı.",
+  "bundleName": "Düğün Zinciri",
+  "bundleSub": "3 Davetiye Hakkı",
+  "bundleP": "İstediğiniz 3 davetiyede kullanın: kına, nişan ve düğün için ideal. Her biri tüm ücretli özelliklerle gelir.",
+  "bundleSave": "≈%{n} tasarruf",
+  "creditsLeft1": "1 Davetiye Hakkınız kaldı",
+  "creditsLeft2": "2 Davetiye Hakkınız kaldı",
+  "creditsLeftN": "{n} Davetiye Hakkınız kaldı",
+  "creditsLeftP": "Bir sonraki ücretli yayında ödeme yapmadan kullanılır.",
+  "creditWillUse": "Bu yayında 1 hak kullanılır; yeniden ödeme yok.",
+  "creditOne": "1 hak",
+  "creditNone": "Kullanılabilir Davetiye Hakkınız kalmadı. Yayınlamak için yeni bir satın alma gerekiyor.",
+  "restoreCreditsLeft": "Satın alımlarınız kontrol edildi. Kalan Davetiye Hakkı: {n}"
 }

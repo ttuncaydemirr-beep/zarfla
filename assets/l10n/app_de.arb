@@ -398,5 +398,17 @@
   "errLogHint": "Falls ein Problem aufgetreten ist, kopieren Sie diesen Text und senden Sie ihn an unsere Support-Adresse.",
   "errLogClear": "Leeren",
   "errLogDetails": "Details",
-  "safeModeNote": "Die App wurde beim letzten Start unerwartet beendet. Werbung und Zahlungen wurden in dieser Sitzung nicht gestartet."
+  "safeModeNote": "Die App wurde beim letzten Start unerwartet beendet. Werbung und Zahlungen wurden in dieser Sitzung nicht gestartet.",
+  "bundleName": "Hochzeits-Trio",
+  "bundleSub": "3 Einladungsrechte",
+  "bundleP": "Für beliebige 3 Einladungen – ideal für Henna-Abend, Verlobung und Hochzeit. Jede mit allen kostenpflichtigen Funktionen.",
+  "bundleSave": "≈{n} % sparen",
+  "creditsLeft1": "1 Einladungsrecht übrig",
+  "creditsLeft2": "2 Einladungsrechte übrig",
+  "creditsLeftN": "{n} Einladungsrechte übrig",
+  "creditsLeftP": "Wird für deine nächste kostenpflichtige Einladung verwendet – ohne neue Zahlung.",
+  "creditWillUse": "Diese Einladung verbraucht 1 Recht – keine neue Zahlung.",
+  "creditOne": "1 Recht",
+  "creditNone": "Du hast keine Einladungsrechte mehr. Zum Veröffentlichen ist ein neuer Kauf nötig.",
+  "restoreCreditsLeft": "Käufe geprüft. Verbleibende Einladungsrechte: {n}"
 }

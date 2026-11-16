@@ -56,6 +56,7 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   const SafeModeBanner(),
                   const PayVerifyBanner(),
+                  const CreditsBadge(),
                   H2(context.t('myInv')),
                   if (list.isEmpty) const _Empty() else ...list.map((inv) => _InvItem(inv: inv)),
                   const SizedBox(height: 6),
@@ -268,7 +269,7 @@ class _InvItem extends StatelessWidget {
                 if (expired && canUpgradeToPaid(inv)) ...[
                   const SizedBox(height: 10),
                   PrimaryButton(
-                    label: context.t('upExpiredBtn', {'p': st.playPrice ?? context.t('price')}),
+                    label: context.t('upExpiredBtn', {'p': st.hasCredit ? context.t('creditOne') : (st.playPrice ?? context.t('price'))}),
                     block: true,
                     onPressed: openEditor,
                   ),

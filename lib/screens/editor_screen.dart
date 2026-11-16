@@ -200,7 +200,7 @@ class _EditorScreenState extends State<EditorScreen> {
     if (_cloudBusy || !canUpgradeToPaid(inv)) return;
     if (!_checkErrors(inv)) return;
     final st = context.read<AppState>();
-    if (!st.billingReady) {
+    if (!st.canPayOrUseCredit) {
       _showActionErr('payUnavailable');
       return;
     }
@@ -235,7 +235,7 @@ class _EditorScreenState extends State<EditorScreen> {
     final primaryLabel = _cloudBusy
         ? context.t(expiredFree ? 'payProcessing' : 'cloudUpdating')
         : expiredFree
-            ? context.t('upExpiredBtn', {'p': price})
+            ? context.t('upExpiredBtn', {'p': st.hasCredit ? context.t('creditOne') : price})
             : (inv.isLive ? context.t('update') : context.t('publish'));
     final errText = _actionErr == null ? null : context.t(_actionErr == 'netErr' ? 'netErrCard' : _actionErr!);
     return Scaffold(

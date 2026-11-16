@@ -398,5 +398,17 @@
   "errLogHint": "If you ran into a problem, copy this text and send it to our support address.",
   "errLogClear": "Clear",
   "errLogDetails": "Details",
-  "safeModeNote": "The app closed unexpectedly last time. Ads and payments were not started for this session."
+  "safeModeNote": "The app closed unexpectedly last time. Ads and payments were not started for this session.",
+  "bundleName": "Wedding Trio",
+  "bundleSub": "3 Invitation Passes",
+  "bundleP": "Use them for any 3 invitations — perfect for the henna night, engagement and wedding. Each comes with every paid feature.",
+  "bundleSave": "Save ≈{n}%",
+  "creditsLeft1": "1 Invitation Pass left",
+  "creditsLeft2": "2 Invitation Passes left",
+  "creditsLeftN": "{n} Invitation Passes left",
+  "creditsLeftP": "It will be used for your next paid invitation — no new payment.",
+  "creditWillUse": "This invitation uses 1 pass — no new payment.",
+  "creditOne": "1 pass",
+  "creditNone": "You have no Invitation Passes left. A new purchase is needed to publish.",
+  "restoreCreditsLeft": "Purchases checked. Invitation Passes remaining: {n}"
 }
