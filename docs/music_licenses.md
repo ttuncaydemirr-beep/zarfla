@@ -5,7 +5,8 @@ Hazırlayan: ses/lisans sorumlusu (Zarfla ekibi) · Doğrulama tarihi: 15 Kasım
 ## Kurallar (kısa)
 
 - Davetiyede yalnızca **bu listedeki** parçalar çalar. Kullanıcı **asla** ses dosyası yükleyemez.
-- Dosyalar **kendi sitemizden** sunulur: `https://ttuncaydemirr-beep.github.io/music/<kimlik>.mp3`. Üçüncü taraf bağlantısı yok.
+- Dosyalar **kendi barındırmamızdan** (Firebase Hosting, davetli sayfasıyla aynı köken) sunulur: `https://zarfla-37da9.web.app/music/<kimlik>.mp3`. Üçüncü taraf bağlantısı yok.
+  `tools/build_hosting.py` dosyaları stüdyo sitesi deposundaki `src/music/`'ten **sha256 doğrulayarak** kopyalar (aynı lisanslı dosyalar; yeni parça eklenemez).
 - Dosyaları yalnızca `ttuncaydemirr-beep.github.io` deposundaki `.github/workflows/fetch-music.yml` iş akışı üretir:
   aşağıdaki indirme adresinden alır, kaynak SHA-1'ini karşılaştırır (değişmişse **durur**), en çok 90 sn'ye kısaltır,
   2 sn açılış / 4 sn kapanış geçişi ve ses eşitlemesi (-20 LUFS) uygular, 96 kbps MP3 yazar, sha256'yı `src/music/manifest.json`'a kaydeder.

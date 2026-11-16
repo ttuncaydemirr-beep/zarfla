@@ -67,6 +67,7 @@ void main() {
       expect(t['category'], mt.category);
       expect((t['credit'] as String).isNotEmpty, mt.ccBy, reason: '${t['id']}: CC BY ise künye dolu olmalı');
     }
-    expect(m['base_url'], kMusicBaseUrl);
+    // Sitenin manifesti dosyaların KAYNAĞIDIR; sunum adresi artık Firebase Hosting (kMusicBaseUrl).
+    expect(m['base_url'], anyOf(kMusicBaseUrl, 'https://ttuncaydemirr-beep.github.io/music/'));
   }, skip: manifest.existsSync() ? false : 'site deposu yan klasörde değil');
 }

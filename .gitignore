@@ -41,3 +41,7 @@ android/app/upload.jks
 # Cloud Functions (bağımlılıklar CI'da kurulur)
 functions/node_modules/
 functions/package-lock.json
+
+# Firebase Hosting çıktısı (tools/build_hosting.py üretir)
+hosting/
+.firebase/

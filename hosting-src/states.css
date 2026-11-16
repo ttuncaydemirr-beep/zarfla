@@ -1,0 +1,20 @@
+/* Davetli sayfası: yükleniyor / bulunamadı / hata görünümleri (Zümrüt Zarf: zemin #F7F1E8, ana #1F3D36, altın #AD7F2E yalnız süs). */
+@font-face{font-family:"Fraunces Soft";font-style:normal;font-weight:500 700;font-display:swap;src:url("../fonts/Fraunces-Soft-500-700.woff") format("woff");unicode-range:U+0020-007E,U+00A0-017F,U+018F,U+0259,U+02C6,U+02DA,U+02DC,U+2013-2014,U+2018-201E,U+2022,U+2026,U+20AC,U+20BA,U+2122,U+2190,U+2192,U+2212}
+@font-face{font-family:"Noto Sans Arabic";font-style:normal;font-weight:400 700;font-display:swap;src:url("../fonts/NotoSansArabic-400-700.woff") format("woff");unicode-range:U+0600-06FF,U+0750-077F,U+200C-200F,U+FB50-FDFF,U+FE70-FEFF}
+.zs{position:fixed;inset:0;overflow:auto;background:#F7F1E8;color:#1F3D36;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;text-align:center;font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Arabic",sans-serif}
+.zs::before{content:"";position:absolute;inset:14px;border:1px solid rgba(173,127,46,.55);border-radius:20px;pointer-events:none}
+.zs-card{max-width:420px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.zs-env{width:150px;height:auto;margin-bottom:14px;overflow:visible}
+.zs-t{font-family:"Fraunces Soft","Fraunces","Noto Sans Arabic",Georgia,"Times New Roman",serif;font-weight:500;font-size:clamp(21px,5.6vw,26px);line-height:1.4;color:#1F3D36;margin:0;text-wrap:balance}
+[dir=rtl] .zs-t{line-height:1.7}
+.zs-btn{margin-top:18px;min-height:46px;padding:0 30px;border:0;border-radius:40px;background:#1F3D36;color:#F7F1E8;font:600 15px/1 system-ui,-apple-system,"Segoe UI","Noto Sans Arabic",sans-serif;cursor:pointer}
+.zs-btn:focus-visible,.zs-foot a:focus-visible{outline:3px solid #AD7F2E;outline-offset:3px}
+.zs-foot{position:absolute;bottom:34px;left:24px;right:24px;margin:0;font-size:14px}
+.zs-foot a{color:#1F3D36;text-decoration:underline;text-underline-offset:3px}
+.zs-seal{transform-box:fill-box;transform-origin:center}
+.zs-env--loading .zs-seal{animation:zs-pulse 1.6s ease-in-out infinite}
+.zs-env--loading{animation:zs-float 3.2s ease-in-out infinite}
+@keyframes zs-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+@keyframes zs-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@media (prefers-reduced-motion:reduce){.zs-env--loading,.zs-env--loading .zs-seal{animation:none}}
+.zs-nojs{position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;background:#F7F1E8;color:#1F3D36;font:16px/1.6 system-ui,sans-serif}
