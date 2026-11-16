@@ -49,11 +49,11 @@ void main() {
     });
 
     test('bağlantı yalnız / sonrasında kırılır, alan adı bölünmez; ham bağlantı değişmez', () {
-      const url = 'ttuncaydemirr-beep.github.io/davetiye/?id=abc';
+      const url = 'zarfla-37da9.web.app/davetiye/?id=abc';
       final soft = softBreakUrl(url);
       expect(soft.replaceAll('​', ''), url);
-      expect(soft, contains('github.io/​'));
-      expect(soft, isNot(contains('github.​')));
+      expect(soft, contains('web.app/​'));
+      expect(soft, isNot(contains('web.​')));
     });
   });
 

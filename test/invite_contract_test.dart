@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zarfla/cloud/invite_contract.dart';
+import 'package:zarfla/data/music.dart' show kMusicBaseUrl;
 import 'package:zarfla/models/invitation.dart';
 
 Invitation _inv({String plan = 'free'}) => Invitation(
@@ -56,13 +57,18 @@ void main() {
 
   group('bağlantı', () {
     test('biçim', () {
-      expect(inviteUrl('AbCdEf123456'), 'https://ttuncaydemirr-beep.github.io/davetiye/?id=AbCdEf123456');
-      expect(inviteUrlDisplay('AbCdEf123456'), 'ttuncaydemirr-beep.github.io/davetiye/?id=AbCdEf123456');
+      expect(inviteUrl('AbCdEf123456'), 'https://zarfla-37da9.web.app/davetiye/?id=AbCdEf123456');
+      expect(inviteUrlDisplay('AbCdEf123456'), 'zarfla-37da9.web.app/davetiye/?id=AbCdEf123456');
+      expect(kMusicBaseUrl, '$kGuestHostUrl/music/');
     });
 
     test('kodda eski "davet/" bağlantısı kalmadı', () {
       for (final f in Directory('lib').listSync(recursive: true).whereType<File>()) {
-        expect(f.readAsStringSync().contains('github.io/davet/'), isFalse, reason: f.path);
+        final s = f.readAsStringSync();
+        expect(s.contains('github.io/davet/'), isFalse, reason: f.path);
+        // Davetli sayfası ve müzik Firebase Hosting'de; uygulama github.io/davetiye/ ya da github.io/music/ üretmez.
+        expect(s.contains('github.io/davetiye/'), isFalse, reason: f.path);
+        expect(s.contains('github.io/music/'), isFalse, reason: f.path);
       }
     });
   });

@@ -41,8 +41,9 @@ uygulama simgesi).
 
 1. **Aşama 1:** Firebase'siz, cihazda çalışan uygulama. Ücretli yayın SAHTE
    (ödeme alınmaz, test için yayınlanmış sayılır). Reklam yalnız yer tutucu.
-2. **Aşama 2 (şimdi):** Firebase (davetiyeler buluta), davetli sayfası stüdyo sitesinde
-   (`https://ttuncaydemirr-beep.github.io/davetiye/?id=<id>`), aynı `invite.html` ile.
+2. **Aşama 2 (şimdi):** Firebase (davetiyeler buluta), davetli sayfası Firebase Hosting'de
+   (`https://zarfla-37da9.web.app/davetiye/?id=<id>`), aynı `invite.html` ile. Eski
+   `https://ttuncaydemirr-beep.github.io/davetiye/?id=…` bağlantıları stüdyo sitesindeki yönlendirmeyle buraya gelir.
    Ücretsiz yayın çalışır; ücretli yayın "yakında" (Aşama 3).
 3. **Aşama 3:** Google Play Faturalandırma (aşağıda), AdMob banner, gerçek imza ve Play yüklemesi.
 
@@ -83,7 +84,8 @@ flutter pub get && flutter test && flutter run
   (free +24 saat, paid +365 gün), `deleteAt` (expiresAt +30 gün, TTL), kilit alanları
   `type, theme, n1, n2, date, origDate, nameEdits, dateEdits`.
 - Storage: `invites/{id}/cover.<uzantı>`, `g1…g6.<uzantı>` (< 2 MB, `image/*`).
-- Bağlantı: `https://ttuncaydemirr-beep.github.io/davetiye/?id={id}`; sayfa belgeyi anahtarsız okur:
+- Bağlantı: `https://zarfla-37da9.web.app/davetiye/?id={id}` (taban: `kGuestHostUrl`, `lib/cloud/invite_contract.dart`);
+  sayfa belgeyi anahtarsız okur:
   `GET https://firestore.googleapis.com/v1/projects/zarfla-37da9/databases/(default)/documents/invites/{id}`
   → `fields.data.stringValue` (süresi dolmuşsa 403, hiç yoksa 404).
 
@@ -208,3 +210,16 @@ idempotent: aynı jeton + aynı davetiye = yine başarı). Kod: `lib/billing/`, 
 **Kurallar:** istemci `paid` oluşturamaz/yükseltemez (yalnız Admin SDK); ücretsiz süre en çok 24 saat + 10 dk.
 **CI:** `functions` işi (`npm run verify`: sözdizimi + sahte Play API ile birim testleri + yükleme).
 **Yayın:** Actions → **Sunucu yayını (Functions + kurallar)** → Run workflow (secret `FIREBASE_DEPLOY_SA`).
+
+## Davetli sayfası (Firebase Hosting)
+
+- Adres: `https://zarfla-37da9.web.app` — `/davetiye/?id=<id>[&g=Ad]`, `/music/<id>.mp3`, `/fonts/…`, sade kök ve 404.
+- Üretim: `python3 tools/build_hosting.py --site <stüdyo sitesi deposu>` → `hosting/` (depoya girmez). Motor
+  `assets/invite/invite.html`; yükleyici, durum CSS'i, kök/404 `hosting-src/`. Müzik ve yazı tipleri stüdyo sitesi deposundaki
+  lisanslı dosyalardan alınır (manifest sha256 ile doğrulanır; motorun MUSIC listesiyle birebir aynı olmalı, yeni parça eklenemez).
+- Başlıklar `firebase.json` → `hosting.headers`: davetiye `X-Robots-Tag: noindex`, CSP (+ `frame-ancestors 'none'`), 5 dk önbellek;
+  müzik/yazı tipi 1 yıl `immutable` (dosya adı aynı kalıp içerik değişirse yeni adla yayımlayın).
+- Yayın: Actions → "Sunucu yayını (Functions + kurallar + davetli sayfası)" → Run workflow → `only: hosting`
+  (gerekirse dal seçilebilir). İş akışı üretir, denetler, yayınlar ve canlı adresi başlıklarıyla doğrular.
+- Ücretsiz davetiyede alt yazı "Zarfla ile hazırlandı · Sen de 2 dakikada hazırla" Play'e küçük bir bağlantıdır
+  (`referrer=utm_source=guest_footer&utm_campaign=<tema>`; süresi dolmuş sayfada `expired`). Ücretli davetiye temiz kalır.

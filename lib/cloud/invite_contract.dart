@@ -17,14 +17,18 @@ import '../models/invitation.dart';
 ///   deleteAt  timestamp expiresAt + 30 gün (Firestore TTL alanı)
 ///   type, theme, n1, n2, date (YYYY-MM-DD), origDate, nameEdits (int), dateEdits (int)  — kilit alanları
 /// Storage: invites/{id}/cover.EXT, invites/{id}/g1.EXT … g6.EXT (< 2 MB, image/*)
-/// Bağlantı: https://ttuncaydemirr-beep.github.io/davetiye/?id={id}
+/// Bağlantı: https://zarfla-37da9.web.app/davetiye/?id={id}  (Firebase Hosting; eski stüdyo sitesi bağlantıları
+/// stüdyo sitesindeki yönlendirme sayfasıyla buraya taşınır — sorgu dizesi korunur)
 
 const int kInviteSchema = 1;
 const int kInviteIdLength = 12;
 const String kInviteIdChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 const String kInvitesCollection = 'invites';
 
-const String kInviteBaseUrl = 'https://ttuncaydemirr-beep.github.io/davetiye/';
+/// Davetli sayfasının ve müzik dosyalarının kökü (Firebase Hosting). Bağlantı tabanı YALNIZ buradan değişir.
+const String kGuestHostUrl = 'https://zarfla-37da9.web.app';
+
+const String kInviteBaseUrl = '$kGuestHostUrl/davetiye/';
 
 const Duration kFreeLife = Duration(hours: 24);
 const Duration kPaidLife = Duration(days: 365);

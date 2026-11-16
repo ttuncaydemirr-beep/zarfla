@@ -62,7 +62,7 @@ void main() {
     test('bağlantı biçimi ve URL kodlama', () {
       const id = 'AbCdEf123456';
       expect(personalInviteUrl(id, 'Ayşe & Can'),
-          'https://ttuncaydemirr-beep.github.io/davetiye/?id=AbCdEf123456&g=Ay%C5%9Fe%20%26%20Can');
+          'https://zarfla-37da9.web.app/davetiye/?id=AbCdEf123456&g=Ay%C5%9Fe%20%26%20Can');
       expect(personalInviteUrl(id, '   '), inviteUrl(id));
       final u = Uri.parse(personalInviteUrl(id, 'محمد + ليلى'));
       expect(u.queryParameters['id'], id);

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
+import '../cloud/invite_contract.dart' show kGuestHostUrl;
+
 /// Editörde parça önizlemesi için hafif oynatıcı: yeni ses paketi eklemek yerine zaten kullanılan
 /// webview_flutter içinde gizli bir <audio> öğesi. Sayfa sitemizin adresiyle yüklenir (ses dosyaları aynı kökten).
 /// Android'de WebView varsayılan olarak "kullanıcı hareketi" ister; çalma Flutter düğmesiyle başladığı için
@@ -43,7 +45,7 @@ post("ready");
     if (p is AndroidWebViewController) {
       p.setMediaPlaybackRequiresUserGesture(false);
     }
-    c.loadHtmlString(_html, baseUrl: 'https://ttuncaydemirr-beep.github.io/');
+    c.loadHtmlString(_html, baseUrl: '$kGuestHostUrl/');
     _c = c;
     notifyListeners();
   }

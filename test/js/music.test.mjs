@@ -27,8 +27,8 @@ test('yalnız ücretli plan ve seçkideki kimlik', () => {
   assert.equal(musicId(null), '');
 });
 
-test('adres: kendi sitemiz + <id>.mp3', () => {
-  assert.equal(MUSIC_BASE, 'https://ttuncaydemirr-beep.github.io/music/');
+test('adres: kendi barındırmamız (Firebase Hosting) + <id>.mp3', () => {
+  assert.equal(MUSIC_BASE, 'https://zarfla-37da9.web.app/music/');
   assert.equal(musicUrl('klasik-grieg'), MUSIC_BASE + 'klasik-grieg.mp3');
 });
 

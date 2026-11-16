@@ -5,10 +5,12 @@
 ///   1) bu dosya (uygulama editörü)
 ///   2) assets/invite/invite.html → `const MUSIC` (davetli sayfası; künye metni orada)
 ///   3) stüdyo sitesi src/music/manifest.json (dosyaları üreten iş akışı)
-/// Dosya adresi: https://ttuncaydemirr-beep.github.io/music/<id>.mp3 (kendi sitemiz, üçüncü taraf yok).
+/// Dosya adresi: https://zarfla-37da9.web.app/music/<id>.mp3 (kendi Firebase Hosting sitemiz, üçüncü taraf yok).
 library;
 
-const String kMusicBaseUrl = 'https://ttuncaydemirr-beep.github.io/music/';
+import '../cloud/invite_contract.dart' show kGuestHostUrl;
+
+const String kMusicBaseUrl = '$kGuestHostUrl/music/';
 
 /// Editördeki sekmeler (ARB anahtarı: musicCat_<kategori>).
 const List<String> kMusicCategories = ['dugun', 'kina', 'cocuk', 'klasik', 'ramazan', 'kutlama'];
