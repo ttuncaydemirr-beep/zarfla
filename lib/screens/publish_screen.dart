@@ -11,6 +11,7 @@ import '../notify/review_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/consent_note.dart';
 import '../widgets/invite_mini.dart';
 import '../widgets/ornament.dart';
 import '../widgets/restore_purchases.dart';
@@ -199,6 +200,7 @@ class _PublishScreenState extends State<PublishScreen> {
             ),
             _PayBar(
               lockLine: paid ? context.t('lockRulesShort') : null,
+              consent: paid && !st.hasCredit,
               button: PrimaryButton(
                 label: label,
                 block: true,
@@ -518,9 +520,10 @@ class _FreeCard extends StatelessWidget {
 
 /// Alt çubuk: (ücretli seçiliyse) düğmenin hemen üstünde kilit kuralları + ana düğme.
 class _PayBar extends StatelessWidget {
-  const _PayBar({required this.button, this.lockLine});
+  const _PayBar({required this.button, this.lockLine, this.consent = false});
 
   final Widget button;
+  final bool consent;
   final String? lockLine;
 
   @override
@@ -546,6 +549,8 @@ class _PayBar extends StatelessWidget {
                     ],
                   ),
                 ),
+              if (consent)
+                const Padding(padding: EdgeInsets.only(bottom: AppSpace.x2), child: WithdrawalConsentNote()),
               button,
             ],
           ),

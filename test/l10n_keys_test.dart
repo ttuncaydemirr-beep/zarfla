@@ -80,4 +80,12 @@ void main() {
     expect(s.get('tr', 'x', {'n': 2}), 'Kalan: 2');
     expect(s.get('en', 'x'), 'Kalan: {n}'); // tr'ye düşer
   });
+
+  test('cayma hakkı onay metni (withdrawalConsent) 4 dilde mevcut ve Google Play iadesini belirtir', () {
+    for (final l in kLangs) {
+      final m = AppStrings.parseArb(File('assets/l10n/app_$l.arb').readAsStringSync());
+      expect(m['withdrawalConsent'], isNotNull, reason: '$l withdrawalConsent yok');
+      expect(m['withdrawalConsent']!, contains('Google Play'), reason: '$l metni Google Play içermiyor');
+    }
+  });
 }

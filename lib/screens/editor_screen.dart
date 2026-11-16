@@ -24,6 +24,7 @@ import '../notify/review_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/consent_note.dart';
 import '../widgets/invite_view.dart';
 import '../widgets/layout_thumb.dart';
 import '../widgets/music_picker.dart';
@@ -1335,6 +1336,10 @@ class _DetailsFormState extends State<DetailsForm> {
       text: expired ? context.t('upExpiredP') : context.t('upFreeP'),
       icon: expired ? Icons.timer_off_outlined : Icons.timer_outlined,
       actions: [
+        if (!st.hasCredit) ...[
+          const WithdrawalConsentNote(),
+          const SizedBox(height: 8),
+        ],
         PrimaryButton(
           label: widget.busy ? context.t('payProcessing') : context.t(expired ? 'upExpiredBtn' : 'upFreeBtn', {'p': price}),
           onPressed: widget.busy ? null : widget.onUpgrade,

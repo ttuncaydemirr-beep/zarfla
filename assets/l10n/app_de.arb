@@ -427,5 +427,6 @@
   "creditWillUse": "Diese Einladung verbraucht 1 Recht – keine neue Zahlung.",
   "creditOne": "1 Recht",
   "creditNone": "Du hast keine Einladungsrechte mehr. Zum Veröffentlichen ist ein neuer Kauf nötig.",
-  "restoreCreditsLeft": "Käufe geprüft. Verbleibende Einladungsrechte: {n}"
+  "restoreCreditsLeft": "Käufe geprüft. Verbleibende Einladungsrechte: {n}",
+  "withdrawalConsent": "Mit dem Kauf bestätigen Sie, dass die Leistung sofort beginnt, und erkennen an, dass Ihr Widerrufsrecht dadurch erlischt. Erstattungen werden über Google Play beantragt."
 }
