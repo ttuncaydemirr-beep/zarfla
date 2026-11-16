@@ -1,12 +1,17 @@
-/// Reklam kimlikleri TEK yerde. Şimdilik Google'ın resmî TEST kimlikleri (para kazandırmaz, hesap riski yok).
-///
-/// TODO(yayın öncesi): AdMob'dan alınan GERÇEK kimliklerle değiştirin (adımlar: ads_setup.md):
-///  - [kAdMobAndroidAppId]  → AdMob > Uygulamalar > Zarfla > Uygulama kimliği (ca-app-pub-XXXX~YYYY)
-///  - [kBannerAdUnitId]     → AdMob > Reklam birimleri > Banner > Reklam birimi kimliği (ca-app-pub-XXXX/ZZZZ)
-/// Uygulama kimliği AndroidManifest'e scripts/patch_android.py ile BU dosyadan okunarak yazılır;
-/// yani değişiklik yalnız bu iki satırdadır. (patch_android.py satırı `kAdMobAndroidAppId = '...'` biçiminde arar;
-/// biçimi bozmayın.)
-const String kAdMobAndroidAppId = 'ca-app-pub-3940256099942544~3347511713';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 
-/// Uyarlanabilir (adaptive) banner için Google test birimi.
-const String kBannerAdUnitId = 'ca-app-pub-3940256099942544/9214589741';
+/// Reklam kimlikleri TEK yerde. GERÇEK AdMob kimlikleri (Demir Games Studio, pub-3269207938446570).
+///
+/// Uygulama kimliği AndroidManifest'e scripts/patch_android.py ile BU dosyadan okunarak yazılır.
+/// (patch_android.py satırı `kAdMobAndroidAppId = '...'` biçiminde arar; biçimi bozmayın.)
+/// app-ads.txt: https://ttuncaydemirr-beep.github.io/app-ads.txt (aynı yayıncı kimliği).
+const String kAdMobAndroidAppId = 'ca-app-pub-3269207938446570~8098988341';
+
+/// Gerçek banner birimi: "Zarfla alt banner".
+const String _kBannerReal = 'ca-app-pub-3269207938446570/5079566629';
+
+/// Google'ın resmî uyarlanabilir banner TEST birimi (debug/profil derlemeleri için; hesap riski yok).
+const String _kBannerTest = 'ca-app-pub-3940256099942544/9214589741';
+
+/// Yalnız yayın (release) derlemesinde gerçek birim; geliştirme derlemelerinde test birimi.
+const String kBannerAdUnitId = kReleaseMode ? _kBannerReal : _kBannerTest;
