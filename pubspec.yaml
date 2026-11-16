@@ -35,6 +35,13 @@ dependencies:
   cloud_functions: ">=6.0.0"
   in_app_purchase: ">=3.2.0"
   in_app_purchase_android: ">=0.4.0"
+  # Yerel hatırlatma bildirimleri (sunucu/FCM yok): eklenti 20+ adlandırılmış parametreli API'yi kullanır
+  # (initialize/zonedSchedule/cancel); 24 öncesi Flutter 3.44 / AGP 9 isteyeceğinden üst sınır konur.
+  # Zaman, UTC bölgesinde mutlak an olarak verilir (tekrarlı bildirim yok); yerel saat dilimi veritabanı gerekmez.
+  flutter_local_notifications: ">=20.0.0 <24.0.0"
+  timezone: ">=0.10.0"
+  # Uygulama içi değerlendirme (Google Play sistem penceresi).
+  in_app_review: ">=2.0.9"
 
 dev_dependencies:
   flutter_test:

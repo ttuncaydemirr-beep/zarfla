@@ -1,13 +1,13 @@
 {
   "name": "zarfla-functions",
   "private": true,
-  "description": "Zarfla Cloud Functions: redeemPurchase, voidedPurchases, enforceFreeLimit, cleanupStorage (europe-west3)",
+  "description": "Zarfla Cloud Functions: redeemPurchase, voidedPurchases, enforceFreeLimit, cleanupStorage, dailyStats (europe-west3)",
   "main": "index.js",
   "engines": {
     "node": "22"
   },
   "scripts": {
-    "check": "node --check index.js && node --check src/logic.js && node --check src/services.js",
+    "check": "node --check index.js && node --check src/logic.js && node --check src/services.js && node --check src/stats.js",
     "test": "node --test --test-reporter=spec test/*.test.js",
     "verify": "npm run check && npm test && node -e \"require('./index.js'); console.log('index.js loads')\""
   },

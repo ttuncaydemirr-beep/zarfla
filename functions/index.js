@@ -17,6 +17,7 @@ const { google } = require('googleapis');
 
 const L = require('./src/logic');
 const S = require('./src/services');
+const ST = require('./src/stats');
 
 const REGION = 'europe-west3';
 const PROJECT_ID = 'zarfla-37da9';
@@ -94,4 +95,13 @@ exports.enforceFreeLimit = onDocumentCreated({ document: 'invites/{id}' }, async
 /** Günlük: TTL ile silinmiş ya da deleteAt'i geçmiş davetiyelerin Storage dosyalarını siler. */
 exports.cleanupStorage = onSchedule({ schedule: '41 4 * * *', timeZone: 'Europe/Istanbul', timeoutSeconds: 540 }, async () => {
   await S.cleanupStorage(deps());
+});
+
+/**
+ * Günlük: dünün (Europe/Istanbul) davetiye/satın alma SAYIMLARINI stats/daily/days/{yyyy-mm-dd} belgesine yazar.
+ * Kişisel veri/uid yok; stats/** istemciye tamamen kapalı (firestore.rules), yalnız konsol/Admin okur.
+ * data alanı 200 KB'a kadar olabileceğinden bellek bu işlev için 512 MiB.
+ */
+exports.dailyStats = onSchedule({ schedule: '10 3 * * *', timeZone: 'Europe/Istanbul', timeoutSeconds: 300, memory: '512MiB' }, async () => {
+  await ST.dailyStats(deps());
 });

@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/catalog.dart';
 import '../l10n/strings.dart';
+import '../notify/reminder_ui.dart';
+import '../notify/review_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -79,6 +83,9 @@ class _PublishScreenState extends State<PublishScreen> {
     }
     if (err != null) showToast(context, context.t(err), ms: 6000);
     nav.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => DoneScreen(invId: inv.id)), (r) => r.isFirst);
+    // İlk ücretsiz yayından sonra kısa açıklamayla bildirim izni; ücretli yayından sonra (nadiren) değerlendirme istemi.
+    if (inv.isLive && inv.plan == 'free') unawaited(askReminderPermissionAfterPublish());
+    if (inv.isLive && inv.plan == 'premium' && (err == null || err == 'paidPhotoErr')) ReviewPrompter.instance.onPaidPublish();
   }
 
   @override

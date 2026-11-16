@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'data/catalog.dart';
 import 'l10n/strings.dart';
+import 'notify/reminder_nav.dart';
 import 'screens/home_screen.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
@@ -18,6 +19,7 @@ class ZarflaApp extends StatelessWidget {
       lang: st.lang,
       child: MaterialApp(
         title: 'Zarfla',
+        navigatorKey: zarflaNavKey,
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(),
         locale: Locale(st.lang),

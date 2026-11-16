@@ -20,6 +20,7 @@ import '../logic/text_utils.dart';
 import '../logic/url_check.dart';
 import '../logic/validation.dart';
 import '../models/invitation.dart';
+import '../notify/review_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -215,6 +216,7 @@ class _EditorScreenState extends State<EditorScreen> {
     if (inv.plan == 'premium' && (err == null || err == 'paidPhotoErr')) {
       showToast(context, context.t(err ?? 'upgraded'), ms: err == null ? 3000 : 6000);
       nav.push(MaterialPageRoute(builder: (_) => DoneScreen(invId: inv.id)));
+      ReviewPrompter.instance.onPaidPublish();
       return;
     }
     final key = err ?? 'payErr';
