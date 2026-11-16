@@ -17,6 +17,7 @@ const L = require('./logic');
 const INVITES = 'invites';
 const PURCHASES = 'purchases';
 const USERS = 'users';
+const CREDITS = 'credits';
 
 function publisherError(err) {
   const status = Number((err && (err.code || (err.response && err.response.status))) || 0);
@@ -40,6 +41,7 @@ async function redeem(deps, uid, rawInput) {
   const { db, fv, publisher, now, log } = deps;
   if (!uid) throw new L.RedeemError('unauthenticated', 'no-auth');
   const input = L.parseRedeemInput(rawInput);
+  if (L.isBundle(input.productId)) return redeemBundle(deps, uid, input);
   const hash = L.sha256(input.purchaseToken);
   const pRef = db.collection(PURCHASES).doc(hash);
 
@@ -146,6 +148,195 @@ async function redeem(deps, uid, rawInput) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// "Düğün Zinciri" paketi (zarfla_invite_3): hak defteri credits/{uid}
+// ---------------------------------------------------------------------------
+
+/** Ücretli davetiye belgesi (redeem ile aynı alanlar). */
+function paidInviteDoc(fv, uid, built, createdAt, nowMs) {
+  const { expiresAtMs, deleteAtMs } = L.paidTimes(nowMs);
+  return {
+    doc: {
+      ownerUid: uid,
+      schema: 1,
+      data: built.data,
+      plan: 'paid',
+      status: 'live',
+      createdAt,
+      expiresAt: fv.ts(expiresAtMs),
+      deleteAt: fv.ts(deleteAtMs),
+      ...built.lock,
+    },
+    expiresAtMs,
+  };
+}
+
+/** Davetiye yazılabilir mi (sahibi aynı, henüz ücretli değil)? Dönen değer: korunacak createdAt. */
+function writableCreatedAt(fv, inv, uid) {
+  if (!inv.exists) return fv.serverTimestamp();
+  const cur = inv.data();
+  if (cur.ownerUid !== uid) throw new L.RedeemError('permission-denied', 'not-owner');
+  if (cur.plan === 'paid') throw new L.RedeemError('failed-precondition', 'already-paid');
+  return cur.createdAt || fv.serverTimestamp();
+}
+
+function creditsDoc(fv, credits) {
+  return { balance: credits.balance, lots: credits.lots, ledger: credits.ledger, updatedAt: fv.serverTimestamp() };
+}
+
+async function readBalance(db, uid) {
+  const s = await db.collection(CREDITS).doc(uid).get();
+  return s.exists ? L.normCredits(s.data()).balance : 0;
+}
+
+/**
+ * Paket alımı: jeton Google Play'de BİR kez doğrulanır (purchases/{sha256} kaydı = idempotentlik),
+ * 3 hak credits/{uid}'e yazılır. inviteId + data verilirse aynı işlemde 1 hak kullanılıp davetiye ücretli yazılır.
+ * Daha önce işlenmiş jeton: aynı kullanıcı → (davetiye varsa) useCredit yolu, yoksa alreadyGranted;
+ * başka kullanıcı → davetiyesiz çağrıda alreadyGranted (istemci tüketir), davetiyeli çağrıda token-used.
+ * Tüketme istemcide, başarıdan sonra (zarfla_invite_1 ile aynı).
+ */
+async function redeemBundle(deps, uid, input) {
+  const { db, fv, publisher, now, log } = deps;
+  const hash = L.sha256(input.purchaseToken);
+  const pRef = db.collection(PURCHASES).doc(hash);
+
+  const already = async (rec) => {
+    if (rec.voided) throw new L.RedeemError('failed-precondition', 'voided');
+    if (rec.uid !== uid) {
+      if (input.inviteId === null) {
+        return { ok: true, inviteId: null, expiresAt: null, alreadyGranted: true, premium: true, sameInvite: false, credits: await readBalance(db, uid) };
+      }
+      throw new L.RedeemError('already-exists', 'token-used');
+    }
+    if (input.inviteId === null) {
+      return { ok: true, inviteId: null, expiresAt: null, alreadyGranted: true, premium: true, sameInvite: false, credits: await readBalance(db, uid) };
+    }
+    const r = await useCredit(deps, uid, { inviteId: input.inviteId, data: input.data });
+    return { ...r, alreadyGranted: true };
+  };
+
+  const pre = await pRef.get();
+  if (pre.exists) return already(pre.data());
+
+  const built = input.inviteId === null ? null : L.buildPaidData(input.data, input.inviteId);
+
+  let purchase;
+  try {
+    purchase = await publisher.getProduct(input.productId, input.purchaseToken);
+  } catch (e) {
+    const err = publisherError(e);
+    (err.reason === 'publisher-auth' ? log.error : log.warn)('purchases.products.get failed', { status: e && e.code, reason: err.reason });
+    throw err;
+  }
+  const bad = L.checkProductPurchase(purchase, input.productId);
+  if (bad) throw new L.RedeemError('failed-precondition', bad);
+  if (purchase.obfuscatedExternalAccountId && purchase.obfuscatedExternalAccountId !== uid) {
+    log.warn('obfuscatedExternalAccountId mismatch (bundle)');
+  }
+
+  const nowMs = now();
+  const rights = L.rightsFor(input.productId);
+  const cRef = db.collection(CREDITS).doc(uid);
+  const iRef = input.inviteId === null ? null : db.collection(INVITES).doc(input.inviteId);
+  const uRef = db.collection(USERS).doc(uid);
+
+  const result = await db.runTransaction(async (tx) => {
+    const p2 = await tx.get(pRef);
+    const c = await tx.get(cRef);
+    const inv = iRef ? await tx.get(iRef) : null;
+    if (p2.exists) return { raced: p2.data() };
+    let credits = L.applyGrant(c.exists ? c.data() : null, { h: hash, productId: input.productId, rights, nowMs });
+    let expiresAt = null;
+    let invDoc = null;
+    if (iRef) {
+      const createdAt = writableCreatedAt(fv, inv, uid);
+      credits = L.applyUse(credits, { inviteId: input.inviteId, nowMs, preferH: hash }).credits;
+      const w = paidInviteDoc(fv, uid, built, createdAt, nowMs);
+      invDoc = w.doc;
+      expiresAt = w.expiresAtMs;
+    }
+    if (invDoc) tx.set(iRef, invDoc);
+    tx.set(cRef, creditsDoc(fv, credits));
+    tx.set(pRef, {
+      uid,
+      inviteId: null,
+      kind: 'bundle',
+      rights,
+      productId: input.productId,
+      orderId: purchase.orderId || null,
+      purchaseTimeMillis: purchase.purchaseTimeMillis ? Number(purchase.purchaseTimeMillis) : null,
+      purchaseType: purchase.purchaseType == null ? null : purchase.purchaseType,
+      regionCode: purchase.regionCode || null,
+      grantedAt: fv.serverTimestamp(),
+      upgrade: !!(inv && inv.exists),
+      voided: false,
+    });
+    tx.set(uRef, { premium: true, updatedAt: fv.serverTimestamp() }, { merge: true });
+    return { expiresAt, balance: credits.balance };
+  });
+  if (result.raced) return already(result.raced);
+
+  if (purchase.acknowledgementState !== 1) {
+    try {
+      await publisher.acknowledge(input.productId, input.purchaseToken);
+    } catch (e) {
+      log.warn('acknowledge failed (client consume will acknowledge)', { status: e && e.code });
+    }
+  }
+  log.info('bundle granted', { rights, orderId: purchase.orderId || null, used: input.inviteId !== null });
+  return {
+    ok: true,
+    inviteId: input.inviteId,
+    expiresAt: result.expiresAt,
+    alreadyGranted: false,
+    premium: true,
+    sameInvite: input.inviteId !== null,
+    credits: result.balance,
+  };
+}
+
+/**
+ * useCredit: defterden 1 hak düşer ve davetiyeyi AYNI işlemde ücretli yazar (Play'e gidilmez).
+ * İdempotent: bu davetiye zaten bir haktan ödendiyse yeniden düşülmez, başarı döner (alreadyGranted).
+ * Bakiye yoksa 'no-credit'.
+ */
+async function useCredit(deps, uid, rawInput) {
+  const { db, fv, now, log } = deps;
+  if (!uid) throw new L.RedeemError('unauthenticated', 'no-auth');
+  const input = L.parseUseCreditInput(rawInput);
+  const built = L.buildPaidData(input.data, input.inviteId);
+  const nowMs = now();
+  const cRef = db.collection(CREDITS).doc(uid);
+  const iRef = db.collection(INVITES).doc(input.inviteId);
+  const uRef = db.collection(USERS).doc(uid);
+  const r = await db.runTransaction(async (tx) => {
+    const c = await tx.get(cRef);
+    const inv = await tx.get(iRef);
+    const cur = c.exists ? c.data() : null;
+    if (L.lotForInvite(cur, input.inviteId) && inv.exists && inv.data().ownerUid === uid && inv.data().plan === 'paid') {
+      return { granted: false, expiresAt: L.toMs(inv.data().expiresAt), balance: L.normCredits(cur).balance };
+    }
+    const createdAt = writableCreatedAt(fv, inv, uid);
+    const { credits } = L.applyUse(cur, { inviteId: input.inviteId, nowMs });
+    const w = paidInviteDoc(fv, uid, built, createdAt, nowMs);
+    tx.set(iRef, w.doc);
+    tx.set(cRef, creditsDoc(fv, credits));
+    tx.set(uRef, { premium: true, updatedAt: fv.serverTimestamp() }, { merge: true });
+    return { granted: true, expiresAt: w.expiresAtMs, balance: credits.balance };
+  });
+  if (r.granted) log.info('credit used', { inviteId: input.inviteId, left: r.balance });
+  return {
+    ok: true,
+    inviteId: input.inviteId,
+    expiresAt: r.expiresAt,
+    alreadyGranted: !r.granted,
+    premium: true,
+    sameInvite: true,
+    credits: r.balance,
+  };
+}
+
 /** Kullanıcının iade edilmemiş başka satın alması yoksa premium (reklamsız) bayrağını kaldırır. */
 async function recomputePremium(deps, uid) {
   const { db, fv } = deps;
@@ -161,6 +352,11 @@ async function recomputePremium(deps, uid) {
  * kapanır (expiresAt = min(mevcut, şimdi+24s), deleteAt +30 gün), satın alma "voided" işaretlenir,
  * kullanıcının başka geçerli alımı yoksa premium (reklamsız) bayrağı kalkar. Plan/tasarım alanlarına
  * dokunulmaz (kurallar ücretsiz planda yalnız papatyaya izin verdiği için plan değişimi belgeyi bozardı).
+ *
+ * PAKET (zarfla_invite_3) İADE POLİTİKASI: Google Play iadesi paketin tamamı içindir. İade edilen paketin
+ * KULLANILMAMIŞ hakları defterden silinir (credits/{uid}.balance düşer, lot "voided"), bu paketin haklarıyla
+ * yayınlanmış TÜM davetiyeler tekli iadeyle aynı şekilde en geç 24 saatte kapanır. Başka paketlerin hakları
+ * ve tekli alımlarla yayınlanmış davetiyeler etkilenmez.
  */
 async function processVoided(deps) {
   const { db, fv, publisher, now, log } = deps;
@@ -177,20 +373,38 @@ async function processVoided(deps) {
       seen++;
       if (!v || !v.purchaseToken) continue;
       const pRef = db.collection(PURCHASES).doc(L.sha256(v.purchaseToken));
+      const hash = L.sha256(v.purchaseToken);
       const changed = await db.runTransaction(async (tx) => {
         const p = await tx.get(pRef);
         if (!p.exists || p.data().voided) return null;
         const rec = p.data();
-        const iRef = db.collection(INVITES).doc(rec.inviteId);
-        const inv = await tx.get(iRef);
+        // Paket: kalan haklar silinir, paketle yayınlanan TÜM davetiyeler (en çok 3) en geç 24 saatte kapanır.
+        const bundle = rec.kind === 'bundle' || L.isBundle(rec.productId);
+        let cRef = null;
+        let voidRes = null;
+        let inviteIds = rec.inviteId ? [rec.inviteId] : [];
+        if (bundle) {
+          cRef = db.collection(CREDITS).doc(rec.uid);
+          const c = await tx.get(cRef);
+          voidRes = L.applyVoid(c.exists ? c.data() : null, hash, nowMs);
+          inviteIds = voidRes.invites;
+        }
+        const invs = [];
+        for (const id of inviteIds) {
+          const iRef = db.collection(INVITES).doc(id);
+          invs.push([iRef, await tx.get(iRef)]);
+        }
         tx.update(pRef, {
           voided: true,
           voidedAt: fv.serverTimestamp(),
           voidedTimeMillis: v.voidedTimeMillis ? Number(v.voidedTimeMillis) : null,
           voidedSource: v.voidedSource == null ? null : v.voidedSource,
           voidedReason: v.voidedReason == null ? null : v.voidedReason,
+          ...(bundle ? { creditsRemoved: voidRes.removed } : {}),
         });
-        if (inv.exists) {
+        if (bundle) tx.set(cRef, creditsDoc(fv, voidRes.credits));
+        for (const [iRef, inv] of invs) {
+          if (!inv.exists) continue;
           const cur = inv.data();
           const curExp = L.toMs(cur.expiresAt);
           if (cur.plan === 'paid' && cur.ownerUid === rec.uid && curExp != null) {
@@ -270,4 +484,4 @@ async function cleanupStorage(deps) {
   return { deleted };
 }
 
-module.exports = { redeem, processVoided, enforceFreeLimit, cleanupStorage, recomputePremium, publisherError };
+module.exports = { redeem, useCredit, processVoided, enforceFreeLimit, cleanupStorage, recomputePremium, publisherError };

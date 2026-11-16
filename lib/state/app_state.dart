@@ -115,7 +115,23 @@ class AppState extends ChangeNotifier {
     try {
       await c.ensureUser();
       if (!premiumUser && await c.fetchPremium()) await _setPremiumUser();
+      await refreshCredits();
     } catch (_) {}
+  }
+
+  /// Sunucudaki paket hakkı bakiyesini (credits/{uid}) okur. Anonim oturum: yalnız aynı uid'de görünür
+  /// (uygulama silinip kurulursa yeni uid → bakiye görünmez; bkz. README / billing_logic).
+  Future<void> refreshCredits() async {
+    final c = cloud;
+    if (c == null || !c.ready) return;
+    final n = await c.fetchCredits();
+    if (n != null) _setCredits(n);
+  }
+
+  void _setCredits(int n) {
+    if (creditBalance == n) return;
+    creditBalance = n;
+    notifyListeners();
   }
 
   Future<void> _setPremiumUser() async {
@@ -243,8 +259,12 @@ class AppState extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
-  // Ücretli yayın: Google Play "1 Davetiye Hakkı" (tüketilebilir) + redeemPurchase
+  // Ücretli yayın: Google Play "1 Davetiye Hakkı" / "Düğün Zinciri" (3 hak, tüketilebilir) + redeemPurchase
   // ---------------------------------------------------------------------------
+
+  /// Sunucudaki kullanılmamış paket hakkı ("2 hakkınız kaldı"). Yalnız sunucu yanıtı / credits belgesiyle değişir.
+  int creditBalance = 0;
+  bool _creditBusy = false;
 
   PendingPaid? _pending;
   Completer<String?>? _buyWait;
@@ -256,9 +276,32 @@ class AppState extends ChangeNotifier {
   /// Play'den gelen yerelleştirilmiş fiyat (yoksa ARB'deki 'price' gösterilir).
   String? get playPrice => billing?.price;
 
+  /// Paket fiyatı (Play); ürün Play Console'da yoksa null → paket kartı gösterilmez.
+  String? get bundlePrice => billing?.bundlePrice;
+
+  /// Paket tasarruf yüzdesi, Play fiyatlarından hesaplanır (ör. 25); hesaplanamazsa null.
+  int? get bundleSavePct {
+    final b = billing;
+    if (b == null) return null;
+    return bundleSavingsPercent(
+      single: b.singleRaw,
+      bundle: b.bundleRaw,
+      singleCurrency: b.singleCurrency,
+      bundleCurrency: b.bundleCurrency,
+      rights: rightsFor(kBundleProductId),
+    );
+  }
+
   bool get billingReady => billing?.available ?? false;
 
-  bool get hasCredit => _credit != null;
+  /// Ödeme yapmadan yayınlanabilir: tüketilmemiş alım ya da sunucuda paket hakkı var.
+  bool get hasCredit => _credit != null || creditBalance > 0;
+
+  /// Tüketilmemiş (sunucunun henüz bir davetiyeye bağlamadığı) tekli alım.
+  bool get hasUnconsumed => _credit != null;
+
+  /// Ücretli yayın düğmesi çalışır mı: Play hazır ya da kullanılabilir paket hakkı var.
+  bool get canPayOrUseCredit => billingReady || creditBalance > 0;
 
   /// Ödeme alındı ama sunucu henüz hak vermedi (Play beklemede ya da doğrulama yapılamadı):
   /// ana ekranda "Ödemeniz doğrulanıyor…" bandı + "Tekrar dene".
@@ -292,7 +335,11 @@ class AppState extends ChangeNotifier {
         results.add(await _handleBought(p));
       }
       _setVerifying(needsVerifyBanner(results, pending: q.pending));
-      return restoreMessageKey(results, pending: q.pending);
+      await refreshCredits();
+      final key = restoreMessageKey(results, pending: q.pending);
+      // Paket hakları sunucuda duruyorsa (aynı uid) kalan sayı söylenir.
+      if (creditBalance > 0 && (key == 'restoreDone' || key == 'restoreNone')) return 'restoreCreditsLeft';
+      return key;
     } finally {
       _restoring = false;
       notifyListeners();
@@ -321,13 +368,15 @@ class AppState extends ChangeNotifier {
   }
 
   /// Ücretli yayın (yayınla ekranı). Dönen değer: null (yayında), 'paidPhotoErr' (yayında, fotoğraf eksik)
-  /// ya da hata metin anahtarı.
-  Future<String?> publishPaid(Invitation inv) async {
+  /// ya da hata metin anahtarı. [productId]: satın alma gerekirse hangi ürün (tekli ya da "Düğün Zinciri").
+  /// Sıra (paidRouteFor): tüketilmemiş alım > sunucudaki paket hakkı (satın almasız) > Play satın alma.
+  Future<String?> publishPaid(Invitation inv, {String productId = kInviteProductId}) async {
     final c = cloud;
     final b = billing;
     if (c == null || !c.ready) return 'cloudSetup';
-    if (b == null || !b.available) return 'payUnavailable';
-    if (_buyWait != null) return 'payProcessing';
+    final billingOk = b != null && b.available;
+    if (!billingOk && creditBalance <= 0) return 'payUnavailable';
+    if (_buyWait != null || _creditBusy) return 'payProcessing';
     inv
       ..n1 = cloudSafeName(inv.n1)
       ..n2 = cloudSafeName(inv.n2)
@@ -349,15 +398,21 @@ class AppState extends ChangeNotifier {
     await _store.savePendingPaid(ctx);
 
     // Kullanılmamış hak varsa yeniden satın alınmaz (tüketilmemiş alım varken Play yeni alıma izin vermez).
-    final credit = _credit ?? _firstOrNull(await b.owned());
-    if (credit != null) {
+    final credit = billingOk ? (_credit ?? _firstOrNull(await b!.owned())) : null;
+    final route = paidRouteFor(balance: creditBalance, hasUnconsumed: credit != null);
+    if (route == PaidRoute.unconsumed) {
       _credit = null;
-      return _handleBought(credit);
+      return _handleBought(credit!);
+    }
+    if (route == PaidRoute.serverCredit) {
+      final used = await _useServerCredit(inv, ctx);
+      // Sunucuda hak kalmamışsa (başka cihazda kullanıldı / iade) satın almaya geçilir.
+      if (used != 'creditNone' || !billingOk) return used;
     }
 
     final wait = Completer<String?>();
     _buyWait = wait;
-    final started = await b.buy(accountId: uid);
+    final started = await b!.buy(productId: productId, accountId: uid);
     if (!started) {
       _buyWait = null;
       return 'payUnavailable';
@@ -369,6 +424,39 @@ class AppState extends ChangeNotifier {
   }
 
   static BillingPurchase? _firstOrNull(List<BillingPurchase> l) => l.isEmpty ? null : l.first;
+
+  /// "Zaten sahipsiniz" hatasında: denenen ürünün tüketilmemiş alımı, yoksa herhangi biri.
+  static BillingPurchase? _ownedFor(List<BillingPurchase> l, String productId) {
+    for (final p in l) {
+      if (p.productId == productId) return p;
+    }
+    return _firstOrNull(l);
+  }
+
+  /// Paket hakkıyla yayın (useCredit). Bağlam (bulut kimliği) önceden saklandığı için yeniden denemede
+  /// sunucu aynı davetiyeye ikinci hak düşmez.
+  Future<String?> _useServerCredit(Invitation inv, PendingPaid ctx) async {
+    final c = cloud;
+    if (c == null) return 'cloudSetup';
+    _creditBusy = true;
+    try {
+      final warn = await c.publishWithCredit(inv, inviteId: ctx.cloudId, onCredits: _setCredits);
+      await _clearPending();
+      _payVerifying = false;
+      premiumUser = true;
+      await _store.savePremiumUser(true);
+      await save();
+      return warn;
+    } on RedeemFailure catch (f) {
+      if (f.key == 'creditNone') _setCredits(0);
+      return f.key;
+    } catch (e) {
+      debugPrint('credit publish failed: $e');
+      return 'payVerifyErr';
+    } finally {
+      _creditBusy = false;
+    }
+  }
 
   void _finishWait(String? result) {
     final w = _buyWait;
@@ -387,7 +475,7 @@ class AppState extends ChangeNotifier {
   Future<void> _onPurchaseInner(BillingPurchase p) async {
     final b = billing;
     if (b == null) return;
-    if (p.productId != kInviteProductId) {
+    if (!kProductIds.contains(p.productId)) {
       await b.complete(p);
       return;
     }
@@ -399,7 +487,7 @@ class AppState extends ChangeNotifier {
         _finishWait('payCancelled');
       case BillingStatus.error:
         if (p.alreadyOwned) {
-          final o = _firstOrNull(await b.owned());
+          final o = _ownedFor(await b.owned(), p.productId);
           if (o != null) {
             await _handleBought(o); // sonucu bekleyen ekrana kendisi iletir
             return;
@@ -431,11 +519,15 @@ class AppState extends ChangeNotifier {
       final ctx = _pending;
       final inv = ctx == null ? null : byId(ctx.invId);
       if (ctx != null && inv != null && (!inv.isLive || (canUpgradeToPaid(inv) && inv.cloudId == ctx.cloudId))) {
-        final warn = await c.publishPaid(inv, purchaseToken: p.token, inviteId: ctx.cloudId);
+        final warn = await c.publishPaid(inv,
+            purchaseToken: p.token, inviteId: ctx.cloudId, productId: p.productId, onCredits: _setCredits);
         await _granted(p);
         return warn;
       }
-      await c.redeemGranted(p.token);
+      // Bağlam yok (açılış / geri yükleme): tekli alımda sunucu daha önce hak verdiyse başarı; paket alımında
+      // 3 hak deftere yazılır (davetiyeye bağlanmadan) ve alım tüketilir.
+      final bal = await c.redeemGranted(p.token, productId: p.productId);
+      if (bal != null) _setCredits(bal);
       await _granted(p);
       return null;
     } on RedeemFailure catch (f) {

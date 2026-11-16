@@ -162,15 +162,41 @@ class CloudService {
   /// Hak verilmezse [RedeemFailure] fırlatır. Hak verildiyse [inv] yayında işaretlenir; dönen değer null ya da
   /// fotoğraflar yüklenemediyse 'paidPhotoErr' (davetiye yine yayındadır, "Güncelle" ile tekrar denenir).
   /// [inviteId] satın almadan önce seçilir ve saklanır: yeniden denemede aynı kimlik → sunucu idempotent.
-  Future<String?> publishPaid(Invitation inv, {required String purchaseToken, required String inviteId}) async {
+  /// [productId]: kInviteProductId ya da kBundleProductId (paket: sunucu 3 hak yazar, 1'ini bu davetiyede kullanır).
+  /// Dönen [onCredits] sunucunun bildirdiği güncel paket bakiyesi (yanıtta varsa).
+  Future<String?> publishPaid(
+    Invitation inv, {
+    required String purchaseToken,
+    required String inviteId,
+    String productId = kInviteProductId,
+    void Function(int balance)? onCredits,
+  }) {
+    return _publishPaidWith(inv, inviteId, onCredits, (data) => _redeem({
+          'inviteId': inviteId,
+          'purchaseToken': purchaseToken,
+          'productId': productId,
+          'data': data,
+        }));
+  }
+
+  /// Paket hakkıyla ücretli yayın (useCredit): satın alma yok; sunucu defterden 1 hak düşer ve belgeyi yazar.
+  /// Bakiye yoksa RedeemFailure('creditNone', keep).
+  Future<String?> publishWithCredit(Invitation inv, {required String inviteId, void Function(int balance)? onCredits}) {
+    return _publishPaidWith(inv, inviteId, onCredits,
+        (data) => _redeem({'inviteId': inviteId, 'data': data}, function: kUseCreditFunction));
+  }
+
+  Future<String?> _publishPaidWith(
+    Invitation inv,
+    String inviteId,
+    void Function(int balance)? onCredits,
+    Future<Map<String, dynamic>> Function(String data) call,
+  ) async {
     final origDate = inv.date;
     final data = inviteDataJson(inv, publicId: inviteId, localPlan: 'premium', coverUrl: '', photoUrls: const []);
-    final res = await _redeem({
-      'inviteId': inviteId,
-      'purchaseToken': purchaseToken,
-      'productId': kInviteProductId,
-      'data': data,
-    });
+    final res = await call(data);
+    final bal = creditsFromResponse(res);
+    if (bal != null) onCredits?.call(bal);
     final exp = res['expiresAt'];
     // Ücretsizden yükseltme (aynı kimlik): Storage'daki fotoğraflar korunur; ancak süresi çoktan dolmuş belgenin
     // dosyaları temizlenmiş olabilir (deleteAt) → eşleme sıfırlanır, fotoğraflar yeniden yüklenir.
@@ -202,8 +228,21 @@ class CloudService {
 
   /// Davetiyesiz doğrulama (açılışta bulunan tüketilmemiş alım): sunucu bu jetonla daha önce hak verdiyse
   /// başarı döner (uygulama tüketir); vermediyse RedeemFailure('payCredit', keep) — kullanılmamış hak.
-  Future<void> redeemGranted(String purchaseToken) async {
-    await _redeem({'purchaseToken': purchaseToken, 'productId': kInviteProductId});
+  /// Paket alımında (davetiyesiz) sunucu 3 hakkı deftere yazar ve başarı döner; dönen değer güncel bakiye (yoksa null).
+  Future<int?> redeemGranted(String purchaseToken, {String productId = kInviteProductId}) async {
+    final res = await _redeem({'purchaseToken': purchaseToken, 'productId': productId});
+    return creditsFromResponse(res);
+  }
+
+  /// credits/{uid}.balance — paket hakkı bakiyesi (yalnız sunucu yazar). Okunamazsa null (bilinmiyor).
+  Future<int?> fetchCredits() async {
+    try {
+      final uid = await ensureUser();
+      final s = await _db.collection('credits').doc(uid).get().timeout(_opTimeout);
+      return balanceFromDoc(s.data());
+    } catch (_) {
+      return null;
+    }
   }
 
   /// users/{uid}.premium (reklamsız) — yalnız sunucu yazar. Hata: false.
@@ -217,7 +256,7 @@ class CloudService {
     }
   }
 
-  Future<Map<String, dynamic>> _redeem(Map<String, Object> payload) async {
+  Future<Map<String, dynamic>> _redeem(Map<String, Object> payload, {String function = kRedeemFunction}) async {
     if (!_ready) throw const RedeemFailure('cloudSetup', RedeemAction.keep);
     try {
       await ensureUser();
@@ -226,7 +265,7 @@ class CloudService {
     }
     try {
       final callable = FirebaseFunctions.instanceFor(region: kFunctionsRegion).httpsCallable(
-        kRedeemFunction,
+        function,
         options: HttpsCallableOptions(timeout: const Duration(seconds: 70)),
       );
       final res = await callable.call<Object?>(payload).timeout(const Duration(seconds: 80));
@@ -234,12 +273,12 @@ class CloudService {
       if (d is! Map || d['ok'] != true) throw const RedeemFailure('payVerifyErr', RedeemAction.keep);
       return d.map((k, v) => MapEntry('$k', v));
     } on FirebaseFunctionsException catch (e) {
-      debugPrint('redeemPurchase: ${e.code} ${e.message}');
+      debugPrint('$function: ${e.code} ${e.message}');
       throw redeemFailureFor(e.code, e.message);
     } on RedeemFailure {
       rethrow;
     } catch (e) {
-      debugPrint('redeemPurchase failed: $e');
+      debugPrint('$function failed: $e');
       throw const RedeemFailure('payVerifyErr', RedeemAction.keep);
     }
   }

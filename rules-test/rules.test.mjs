@@ -556,6 +556,37 @@ describe('Firestore · Aşama 3 (ödeme, sunucu yazımı, users/purchases)', () 
     await assertFails(getDoc(doc(db('alice'), 'purchases', 'h1')));
     await assertFails(setDoc(doc(db('alice'), 'purchases', 'h2'), { uid: 'alice' }));
   });
+  test('CR1 credits: sahibi kendi bakiyesini okur; başkası/oturumsuz okuyamaz; listelenemez', async () => {
+    const c = serverLogic.applyGrant(null, { h: 'h1', productId: 'zarfla_invite_3', rights: 3, nowMs: Date.now() });
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'credits', 'alice'), c);
+    });
+    const s = await assertSucceeds(getDoc(doc(db('alice'), 'credits', 'alice')));
+    assert.equal(s.data().balance, 3);
+    await assertFails(getDoc(doc(db('bob'), 'credits', 'alice')));
+    await assertFails(getDoc(doc(db(null), 'credits', 'alice')));
+    await assertFails(getDocs(collection(db('alice'), 'credits')));
+  });
+  test('CR2 credits: istemci bakiye oluşturamaz, artıramaz, silemez', async () => {
+    await assertFails(setDoc(doc(db('alice'), 'credits', 'alice'), { balance: 3, lots: [], ledger: [] }));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'credits', 'alice'), { balance: 1, lots: [], ledger: [] });
+    });
+    await assertFails(updateDoc(doc(db('alice'), 'credits', 'alice'), { balance: 99 }));
+    await assertFails(setDoc(doc(db('bob'), 'credits', 'bob'), { balance: 99 }));
+    await assertFails(deleteDoc(doc(db('alice'), 'credits', 'alice')));
+  });
+  test('CR3 paket hakkıyla sunucunun (useCredit) yazdığı ücretli belge kurallara uyar ve sahibi güncelleyebilir', async () => {
+    const built = serverLogic.buildPaidData(dataJson({ theme: 'altin', plan: 'premium' }), ID);
+    const t = serverLogic.paidTimes(Date.now());
+    await seed(ID, {
+      ownerUid: 'alice', schema: 1, data: built.data, plan: 'paid', status: 'live',
+      createdAt: Timestamp.fromMillis(Date.now()), expiresAt: Timestamp.fromMillis(t.expiresAtMs),
+      deleteAt: Timestamp.fromMillis(t.deleteAtMs), ...built.lock,
+    });
+    const o = JSON.parse(built.data);
+    await assertSucceeds(updateDoc(inv('alice'), { data: JSON.stringify({ ...o, msg: 'Yeni mesaj' }) }));
+  });
 });
 
 // ============================================================================

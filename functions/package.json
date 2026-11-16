@@ -1,7 +1,7 @@
 {
   "name": "zarfla-functions",
   "private": true,
-  "description": "Zarfla Cloud Functions: redeemPurchase, voidedPurchases, enforceFreeLimit, cleanupStorage (europe-west3)",
+  "description": "Zarfla Cloud Functions: redeemPurchase, useCredit, voidedPurchases, enforceFreeLimit, cleanupStorage (europe-west3)",
   "main": "index.js",
   "engines": {
     "node": "22"

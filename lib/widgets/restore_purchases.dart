@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../billing/billing_logic.dart';
 import '../l10n/strings.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -12,7 +13,7 @@ Future<void> runRestorePurchases(BuildContext context) async {
   final st = context.read<AppState>();
   final key = await st.restorePurchases();
   if (!context.mounted) return;
-  showToast(context, context.t(key), ms: 6000);
+  showToast(context, context.t(key, {'n': st.creditBalance}), ms: 6000);
 }
 
 /// Yayınla ekranı alt bilgisi ve benzeri yerler için sade metin düğmesi.
@@ -55,6 +56,46 @@ class PayVerifyBanner extends StatelessWidget {
           onPressed: st.restoring ? null : () => runRestorePurchases(context),
         ),
       ],
+    );
+  }
+}
+
+/// "2 hakkınız kaldı": sunucudaki "Düğün Zinciri" paket hakkı bakiyesi (yalnız > 0 iken görünür).
+class CreditsBadge extends StatelessWidget {
+  const CreditsBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final n = context.select<AppState, int>((s) => s.creditBalance);
+    if (n <= 0) return const SizedBox.shrink();
+    return Semantics(
+      container: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpace.x3),
+        padding: const EdgeInsetsDirectional.fromSTEB(AppSpace.x3, AppSpace.x3, AppSpace.x4, AppSpace.x3),
+        decoration: BoxDecoration(
+          color: AppColors.tint,
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(padding: EdgeInsets.only(top: 1), child: ZGlyph(ZGlyphs.crown, size: 18, color: AppColors.primary)),
+            const SizedBox(width: AppSpace.x2 + 2),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(context.t(creditsLeftKey(n), {'n': n}), style: bodyStyle(14.5, weight: FontWeight.w700, color: AppColors.ink)),
+                  const SizedBox(height: 2),
+                  Text(context.t('creditsLeftP'), style: bodyStyle(13, color: AppColors.muted, height: 1.4)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

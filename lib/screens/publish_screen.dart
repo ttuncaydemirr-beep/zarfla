@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../billing/billing_logic.dart';
 import '../data/catalog.dart';
 import '../l10n/strings.dart';
 import '../state/app_state.dart';
@@ -17,6 +18,8 @@ import 'done_screen.dart';
 /// ekranda kalan durum paneli (UX #8).
 /// Ücretsiz: Firestore + Storage. Ücretli: Google Play'de tek seferlik, tüketilebilir zarfla_invite_1 alımı →
 /// redeemPurchase sunucuda doğrular ve yazar → uygulama alımı tüketir.
+/// "Düğün Zinciri" (zarfla_invite_3, 3 hak): Play'de ürün varsa ikinci kart; tasarruf rozeti Play fiyatlarından
+/// hesaplanır. Sunucuda paket hakkı varsa ödeme yapılmaz, 1 hak kullanılır (kalan sayı gösterilir).
 class PublishScreen extends StatefulWidget {
   const PublishScreen({super.key, required this.invId});
 
@@ -67,7 +70,9 @@ class _PublishScreenState extends State<PublishScreen> {
       inv.theme = 'papatya';
       await st.save();
     }
-    final err = plan == 'free' ? await st.publishFree(inv) : await st.publishPaid(inv);
+    final err = plan == 'free'
+        ? await st.publishFree(inv)
+        : await st.publishPaid(inv, productId: plan == 'bundle' ? kBundleProductId : kInviteProductId);
     if (!mounted) return;
     setState(() => _busy = false);
     // 'paidPhotoErr': ödeme alındı ve davetiye yayında, yalnız bazı fotoğraflar yüklenemedi.
@@ -87,17 +92,25 @@ class _PublishScreenState extends State<PublishScreen> {
     final inv = st.byId(widget.invId);
     if (inv == null) return const Scaffold(body: SizedBox.shrink());
     final prem = kThemes[inv.theme]?.premium ?? false;
-    final plan = _plan ?? (prem ? 'premium' : 'free');
     final price = st.playPrice ?? context.t('price');
-    final payReady = st.billingReady;
+    final bundlePrice = st.bundlePrice;
+    final credits = st.creditBalance;
+    // Paket kartı: Play'de ürün var ve elde kullanılacak hak yok.
+    final showBundle = bundlePrice != null && !st.hasCredit;
+    var plan = _plan ?? (prem ? 'premium' : 'free');
+    if (plan == 'bundle' && !showBundle) plan = 'premium';
+    final paid = plan != 'free';
+    final payReady = st.canPayOrUseCredit;
     final status = _status;
     final String label;
     if (_busy) {
       label = context.t(plan == 'free' ? 'cloudPublishing' : 'payProcessing');
     } else if (plan == 'free') {
       label = prem ? context.t('publishFreePapatya') : context.t('publishFree');
+    } else if (st.hasCredit) {
+      label = context.t('payUseCredit');
     } else {
-      label = st.hasCredit ? context.t('payUseCredit') : context.t('pay', {'p': price});
+      label = context.t('pay', {'p': plan == 'bundle' ? bundlePrice! : price});
     }
     return Scaffold(
       body: SafeArea(
@@ -129,20 +142,37 @@ class _PublishScreenState extends State<PublishScreen> {
                     onTap: () => setState(() => _plan = 'premium'),
                   ),
                   const SizedBox(height: AppSpace.x3),
+                  if (showBundle) ...[
+                    _BundleCard(
+                      on: plan == 'bundle',
+                      price: bundlePrice!,
+                      savePct: st.bundleSavePct,
+                      onTap: () => setState(() => _plan = 'bundle'),
+                    ),
+                    const SizedBox(height: AppSpace.x3),
+                  ],
                   _FreeCard(
                     on: plan == 'free',
                     premTheme: prem,
                     onTap: () => setState(() => _plan = 'free'),
                   ),
-                  if (plan == 'premium' && !payReady)
+                  if (paid && !payReady)
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpace.x3),
                       child: StatusPanel(tone: ZStatusTone.error, text: context.t('payUnavailable')),
                     ),
-                  if (plan == 'premium' && payReady && st.hasCredit)
+                  if (paid && st.hasUnconsumed)
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpace.x3),
                       child: StatusPanel(tone: ZStatusTone.success, text: context.t('payCredit')),
+                    )
+                  else if (paid && credits > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpace.x3),
+                      child: StatusPanel(
+                        tone: ZStatusTone.success,
+                        text: [context.t(creditsLeftKey(credits), {'n': credits}), context.t('creditWillUse')].join(' · '),
+                      ),
                     ),
                   const SizedBox(height: AppSpace.x3),
                   // Güven şeridi
@@ -161,12 +191,12 @@ class _PublishScreenState extends State<PublishScreen> {
               ),
             ),
             _PayBar(
-              lockLine: plan == 'premium' ? context.t('lockRulesShort') : null,
+              lockLine: paid ? context.t('lockRulesShort') : null,
               button: PrimaryButton(
                 label: label,
                 block: true,
-                icon: plan == 'premium' && !_busy ? const ZGlyph(ZGlyphs.crown, size: 18, color: AppColors.brandRing) : null,
-                onPressed: (_busy || (plan != 'free' && !payReady)) ? null : () => _publish(plan),
+                icon: paid && !_busy ? const ZGlyph(ZGlyphs.crown, size: 18, color: AppColors.brandRing) : null,
+                onPressed: (_busy || (paid && !payReady)) ? null : () => _publish(plan),
               ),
             ),
           ],
@@ -301,6 +331,91 @@ class _PremiumCard extends StatelessWidget {
                     ],
                   ),
                 ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Düğün Zinciri": 3 Davetiye Hakkı. Tasarruf rozeti yalnız Play fiyatlarından hesaplanabildiğinde görünür.
+class _BundleCard extends StatelessWidget {
+  const _BundleCard({required this.on, required this.price, required this.savePct, required this.onTap});
+
+  final bool on;
+  final String price;
+  final int? savePct;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final save = savePct;
+    final saveText = save == null ? null : context.t('bundleSave', {'n': save});
+    final parts = [context.t('bundleName'), context.t('bundleSub'), price, if (saveText != null) saveText];
+    return Semantics(
+      inMutuallyExclusiveGroup: true,
+      checked: on,
+      button: true,
+      label: parts.join(', '),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: AppMotion.base,
+          curve: AppMotion.enter,
+          padding: const EdgeInsets.all(AppSpace.x4),
+          decoration: BoxDecoration(
+            color: on ? AppColors.surface : AppColors.sand,
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            border: Border.all(color: on ? AppColors.primary : AppColors.lineStrong, width: on ? 2 : 1),
+            boxShadow: on ? const [BoxShadow(color: AppColors.focusRing, spreadRadius: 3)] : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _Radio(on: on, color: AppColors.primary),
+                  const SizedBox(width: AppSpace.x3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(context.t('bundleName'), style: headStyle(17, color: AppColors.ink)),
+                        Text(context.t('bundleSub'), style: bodyStyle(13, weight: FontWeight.w600, color: AppColors.primary)),
+                      ],
+                    ),
+                  ),
+                  if (saveText != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                      decoration: BoxDecoration(color: AppColors.brandRing, borderRadius: BorderRadius.circular(AppRadii.pill)),
+                      child: Text(saveText, style: bodyStyle(11.5, weight: FontWeight.w700, color: AppColors.primary)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpace.x2),
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 34),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.end,
+                      spacing: AppSpace.x2,
+                      children: [
+                        Text(price, style: headStyle(22, color: AppColors.ink)),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
+                          child: Text(context.t('oneTime'), style: bodyStyle(12.5, color: AppColors.mutedOnSand)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpace.x1),
+                    Text(context.t('bundleP'), style: bodyStyle(13.5, color: AppColors.mutedOnSand, height: 1.45)),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

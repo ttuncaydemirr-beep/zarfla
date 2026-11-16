@@ -179,6 +179,13 @@ service cloud.firestore {
       allow list, write: if false;
     }
 
+    // credits/{uid}: "Düğün Zinciri" paketinin hak defteri (balance, lots, ledger). Yalnız redeemPurchase /
+    // useCredit / voidedPurchases yazar; kullanıcı yalnız kendi bakiyesini okur ("2 hakkınız kaldı").
+    match /credits/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, write: if false;
+    }
+
     // purchases/{sha256(jeton)}: satın alma kayıtları — yalnız sunucu (istemciye tamamen kapalı).
     match /purchases/{hash} {
       allow read, write: if false;
