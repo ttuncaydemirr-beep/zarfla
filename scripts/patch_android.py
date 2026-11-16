@@ -11,6 +11,10 @@
 - Uygulama simgesi: assets/branding/android/res/ → android/app/src/main/res/ (Flutter varsayılanının üzerine)
 - ZarflaApplication (Kotlin): yerel (Java/Kotlin) çökmeleri files/zarfla_last_crash.txt'e yazar; Dart tarafı bir sonraki
   açılışta okur, o açılışı "güvenli kip"te yapar (reklam/ödeme başlatılmaz) ve ayrıntıyı Hakkında'da gösterir.
+- Yerel hatırlatmalar (flutter_local_notifications): RECEIVE_BOOT_COMPLETED + POST_NOTIFICATIONS izinleri, ScheduledNotificationReceiver /
+  ScheduledNotificationBootReceiver bildirimleri, core library desugaring (eklenti şartı), bildirim küçük simgesi
+  (res/drawable/ic_stat_zarfla.xml) ve R8 kaynak küçültmesinde silinmemesi için res/raw/zarfla_keep.xml.
+  KESİN ALARM izni (SCHEDULE_EXACT_ALARM/USE_EXACT_ALARM) bilerek EKLENMEZ: zamanlama yaklaşıktır.
 - Yedekleme: yalnız uygulamanın kendi verisi (FlutterSharedPreferences.xml) yedeklenir/aktarılır. Reklam/WorkManager/
   Firebase/UMP gibi SDK durumları geri yüklenmez (eski, uyumsuz SDK verisinin yeni sürümde açılışı bozmasını önler).
 """
@@ -66,6 +70,37 @@ def patch_gradle() -> None:
             s += f'\napply plugin: "{GMS_ID}"\n' if not is_kts else f'\napply(plugin = "{GMS_ID}")\n'
     path.write_text(s, encoding="utf-8")
     print(f"{path.relative_to(ROOT)} güncellendi")
+
+
+DESUGAR_MARK = "zarflaDesugar"
+DESUGAR_LIB = "com.android.tools:desugar_jdk_libs:2.1.5"
+
+
+def patch_desugaring() -> None:
+    """flutter_local_notifications core library desugaring ister (idempotent; Kotlin DSL ve Groovy)."""
+    path = _app_gradle()
+    s = path.read_text(encoding="utf-8")
+    is_kts = path.suffix == ".kts"
+    flag = "isCoreLibraryDesugaringEnabled = true" if is_kts else "coreLibraryDesugaringEnabled true"
+    dep = (f'    coreLibraryDesugaring("{DESUGAR_LIB}")' if is_kts else f"    coreLibraryDesugaring '{DESUGAR_LIB}'")
+    changed = False
+    if "oreLibraryDesugaringEnabled" not in s:
+        s, n = re.subn(r"^([ \t]*)compileOptions\s*\{[ \t]*\n",
+                       lambda m: m.group(0) + f"{m.group(1)}    {flag} // {DESUGAR_MARK}\n", s, count=1, flags=re.M)
+        if n == 0:
+            sys.exit(f"{path.name}: compileOptions bloğu bulunamadı; core library desugaring açılamadı.")
+        changed = True
+    if "coreLibraryDesugaring(" not in s and "coreLibraryDesugaring '" not in s and "coreLibraryDesugaring \"" not in s:
+        s2, n = re.subn(r"^dependencies\s*\{[ \t]*\n", lambda m: m.group(0) + dep + "\n", s, count=1, flags=re.M)
+        if n == 0:
+            s2 = s.rstrip("\n") + "\n\ndependencies {\n" + dep + "\n}\n"
+        s = s2
+        changed = True
+    if changed:
+        path.write_text(s, encoding="utf-8")
+        print(f"{path.name}: core library desugaring açıldı ({DESUGAR_LIB})")
+    else:
+        print(f"{path.name}: core library desugaring zaten var")
 
 
 KEYPROPS_MARK = "zarflaKeyProps"
@@ -258,9 +293,46 @@ def patch_manifest() -> None:
         s, n = re.subn(r"(<application\b)", lambda mm: perm + mm.group(1), s, count=1)
         if n == 0:
             sys.exit("AndroidManifest.xml: <application> bulunamadı; AD_ID izni eklenemedi.")
+    s = patch_notifications_manifest(s)
     s = patch_application_tag(s)
     m.write_text(s, encoding="utf-8")
     print(f"AndroidManifest.xml: name=.ZarflaApplication, yedekleme kuralları, label=Zarfla, icon/roundIcon, AdMob app id={app_id}, AD_ID izni")
+
+
+NOTIFY_PERMISSIONS = [
+    "android.permission.RECEIVE_BOOT_COMPLETED",  # yeniden başlatmadan sonra zamanlanmış hatırlatmaları geri yükler
+    "android.permission.POST_NOTIFICATIONS",  # Android 13+; yalnız ilk ücretsiz yayından sonra açıklamayla istenir
+]
+NOTIFY_RECEIVERS = """<receiver android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
+    <receiver android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+        <intent-filter>
+            <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+            <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+        </intent-filter>
+    </receiver>
+"""
+
+
+def patch_notifications_manifest(s: str) -> str:
+    """Yerel hatırlatmalar için izinler ve alıcılar (idempotent). KESİN ALARM izni eklenmez."""
+    for perm in NOTIFY_PERMISSIONS:
+        if perm not in s:
+            line = f'<uses-permission android:name="{perm}"/>\n    '
+            s, n = re.subn(r"(<application\b)", lambda mm: line + mm.group(1), s, count=1)
+            if n == 0:
+                sys.exit(f"AndroidManifest.xml: <application> bulunamadı; {perm} eklenemedi.")
+    if "ScheduledNotificationReceiver" not in s:
+        s, n = re.subn(r"(</application>)", lambda mm: NOTIFY_RECEIVERS + "    " + mm.group(1), s, count=1)
+        if n == 0:
+            sys.exit("AndroidManifest.xml: </application> bulunamadı; bildirim alıcıları eklenemedi.")
+    for banned in ("SCHEDULE_EXACT_ALARM", "USE_EXACT_ALARM"):
+        if banned in s:
+            sys.exit(f"AndroidManifest.xml: {banned} bulundu; hatırlatmalar yaklaşık zamanlama kullanır, kesin alarm izni istenmez.")
+    return s
 
 
 KOTLIN_PKG_DIR = APP / "src" / "main" / "kotlin" / "com" / "demirgamesstudio" / "zarfla"
@@ -336,6 +408,26 @@ DATA_EXTRACTION_RULES = """<?xml version="1.0" encoding="utf-8"?>
 """
 
 
+NOTIFY_ICON = """<?xml version="1.0" encoding="utf-8"?>
+<!-- Bildirim küçük simgesi: tek renkli (beyaz) zarf. Android durum çubuğunda kendi rengiyle boyar. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M20,4H4C2.9,4 2,4.9 2,6v12c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V6C22,4.9 21.1,4 20,4zM20,8l-8,5L4,8V6l8,5l8,-5V8z"/>
+</vector>
+"""
+
+# Eklenti simgeyi ada göre (getIdentifier) bulur; kaynak küçültme (isShrinkResources) kullanılmıyor sanıp silmesin.
+NOTIFY_KEEP = """<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_zarfla" />
+"""
+
+
 def write_native_files() -> None:
     KOTLIN_PKG_DIR.mkdir(parents=True, exist_ok=True)
     (KOTLIN_PKG_DIR / "ZarflaApplication.kt").write_text(APPLICATION_KT, encoding="utf-8")
@@ -343,7 +435,12 @@ def write_native_files() -> None:
     xml.mkdir(parents=True, exist_ok=True)
     (xml / "zarfla_backup_rules.xml").write_text(BACKUP_RULES, encoding="utf-8")
     (xml / "zarfla_data_extraction_rules.xml").write_text(DATA_EXTRACTION_RULES, encoding="utf-8")
-    print("ZarflaApplication.kt + yedekleme kuralları yazıldı")
+    res = APP / "src" / "main" / "res"
+    (res / "drawable").mkdir(parents=True, exist_ok=True)
+    (res / "raw").mkdir(parents=True, exist_ok=True)
+    (res / "drawable" / "ic_stat_zarfla.xml").write_text(NOTIFY_ICON, encoding="utf-8")
+    (res / "raw" / "zarfla_keep.xml").write_text(NOTIFY_KEEP, encoding="utf-8")
+    print("ZarflaApplication.kt + yedekleme kuralları + bildirim simgesi yazıldı")
 
 
 def patch_application_tag(s: str) -> str:
@@ -389,6 +486,7 @@ def copy_icons() -> None:
 if __name__ == "__main__":
     check_google_services()
     patch_gradle()
+    patch_desugaring()
     patch_signing()
     patch_r8()
     patch_settings()

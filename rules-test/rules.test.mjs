@@ -590,6 +590,26 @@ describe('Firestore · Aşama 3 (ödeme, sunucu yazımı, users/purchases)', () 
 });
 
 // ============================================================================
+// stats/**: günlük özet sayımları yalnız sunucuya (Admin) açık; istemci okuyamaz, yazamaz, listeleyemez.
+describe('Firestore · stats (yalnız sunucu)', () => {
+  const DAY = ['stats', 'daily', 'days', '2026-11-14'];
+
+  test('ST1 stats belgesi oturumsuz, anonim ve belge sahibi dahil hiçbir istemciye açık değil', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), ...DAY), { schema: 1, day: '2026-11-14', invitations: { created: 3 } });
+    });
+    for (const uid of [null, 'alice', 'bob']) {
+      await assertFails(getDoc(doc(db(uid), ...DAY)), `okuma ${uid}`);
+      await assertFails(setDoc(doc(db(uid), 'stats', 'daily', 'days', '2026-11-15'), { schema: 1 }), `yazma ${uid}`);
+      await assertFails(updateDoc(doc(db(uid), ...DAY), { schema: 2 }), `güncelleme ${uid}`);
+      await assertFails(deleteDoc(doc(db(uid), ...DAY)), `silme ${uid}`);
+      await assertFails(getDocs(collection(db(uid), 'stats', 'daily', 'days')), `liste ${uid}`);
+      await assertFails(getDoc(doc(db(uid), 'stats', 'daily')), `üst belge ${uid}`);
+    }
+  });
+});
+
+// ============================================================================
 describe('Storage', () => {
   const jpg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4]);
   const meta = { contentType: 'image/jpeg' };

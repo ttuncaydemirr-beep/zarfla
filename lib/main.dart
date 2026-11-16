@@ -11,6 +11,11 @@ import 'app.dart';
 import 'billing/billing_service.dart';
 import 'cloud/cloud_service.dart';
 import 'l10n/strings.dart';
+import 'notify/fln_platform.dart';
+import 'notify/reminder_nav.dart';
+import 'notify/reminder_service.dart';
+import 'notify/reminder_store.dart';
+import 'notify/review_service.dart';
 import 'startup/startup_log.dart';
 import 'state/app_state.dart';
 import 'storage/invitation_store.dart';
@@ -74,6 +79,23 @@ Future<void> _start() async {
   unawaited(_step('ads', () async => AdService.init()));
   // Google Play Faturalandırma: alım akışı, fiyat, yarım kalmış alımları tamamlama (hak ver → tüket).
   unawaited(_step('billing', state.startBilling, timeout: const Duration(seconds: 60)));
+  // Yerel hatırlatmalar (süre bitiyor / yarım taslak): izin İSTEMEZ; yalnız dinleyici ve zamanlama. İzin, ilk ücretsiz
+  // yayından sonra açıklamayla istenir. Değerlendirme istemi: yalnız ilk açılış zamanını kaydeder.
+  unawaited(_step(
+    'reminders',
+    () => Reminders.instance.start(
+      platform: FlnPlatform(),
+      store: PrefsReminderStore(),
+      host: ReminderHost(
+        invitations: () => state.invitations,
+        lang: () => state.lang,
+        text: (lang, key, args) => state.strings.get(lang, key, args),
+        onOpen: openFromReminder,
+      ),
+    ),
+    timeout: const Duration(seconds: 20),
+  ));
+  unawaited(_step('review', ReviewPrompter.instance.start));
 }
 
 /// Bir açılış adımını çalıştırır; hata ya da süre aşımı kaydedilir, asla yukarı fırlatılmaz.

@@ -21,13 +21,23 @@ izin/eklenti/ürün kararı gerektirenler aşağıda tasarım notu olarak bekliy
   bugünkü gibi sürer (yanıt kaybolmasın). CSP `connect-src` zaten firestore.googleapis.com.
 - **Uygulama:** editörde/ana ekranda sayaç kartı; ücretlide liste ekranı. Tahmini efor: L (kurallar + tetikleyici + iki ekran).
 
-### 2. Bildirimler (süre bitiyor / yarım taslak) — yeni izin ve eklenti
+### 2. Bildirimler (süre bitiyor / yarım taslak) — yeni izin ve eklenti — ✅ YAPILDI (17 Kasım 2026, dal `notify`)
 - **Ne:** (a) Ücretsiz bağlantı kapanmadan 3 saat önce "Davetiyenizin bağlantısı 3 saat sonra kapanıyor — süreyi uzatın";
   (b) taslak 24 saat düzenlenmezse "Elif & Can davetiyeniz yarım kaldı (%75 hazır)".
 - **Yol:** sunucu gerekmez — `flutter_local_notifications` ile cihazda zamanlanmış bildirim (Android 13+ bildirim izni,
   Android 12+ kesin alarm yerine yaklaşık zamanlama yeterli). Metinler ARB'ye (4 dil). Yayında/taslakta kaydetmede yeniden zamanla,
   silmede iptal et. Play politikası: pazarlama değil, kullanıcının kendi işine dair hatırlatma; ayarlarda kapatılabilir olmalı.
 - **Neden bekliyor:** yeni eklenti + izin akışı + Play beyanı; ürün sahibinin onayı gerekir. Efor: M.
+- **Durum (yapıldı):** `flutter_local_notifications` ile cihazda yaklaşık zamanlama (kesin alarm izni YOK, FCM/sunucu YOK).
+  (a) Ücretsiz davetiye: bağlantı kapanmadan 3 saat önce; dokununca o davetiyenin düzenleyicisi açılır (yayındaki davetiyede en üstteki
+  "1 yıla çıkar" kartı ödeme akışını başlatır; yayınla ekranı yayındaki davetiyeye uygun değil). (b) Yarım taslak: son düzenlemeden ~24 saat
+  sonra, taslak başına BİR kez; dokununca düzenleyici. Yayın/ödeme/silmede iptal; ayarlarda (⋯ > Hatırlatmalar) kapatılır.
+  Bildirim izni (Android 13+) yalnız ilk ücretsiz yayından hemen sonra kısa açıklamayla, bir kez sorulur; açılışta asla.
+  Sessiz saat: taslak hatırlatması 22:00-08:00'e düşerse ertesi sabah 09:00'a ertelenir; süre hatırlatması 23:00-07:00'e düşerse
+  22:30'a öne alınır (metin kalan saati gerçek değerle yazar). Kod: `lib/notify/`, testler: `test/reminder_*_test.dart`.
+- **Ek (aynı dal):** uygulama içi değerlendirme istemi (ücretli yayından sonra ya da 2. WhatsApp paylaşımından sonra, 90 günde en çok bir kez,
+  ilk açılıştan en az 1 saat sonra; ön soru/düğme yok) ve gizlilik dostu günlük istatistik (`dailyStats`, `stats/daily/days/{gün}`, yalnız sayımlar,
+  istemciye kapalı). Play veri güvenliği: form değişmez (bkz. `staging/play/data_safety.md` Bölüm 8).
 
 ### 3. Ücretsiz bağlantı süresi 1 gün → 3 gün (A/B)
 - Ürün/gelir kararı; değişirse `kFreeLife` (lib/cloud/invite_contract.dart), firestore.rules `1450m` sınırı, `freeL1` metni ve

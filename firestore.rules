@@ -191,6 +191,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // stats/{...}: günlük özet sayımları (dailyStats fonksiyonu yazar: stats/daily/days/{yyyy-mm-dd}).
+    // İstemciye tamamen kapalı: okuma da yazma da yok; yalnız konsol/Admin SDK erişir.
+    match /stats/{document=**} {
+      allow read, write: if false;
+    }
+
     // Diğer her şey kapalı
     match /{document=**} {
       allow read, write: if false;

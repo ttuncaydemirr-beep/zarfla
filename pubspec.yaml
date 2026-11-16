@@ -35,6 +35,14 @@ dependencies:
   cloud_functions: ">=6.0.0"
   in_app_purchase: ">=3.2.0"
   in_app_purchase_android: ">=0.4.0"
+  # Yerel hatırlatma bildirimleri (sunucu/FCM yok). API: 20+ adlandırılmış parametreli (initialize/zonedSchedule/cancel).
+  # 23+ Flutter 3.44 / AGP 9.1 / compileSdk 37 (androidx.core 1.19) ister; uygulama compileSdk'ı Flutter varsayılanında
+  # (36) kalsın diye üst sınır 23'ün altında. CI'da bu şart yüzünden Debug APK düştü (17 Kasım 2026, 23.x çözülmüştü).
+  # Zaman, UTC bölgesinde mutlak an olarak verilir (tekrarlı bildirim yok); yerel saat dilimi veritabanı gerekmez.
+  flutter_local_notifications: ">=21.0.0 <23.0.0"
+  timezone: ">=0.10.0"
+  # Uygulama içi değerlendirme (Google Play sistem penceresi).
+  in_app_review: ">=2.0.9"
 
 dev_dependencies:
   flutter_test:

@@ -14,6 +14,7 @@ import '../l10n/strings.dart';
 import '../logic/lock_rules.dart';
 import '../logic/sample_names.dart';
 import '../models/invitation.dart';
+import '../notify/reminder_service.dart';
 import '../startup/startup_log.dart';
 import '../storage/invitation_store.dart';
 import '../storage/photo_store.dart';
@@ -148,6 +149,7 @@ class AppState extends ChangeNotifier {
     lang = l;
     notifyListeners();
     await _store.saveLang(l);
+    Reminders.instance.sync(); // bildirim metinleri yeni dilde yeniden zamanlanır
   }
 
   Invitation? byId(String id) {
@@ -183,6 +185,7 @@ class AppState extends ChangeNotifier {
     final ok = await _store.saveAll(invitations);
     lastSaveFailed = !ok;
     savedTick.value++;
+    Reminders.instance.sync(); // hatırlatmalar: yayın/ödeme/silme/düzenleme sonrası yeniden hesaplanır (başlamadıysa etkisiz)
     return ok;
   }
 

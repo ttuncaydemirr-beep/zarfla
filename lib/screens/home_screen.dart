@@ -9,6 +9,7 @@ import '../logic/lock_rules.dart';
 import '../logic/progress.dart';
 import '../logic/text_utils.dart';
 import '../models/invitation.dart';
+import '../notify/reminder_ui.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/about_dialog.dart';
@@ -87,6 +88,7 @@ class _HomeMenu extends StatelessWidget {
       tooltip: context.t('more'),
       onSelected: (v) {
         if (v == 'restore') runRestorePurchases(context);
+        if (v == 'reminders') showReminderSettings(context);
         if (v == 'about') showZarflaAbout(context);
       },
       itemBuilder: (_) => [
@@ -96,6 +98,14 @@ class _HomeMenu extends StatelessWidget {
             const ZGlyph(ZGlyphs.retry, size: 20, color: AppColors.primary),
             const SizedBox(width: 10),
             Flexible(child: Text(context.t('restoreBtn'), style: bodyStyle(15))),
+          ]),
+        ),
+        PopupMenuItem<String>(
+          value: 'reminders',
+          child: Row(children: [
+            const Icon(Icons.notifications_none, size: 20, color: AppColors.primary),
+            const SizedBox(width: 10),
+            Flexible(child: Text(context.t('remMenu'), style: bodyStyle(15))),
           ]),
         ),
         PopupMenuItem<String>(

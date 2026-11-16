@@ -10,6 +10,7 @@ import '../data/catalog.dart';
 import '../logic/date_utils.dart';
 import '../logic/share_text.dart';
 import '../l10n/strings.dart';
+import '../notify/review_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -93,7 +94,10 @@ class DoneScreen extends StatelessWidget {
                         block: true,
                         icon: const WaIcon(),
                         onPressed: () {
-                          launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(shareText)}'), mode: LaunchMode.externalApplication);
+                          launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(shareText)}'), mode: LaunchMode.externalApplication)
+                              .then((ok) {
+                            if (ok) ReviewPrompter.instance.onShare();
+                          });
                         },
                       ),
                       const SizedBox(height: AppSpace.x3),
@@ -553,7 +557,10 @@ class _GuestLinksSheetState extends State<_GuestLinksSheet> {
                 onTap: () {
                   setState(() => _sent.add(guest));
                   launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(widget.messageFor(guest, link))}'),
-                      mode: LaunchMode.externalApplication);
+                          mode: LaunchMode.externalApplication)
+                      .then((ok) {
+                    if (ok) ReviewPrompter.instance.onShare();
+                  });
                 },
                 child: Container(
                   width: 44,
