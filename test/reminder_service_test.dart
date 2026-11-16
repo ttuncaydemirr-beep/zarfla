@@ -354,7 +354,7 @@ void main() {
       await g.sync();
       d.msg = 'x'; // düzenleme
       await g.sync();
-      expect(g.p.scheduled[g.did('d')]!.body, 'tr:notifDraftBodyReady');
+      expect(g.p.scheduled[g.did('d')]!.body, 'tr:notifDraftBodyReady{n: 100}');
     });
   });
 
