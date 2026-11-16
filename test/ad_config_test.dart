@@ -7,8 +7,10 @@ void main() {
   test('reklam kimlikleri biçimi geçerli (uygulama kimliği ~, birim kimliği /)', () {
     expect(RegExp(r'^ca-app-pub-\d+~\d+$').hasMatch(kAdMobAndroidAppId), isTrue);
     expect(RegExp(r'^ca-app-pub-\d+/\d+$').hasMatch(kBannerAdUnitId), isTrue);
-    // Uygulama ve birim aynı yayıncı hesabından olmalı.
-    expect(kAdMobAndroidAppId.split('~').first, kBannerAdUnitId.split('/').first);
+    expect(RegExp(r'^ca-app-pub-\d+/\d+$').hasMatch(kBannerAdUnitIdRelease), isTrue);
+    // Yayın birimi ve uygulama aynı yayıncı hesabından olmalı; test derlemesi Google test birimini kullanır.
+    expect(kAdMobAndroidAppId.split('~').first, kBannerAdUnitIdRelease.split('/').first);
+    expect(kBannerAdUnitId, startsWith('ca-app-pub-3940256099942544/'));
   });
 
   test('patch_android.py uygulama kimliğini ad_config.dart içinden okur (satır biçimi korunmuş)', () {

@@ -8,10 +8,10 @@ import 'package:flutter/foundation.dart' show kReleaseMode;
 const String kAdMobAndroidAppId = 'ca-app-pub-3269207938446570~8098988341';
 
 /// Gerçek banner birimi: "Zarfla alt banner".
-const String _kBannerReal = 'ca-app-pub-3269207938446570/5079566629';
+const String kBannerAdUnitIdRelease = 'ca-app-pub-3269207938446570/5079566629';
 
 /// Google'ın resmî uyarlanabilir banner TEST birimi (debug/profil derlemeleri için; hesap riski yok).
 const String _kBannerTest = 'ca-app-pub-3940256099942544/9214589741';
 
 /// Yalnız yayın (release) derlemesinde gerçek birim; geliştirme derlemelerinde test birimi.
-const String kBannerAdUnitId = kReleaseMode ? _kBannerReal : _kBannerTest;
+const String kBannerAdUnitId = kReleaseMode ? kBannerAdUnitIdRelease : _kBannerTest;
