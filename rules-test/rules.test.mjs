@@ -48,7 +48,7 @@ function dataJson(o = {}) {
     type: o.type ?? 'nisan',
     theme: o.theme ?? 'papatya',
     lang: 'tr',
-    layout: 'klasik',
+    layout: o.layout ?? 'klasik',
     opening: o.opening ?? 'door',
     n1: o.n1 ?? 'Test A',
     n2: o.n2 ?? 'Test B',
@@ -647,5 +647,33 @@ describe('Storage', () => {
     await assertSucceeds(getMetadata(fref(null, 'g1.jpg')));
     await assertFails(deleteObject(fref('bob', 'g1.jpg')));
     await assertSucceeds(deleteObject(fref('alice', 'g1.jpg')));
+  });
+});
+
+// ============================================================================
+// Dalga 3: 6 yeni düzen + 8 yeni açılış. Kurallarda düzen/açılış beyaz listesi yok; ikisi de
+// mevcutlar gibi tüm planlarda serbest (ücretli olan yalnız tasarım/tema).
+const WAVE3_LAYOUTS = ['galeri', 'mektup', 'davetkarti', 'minimal', 'gece', 'hikaye'];
+const WAVE3_OPENINGS = ['zarfacil', 'muhurkir', 'kagitkatla', 'parilti', 'lale', 'fener', 'kapikemer', 'konfeti'];
+
+describe('Firestore · Dalga 3 (yeni düzen ve açılışlar)', () => {
+  for (const lay of WAVE3_LAYOUTS) {
+    test(`X1 ücretsiz papatya + yeni düzen "${lay}" geçer`, async () => {
+      await assertSucceeds(setDoc(inv('alice'), freeDoc('alice', { data: dataJson({ layout: lay }) })));
+    });
+  }
+  for (const op of WAVE3_OPENINGS) {
+    test(`X2 ücretsiz papatya + yeni açılış "${op}" geçer`, async () => {
+      await assertSucceeds(setDoc(inv('alice'), freeDoc('alice', { data: dataJson({ opening: op }) })));
+    });
+  }
+  test('X3 yeni düzen/açılış ile de ücretsiz planda ücretli tasarım reddedilir', async () => {
+    await assertFails(setDoc(inv('alice'), freeDoc('alice', { theme: 'altin', data: dataJson({ theme: 'altin', layout: 'gece', opening: 'kapikemer' }) })));
+  });
+  test('X4 ücretli belgede düzen + açılış dalga 3 değerlerine güncellenir, tasarım değişmez', async () => {
+    const paid = (o = {}) => dataJson({ theme: 'nar', plan: 'premium', ...o });
+    await seed(ID, seededPaid('alice', { theme: 'nar', data: paid() }));
+    await assertSucceeds(updateDoc(inv('alice'), { data: paid({ layout: 'hikaye', opening: 'fener' }) }));
+    await assertFails(updateDoc(inv('alice'), { theme: 'altin', data: paid({ theme: 'altin', layout: 'mektup' }) }));
   });
 });

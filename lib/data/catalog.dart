@@ -9,8 +9,8 @@ const List<String> kEventTypes = ["nisan", "dugun", "kina", "soz", "sunnet", "do
 /// İki isimli (çift) etkinlik türleri.
 const Set<String> kCoupleTypes = {"nisan", "dugun", "kina", "soz", "nikah", "cinsiyet", "yildonumu"};
 
-const List<String> kLayouts = ['klasik', 'kemer', 'monogram', 'editoryal', 'kartpostal', 'zamancizelgesi', 'bilet'];
-const List<String> kOpenings = ['door', 'env', 'perde', 'kitap', 'muhur', 'isik', 'sarmasik', 'cicek', 'kurdele', 'kelebek', 'yildiz', 'pencere'];
+const List<String> kLayouts = ['klasik', 'kemer', 'monogram', 'editoryal', 'kartpostal', 'zamancizelgesi', 'bilet', 'galeri', 'mektup', 'davetkarti', 'minimal', 'gece', 'hikaye'];
+const List<String> kOpenings = ['door', 'env', 'perde', 'kitap', 'muhur', 'isik', 'sarmasik', 'cicek', 'kurdele', 'kelebek', 'yildiz', 'pencere', 'zarfacil', 'muhurkir', 'kagitkatla', 'parilti', 'lale', 'fener', 'kapikemer', 'konfeti'];
 const List<String> kLangs = ['tr', 'en', 'de', 'ar'];
 const Map<String, String> kLangNames = {'tr': 'Türkçe', 'en': 'English', 'de': 'Deutsch', 'ar': 'العربية'};
 const int kMaxGallery = 6;

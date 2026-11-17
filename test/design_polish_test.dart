@@ -12,6 +12,7 @@ import 'package:zarfla/theme/app_theme.dart';
 import 'package:zarfla/widgets/common.dart';
 import 'package:zarfla/widgets/invite_mini.dart';
 import 'package:zarfla/widgets/opening_picker.dart';
+import 'package:zarfla/widgets/layout_thumb.dart';
 
 void main() {
   group('paylaşım mesajı (UX #10)', () {
@@ -101,13 +102,38 @@ void main() {
     expect(kRetryableStatus, isNot(contains('payPending')));
   });
 
-  test('açılış küçük resimleri: 12 açılışın hepsi çizilir ve tema renklerini kullanır', () {
+  test('açılış küçük resimleri: 20 açılışın hepsi çizilir ve tema renklerini kullanır', () {
     final css = kThemes['altin']!.css;
     for (final k in kOpenings) {
       final svg = openingThumbSvg(k, css);
       expect(svg, startsWith('<svg'), reason: k);
       expect(svg.length, greaterThan(200), reason: k);
       expect(svg, contains(css['bg']!), reason: k);
+    }
+  });
+
+  test('dalga 3: 6 yeni düzen + 8 yeni açılış küçük resmi tema renkleriyle çizilir (boş değil, açık temada da)', () {
+    const lays = ['galeri', 'mektup', 'davetkarti', 'minimal', 'gece', 'hikaye'];
+    const opns = ['zarfacil', 'muhurkir', 'kagitkatla', 'parilti', 'lale', 'fener', 'kapikemer', 'konfeti'];
+    for (final th in ['papatya', 'altin']) {
+      final css = kThemes[th]!.css;
+      final klasik = layoutThumbSvg('klasik', css, false);
+      for (final k in lays) {
+        expect(kLayouts, contains(k));
+        for (final rtl in [false, true]) {
+          final svg = layoutThumbSvg(k, css, rtl);
+          expect(svg, startsWith('<svg'), reason: k);
+          expect(svg, isNot(klasik), reason: '$k varsayılana düşmemeli');
+          expect(svg, anyOf(contains(css['accent']!), contains(css['gold']!)), reason: k);
+          expect(svg, isNot(contains(r'$')), reason: k);
+        }
+      }
+      for (final k in opns) {
+        expect(kOpenings, contains(k));
+        final svg = openingThumbSvg(k, css);
+        expect(svg.length, greaterThan(300), reason: k);
+        expect(svg, isNot(contains(r'$')), reason: k);
+      }
     }
   });
 

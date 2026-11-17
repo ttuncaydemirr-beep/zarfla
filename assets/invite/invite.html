@@ -454,6 +454,403 @@ button,input,select,textarea{font:inherit;color:inherit}
   .inv{transition:opacity .5s ease!important;transform:none!important}
 }
 </style>
+<style id="wave3">
+/* ===== Dalga 3: 6 yeni sayfa düzeni + 8 yeni açılış (Flutter: assets/invite/invite.html'e aynen taşınır) ===== */
+.inv-host{--w3-serif:var(--zf-serif);--w3-sans:var(--zf-sans)}
+.w3-wax{position:relative;display:grid;place-items:center;border-radius:47% 53% 50% 50%/52% 46% 54% 48%;background:radial-gradient(circle at 34% 28%,color-mix(in srgb,var(--accent) 52%,#fff) 0,var(--accent) 36%,color-mix(in srgb,var(--accent) 68%,#000) 100%);box-shadow:3px 2px 0 -1px var(--accent),-3px 3px 0 -1px color-mix(in srgb,var(--accent) 80%,#000),2px -3px 0 -1px var(--accent),-2px -2px 0 -1px var(--accent),0 6px 14px -4px rgba(0,0,0,.45)}
+.w3-wax::before{content:"";position:absolute;inset:15%;border-radius:50%;border:1.5px solid rgba(0,0,0,.2);box-shadow:0 1px 0 rgba(255,255,255,.22),inset 0 1px 0 rgba(255,255,255,.22)}
+.w3-wax span{position:relative;font-family:var(--w3-serif);font-style:italic;line-height:1;white-space:nowrap;color:color-mix(in srgb,var(--accent) 66%,#000);text-shadow:0 1px 0 rgba(255,255,255,.34),0 -1px 0 rgba(0,0,0,.18)}
+.w3-wax svg.ini-orn{width:48%;height:48%;color:color-mix(in srgb,var(--accent) 62%,#000)}
+[dir=rtl] .w3-wax span{font-style:normal}
+
+/* ---------- 1) GALERİ: fotoğraf öncelikli hikâye ---------- */
+.lay-galeri .gl-hero{position:relative;margin:0 -18px;padding:0 0 18px!important}
+.lay-galeri .gl-cv{position:relative;aspect-ratio:4/5;max-height:620px;width:100%;overflow:hidden}
+.lay-galeri .gl-cv img{width:100%;height:100%;object-fit:cover;-webkit-mask:linear-gradient(#000 58%,transparent 99%);mask:linear-gradient(#000 58%,transparent 99%)}
+.lay-galeri .no-img .gl-cv{aspect-ratio:auto;height:250px;display:grid;place-items:center;background:radial-gradient(60% 70% at 50% 55%,color-mix(in srgb,var(--leaf) 26%,transparent),transparent 70%)}
+.lay-galeri .gl-orn{width:150px;height:150px}.lay-galeri .gl-orn svg{width:100%;height:100%}
+.lay-galeri .has-img .gl-txt{margin-top:-120px;position:relative}
+.lay-galeri .gl-txt{padding:0 22px}
+.lay-galeri .gl-txt .guest-hi{margin:0 0 12px;padding:0}
+.lay-galeri .names{font-family:var(--w3-serif);font-size:clamp(46px,14vw,74px);line-height:1}
+.lay-galeri .gl-date{font-family:var(--w3-sans);font-size:13px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);margin-top:16px}
+[dir=rtl] .lay-galeri .gl-date{letter-spacing:0;font-size:15px}
+.lay-galeri .gl-scroll{width:22px;height:34px;border:1.5px solid var(--line);border-radius:12px;margin:22px auto 0;position:relative}
+.lay-galeri .gl-scroll i{position:absolute;left:50%;top:7px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:var(--accent);animation:glsc 1.8s ease-in-out infinite}
+@keyframes glsc{0%{transform:none;opacity:1}70%{transform:translateY(11px);opacity:0}100%{opacity:0}}
+.lay-galeri .gl-intro{text-align:center;padding:6px 10px 8px}
+.lay-galeri .gl-lab{text-align:center;margin:30px 0 14px}
+.lay-galeri .gl-gal{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 -8px 10px}
+.lay-galeri .gl-gal .gal-it{aspect-ratio:1;border:0;padding:0;border-radius:14px;overflow:hidden;cursor:pointer;background:var(--paper);box-shadow:0 10px 22px -16px rgba(0,0,0,.6)}
+.lay-galeri .gl-gal .gal-it:first-child,.lay-galeri .gl-gal .gal-it:last-child:nth-child(even){grid-column:1/-1;aspect-ratio:4/3}
+.lay-galeri .gl-gal .gal-it img{width:100%;height:100%;object-fit:cover}
+.lay-galeri .gl-gal .gal-it.reveal{transform:translateY(26px) scale(.97)}
+.lay-galeri .gl-gal .gal-it.reveal.in{transform:none}
+.lay-galeri .icard{border-radius:28px;box-shadow:none;border-color:var(--line);padding:30px 20px}
+.lay-galeri .icard .mini{display:none}
+.lay-galeri .reveal{transition-duration:1.1s}
+
+/* ---------- 2) MEKTUP: kâğıt üstünde el yazısı mektup + mum mühür ---------- */
+.inv-host.L-mektup{background:radial-gradient(130% 90% at 50% 0,var(--bg),color-mix(in srgb,var(--bg) 82%,var(--door2)))}
+.lay-mektup{padding-top:28px}
+.lay-mektup .mk{padding:14px 0 30px!important}
+.mk-sheet{position:relative;text-align:start;background:var(--paper);background-image:linear-gradient(90deg,transparent 30px,color-mix(in srgb,var(--accent) 22%,transparent) 30px 31px,transparent 31px),repeating-linear-gradient(180deg,transparent 0 33px,color-mix(in srgb,var(--line) 75%,transparent) 33px 34px);background-position:0 0,0 10px;padding:34px 22px 64px 44px;border-radius:3px;box-shadow:0 1px 0 var(--line),0 26px 44px -26px rgba(0,0,0,.5),0 3px 10px -4px rgba(0,0,0,.14)}
+[dir=rtl] .mk-sheet{padding:34px 44px 64px 22px;background-image:linear-gradient(270deg,transparent 30px,color-mix(in srgb,var(--accent) 22%,transparent) 30px 31px,transparent 31px),repeating-linear-gradient(180deg,transparent 0 33px,color-mix(in srgb,var(--line) 75%,transparent) 33px 34px)}
+.mk-sheet::after{content:"";position:absolute;left:6px;right:6px;bottom:-6px;height:12px;background:var(--paper);border-radius:0 0 3px 3px;box-shadow:0 8px 16px -10px rgba(0,0,0,.4);z-index:-1;transform:rotate(-.8deg)}
+.mk-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.lay-mektup .mk-head .eyebrow{margin:0;font-size:10.5px}
+.mk-date{font-family:var(--w3-serif);font-style:italic;font-size:15px;color:var(--muted)}
+[dir=rtl] .mk-date{font-style:normal}
+.lay-mektup .mk .guest-hi{text-align:start;margin:0 0 6px;padding:0;font-family:var(--w3-serif);font-size:26px;line-height:34px}
+.lay-mektup .mk .lead{text-align:start;margin-top:0;font-family:var(--w3-serif);font-size:20px;line-height:34px;color:var(--ink)}
+.lay-mektup .mk .host{text-align:start;margin-top:0;line-height:34px;font-style:italic}
+.mk-photo{float:left;width:104px;margin:26px 14px 0 -10px;padding:6px 6px 18px;background:#fff;box-shadow:0 8px 18px -10px rgba(0,0,0,.55);transform:rotate(-4deg);position:relative}
+[dir=rtl] .mk-photo{float:right;margin:26px -10px 0 14px;transform:rotate(3deg)}
+.mk-photo img{width:100%;aspect-ratio:4/5;object-fit:cover}
+.mk-photo i{position:absolute;left:50%;top:-10px;width:56px;height:20px;margin-left:-28px;background:color-mix(in srgb,var(--gold) 26%,rgba(255,255,255,.6));transform:rotate(-4deg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.mk-sign{margin-top:30px;text-align:end}.mk-sheet::before{content:"";display:table;clear:both}.mk-wax{clear:both}
+.mk-love{display:block;font-family:var(--w3-serif);font-style:italic;font-size:18px;color:var(--muted)}
+.lay-mektup .mk .names{font-family:var(--w3-serif);font-size:clamp(34px,10vw,48px);line-height:1.1;margin-top:4px;text-align:end}
+.lay-mektup .mk .names .amp{display:inline;margin:0 .18em;font-size:.62em}
+.mk-wax{position:absolute;bottom:-34px;left:50%;width:84px;height:84px;margin-left:-42px;transform:rotate(-8deg)}
+.mk-wax span{font-size:24px}
+.lay-mektup .icard{border-radius:3px;border:0;background-image:linear-gradient(var(--line),var(--line));background-size:calc(100% - 36px) 1px;background-repeat:no-repeat;background-position:18px 12px;padding-top:34px;box-shadow:0 18px 30px -22px rgba(0,0,0,.45),0 2px 6px -3px rgba(0,0,0,.12)}
+.lay-mektup .hero+.icard{margin-top:56px}
+.lay-mektup .icard .mini{display:none}
+.lay-mektup .icard>.label{font-family:var(--w3-serif);font-style:italic;font-weight:400;text-transform:none;letter-spacing:0;font-size:22px}
+[dir=rtl] .lay-mektup .icard>.label{font-style:normal}
+
+/* ---------- 3) DAVET KARTI: kenarı yırtık (deckle) klasik katlı kart ---------- */
+.inv-host.L-davetkarti{background-color:var(--door2);background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(0,0,0,.05) 0 1px,transparent 1px 4px),radial-gradient(120% 70% at 50% 0,rgba(255,255,255,.12),transparent 70%)}
+.lay-davetkarti{padding:34px 16px 60px}
+.dk-wrap{filter:drop-shadow(0 18px 22px rgba(0,0,0,.32)) drop-shadow(0 2px 3px rgba(0,0,0,.18));margin-bottom:26px}
+.dk-card,.dk-insert{position:relative;background:var(--paper);--dkh:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 46 6' preserveAspectRatio='none'%3E%3Cpath d='M0 6V3.2L2 2.1 4.5 3.4 6 1.4 8.6 2.8 10 .9 12.4 2.6 14.8 1.2 16.5 3 19 1.6 21.3 2.9 23 .7 25.6 2.4 27.4 1 29.8 3.1 31.5 1.5 34 2.7 36.2 .8 38.4 2.6 40.7 1.3 42.6 3 44.8 1.9 46 3.2V6Z'/%3E%3C/svg%3E");--dkv:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 46' preserveAspectRatio='none'%3E%3Cpath d='M6 0H3.2L2.1 2 3.4 4.5 1.4 6 2.8 8.6 .9 10 2.6 12.4 1.2 14.8 3 16.5 1.6 19 2.9 21.3.7 23 2.4 25.6 1 27.4 3.1 29.8 1.5 31.5 2.7 34 .8 36.2 2.6 38.4 1.3 40.7 3 42.6 1.9 44.8 3.2 46H6Z'/%3E%3C/svg%3E");--dkh2:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 46 6' preserveAspectRatio='none'%3E%3Cpath transform='matrix(1 0 0 -1 0 6)' d='M0 6V3.2L2 2.1 4.5 3.4 6 1.4 8.6 2.8 10 .9 12.4 2.6 14.8 1.2 16.5 3 19 1.6 21.3 2.9 23 .7 25.6 2.4 27.4 1 29.8 3.1 31.5 1.5 34 2.7 36.2 .8 38.4 2.6 40.7 1.3 42.6 3 44.8 1.9 46 3.2V6Z'/%3E%3C/svg%3E");--dkv2:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 46' preserveAspectRatio='none'%3E%3Cpath transform='matrix(-1 0 0 1 6 0)' d='M6 0H3.2L2.1 2 3.4 4.5 1.4 6 2.8 8.6 .9 10 2.6 12.4 1.2 14.8 3 16.5 1.6 19 2.9 21.3.7 23 2.4 25.6 1 27.4 3.1 29.8 1.5 31.5 2.7 34 .8 36.2 2.6 38.4 1.3 40.7 3 42.6 1.9 44.8 3.2 46H6Z'/%3E%3C/svg%3E");
+  -webkit-mask:linear-gradient(#000 0 0) center/calc(100% - 10px) calc(100% - 10px) no-repeat,var(--dkh) top left/46px 6px repeat-x,var(--dkh2) bottom left/46px 6px repeat-x,var(--dkv2) top right/6px 46px repeat-y,var(--dkv) top left/6px 46px repeat-y;
+  mask:linear-gradient(#000 0 0) center/calc(100% - 10px) calc(100% - 10px) no-repeat,var(--dkh) top left/46px 6px repeat-x,var(--dkh2) bottom left/46px 6px repeat-x,var(--dkv2) top right/6px 46px repeat-y,var(--dkv) top left/6px 46px repeat-y}
+.dk-card{padding:14px!important}
+.dk-frame{border:1.5px solid var(--gold);padding:30px 18px 28px;position:relative;text-align:center}
+.dk-frame::before{content:"";position:absolute;inset:5px;border:1px solid color-mix(in srgb,var(--gold) 55%,transparent);pointer-events:none}
+.dk-frame .guest-hi{margin:0 0 14px;padding:0}
+.dk-crest{width:86px;height:86px;margin:2px auto 14px;display:grid;place-items:center}
+.dk-crest svg{width:100%;height:100%}
+.dk-img{width:150px;height:150px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 4px var(--paper),0 0 0 5.5px var(--gold);margin:4px auto 0}
+.dk-crest:has(.dk-img){width:auto;height:auto;margin-bottom:22px}
+.lay-davetkarti .dk-card .names{font-family:var(--w3-serif);font-size:clamp(40px,12vw,60px)}
+.dk-date{margin:22px auto 6px;max-width:270px;font-family:var(--w3-sans);font-size:12px;font-weight:600;line-height:1.7;letter-spacing:.2em;text-transform:uppercase;color:var(--ink)}
+.dk-date::before,.dk-date::after{content:"";display:block;width:46px;height:1px;margin:8px auto;background:var(--gold)}
+[dir=rtl] .dk-date{letter-spacing:0;font-size:14.5px}
+.dk-insert{padding:6px 18px 24px}
+.lay-davetkarti .icard{background:transparent;border:0;box-shadow:none;border-radius:0;margin:0;padding:26px 4px;background-image:radial-gradient(circle,var(--gold) 0 2px,transparent 2.5px),linear-gradient(90deg,transparent,var(--line) 20%,var(--line) 80%,transparent);background-size:8px 8px,100% 1px;background-repeat:no-repeat;background-position:50% 0,0 3.5px}
+.lay-davetkarti .dk-insert>.icard:first-child{background:none}
+.lay-davetkarti .icard .mini{display:none}
+.lay-davetkarti footer{margin-top:10px;padding-top:24px;border-top:1px solid var(--line)}
+
+/* ---------- 4) SADE (minimal): havadar, tipografik, ay takvimli ---------- */
+.lay-minimal{padding-inline:26px}
+.lay-minimal .mn{padding:84px 0 34px!important}
+.lay-minimal .eyebrow{font-family:var(--w3-sans);font-size:11px;letter-spacing:.42em;color:var(--muted);margin-bottom:34px}
+.lay-minimal .names{font-family:var(--w3-serif);font-style:normal;font-weight:300;font-size:clamp(38px,11vw,56px);line-height:1.12;color:var(--ink);letter-spacing:-.01em}
+.lay-minimal .names .amp{display:block;width:34px;height:1px;background:var(--accent);margin:20px auto;font-size:0;color:transparent;overflow:hidden}
+.mn-date{font-family:var(--w3-sans);font-weight:500;font-size:13px;letter-spacing:.3em;color:var(--accent);margin-top:34px;unicode-bidi:isolate}
+.mn-photo{margin:44px auto 0;width:78%}
+.mn-photo img{width:100%;aspect-ratio:3/4;object-fit:cover;filter:saturate(.9)}
+.lay-minimal .host{font-family:var(--w3-sans);font-size:14px;margin-top:40px;color:var(--muted)}
+.lay-minimal .lead{font-family:var(--w3-serif);font-style:normal;font-size:18px;line-height:1.9;color:var(--ink);margin-top:20px}
+.lay-minimal .divider{display:none}
+.lay-minimal .icard{background:transparent;border:0;border-radius:0;box-shadow:none;padding:46px 0;margin:0;border-top:1px solid var(--line);overflow:visible}
+.lay-minimal .icard .mini{display:none}
+.lay-minimal .icard>.label{font-family:var(--w3-sans);font-weight:600;font-size:10.5px;letter-spacing:.42em;color:var(--muted);margin-bottom:18px}
+[dir=rtl] .lay-minimal .icard>.label,[dir=rtl] .lay-minimal .eyebrow,[dir=rtl] .mn-date{letter-spacing:0;font-size:13px}
+.lay-minimal .big{font-family:var(--w3-serif);font-weight:400;font-size:24px}
+.lay-minimal .mn-cal+.icard .daterow{display:none}
+.lay-minimal .countdown div{background:transparent;border:0;border-radius:0;padding:4px 0}
+.lay-minimal .countdown div+div{border-inline-start:1px solid var(--line)}
+.lay-minimal .countdown b{font-family:var(--w3-serif);font-weight:300;font-size:28px}
+.lay-minimal .ibtn{border-radius:0;font-family:var(--w3-sans);letter-spacing:.06em}
+.lay-minimal .ibtn-ghost{border-width:1px}
+.mn-cal .mn-mon{font-family:var(--w3-serif);font-size:22px;color:var(--ink);margin-bottom:18px}
+.mn-grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:6px;max-width:300px;margin:0 auto;font-family:var(--w3-sans);font-size:14px;color:var(--ink)}
+.mn-grid small{font-size:10.5px;font-weight:600;letter-spacing:.06em;color:var(--muted);padding-bottom:8px;text-transform:uppercase}
+.mn-grid span{line-height:34px;font-variant-numeric:tabular-nums}
+.mn-grid span.we{color:var(--accent);opacity:.75}
+.mn-grid span.on{position:relative;color:var(--onAccent);font-weight:700;opacity:1}
+.mn-grid span.on::before{content:"";position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:var(--accent);z-index:-1}
+.mn-grid span.on{z-index:0}
+.mn-dday{margin-top:18px;font-family:var(--w3-sans);font-size:12.5px;letter-spacing:.2em;color:var(--muted)}
+.mn-dday b{color:var(--accent);font-weight:700}
+.lay-minimal footer{margin-top:20px;border-top:1px solid var(--line);padding-top:46px}
+.lay-minimal footer .sign{font-family:var(--w3-serif);font-style:normal;font-weight:300}
+.lay-minimal footer>svg{display:none}
+
+/* ---------- 5) GECE: koyu lüks + altın varak ışıltısı ---------- */
+.inv-host.L-gece{background:radial-gradient(90% 60% at 50% 0,color-mix(in srgb,var(--door1) 30%,transparent),transparent 70%),var(--bg)}
+.inv-host.L-gece.th-light{background:radial-gradient(90% 60% at 50% 0,color-mix(in srgb,var(--door1) 34%,transparent),transparent 70%),color-mix(in srgb,var(--door2) 20%,#0b0a0f)}
+.L-gece .inv-scroll{background-image:radial-gradient(circle,color-mix(in srgb,var(--gold) 55%,transparent) 0 .8px,transparent 1.3px),radial-gradient(circle,color-mix(in srgb,var(--gold) 35%,transparent) 0 .6px,transparent 1.1px);background-size:97px 89px,61px 67px;background-position:13px 7px,41px 33px;background-attachment:local}
+.L-gece.th-light .inv-scroll{--lt-paper:var(--paper);--lt-gold:var(--gold);--lt-door:var(--door2);--lt-err:var(--err)}
+.L-gece.th-light .inv{--bg:color-mix(in srgb,var(--lt-door) 24%,#0d0c11);--paper:color-mix(in srgb,var(--lt-door) 16%,#17161d);--ink:color-mix(in srgb,var(--lt-paper) 94%,#000);--muted:color-mix(in srgb,var(--lt-paper) 68%,#55505a);--gold:color-mix(in srgb,var(--lt-gold) 60%,#fff1cf);--accent:var(--gold);--onAccent:#15130f;--line:color-mix(in srgb,var(--gold) 30%,transparent);--ring:color-mix(in srgb,var(--gold) 28%,transparent);--err:#f0a590}
+.lay-gece{--foil:linear-gradient(105deg,color-mix(in srgb,var(--gold) 82%,#000) 0%,var(--gold) 22%,color-mix(in srgb,var(--gold) 35%,#fff) 34%,var(--gold) 46%,color-mix(in srgb,var(--gold) 78%,#000) 62%,var(--gold) 80%,color-mix(in srgb,var(--gold) 45%,#fff) 92%,var(--gold) 100%)}
+.lay-gece .gc{padding:40px 0 20px!important}
+.gc-frame{position:relative;padding:44px 20px 38px;border:1px solid color-mix(in srgb,var(--gold) 55%,transparent);outline:1px solid color-mix(in srgb,var(--gold) 22%,transparent);outline-offset:5px}
+.gc-frame::before,.gc-frame::after{content:"";position:absolute;width:34px;height:34px;border:2px solid var(--gold);pointer-events:none}
+.gc-frame::before{top:-9px;left:-9px;border-right:0;border-bottom:0}
+.gc-frame::after{bottom:-9px;right:-9px;border-left:0;border-top:0}
+.gc-orn{width:70px;height:70px;display:block;margin:0 auto 18px;filter:drop-shadow(0 0 10px color-mix(in srgb,var(--gold) 45%,transparent))}
+.gc-photo{width:180px;max-width:62%;margin:0 auto 24px;padding:5px;border:1px solid var(--gold);border-radius:999px 999px 6px 6px}
+.gc-photo img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:999px 999px 3px 3px}
+.lay-gece .eyebrow{color:var(--gold);letter-spacing:.4em;font-family:var(--w3-sans)}
+.lay-gece .names{font-family:var(--w3-serif);font-style:normal;font-weight:400;font-size:clamp(42px,12.5vw,66px);background:var(--foil);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:gcfoil 7s ease-in-out infinite;padding:0 .05em}
+.lay-gece .names .amp{font-style:italic;-webkit-text-fill-color:transparent}
+@keyframes gcfoil{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+.gc-rule{display:flex;align-items:center;justify-content:center;gap:12px;margin:22px 0 14px}
+.gc-rule i{height:1px;width:64px;background:linear-gradient(90deg,transparent,var(--gold))}
+.gc-rule i:last-child{transform:scaleX(-1)}
+.gc-rule svg{width:22px;height:22px}
+.gc-date{font-family:var(--w3-sans);font-size:12px;font-weight:600;letter-spacing:.2em;line-height:1.7;text-transform:uppercase;color:var(--ink)}
+[dir=rtl] .gc-date,[dir=rtl] .lay-gece .eyebrow{letter-spacing:0;font-size:14px}
+.lay-gece .lead{color:var(--muted)}
+.lay-gece .divider::before,.lay-gece .divider::after{background:linear-gradient(90deg,transparent,var(--gold))}
+.lay-gece .divider::after{transform:scaleX(-1)}
+.lay-gece .icard{background:linear-gradient(180deg,color-mix(in srgb,var(--paper) 92%,transparent),color-mix(in srgb,var(--paper) 70%,transparent));border:1px solid var(--line);border-radius:4px;box-shadow:inset 0 0 0 4px color-mix(in srgb,var(--paper) 0%,transparent),inset 0 0 0 5px color-mix(in srgb,var(--gold) 16%,transparent),0 20px 40px -26px rgba(0,0,0,.8)}
+.lay-gece .icard .mini{display:none}
+.lay-gece .icard>.label{color:var(--gold)}
+.lay-gece .daterow .day,.lay-gece .countdown b{color:var(--gold)}
+.lay-gece .countdown div{border-radius:2px}
+.lay-gece .ibtn{border-radius:2px;letter-spacing:.04em}
+.lay-gece footer .sign{font-family:var(--w3-serif);color:var(--gold)}
+
+/* ---------- 6) HİKÂYE: Instagram hikâyesi gibi dikey ekranlar ---------- */
+.L-hikaye .inv-scroll{container-type:size;scroll-snap-type:y proximity}
+.lay-hikaye{padding:0 10px 30px}
+.hk-bar{position:sticky;top:0;z-index:6;display:flex;gap:4px;padding:10px 6px 12px;margin:0 0 -26px;pointer-events:none}
+.hk-bar i{flex:1;height:2.5px;border-radius:2px;background:color-mix(in srgb,var(--ink) 20%,transparent);overflow:hidden;box-shadow:0 0 3px rgba(0,0,0,.15)}
+.hk-bar i b{display:block;height:100%;background:var(--accent);transform:scaleX(0);transform-origin:0 50%;transition:transform .45s ease}
+[dir=rtl] .hk-bar i b{transform-origin:100% 50%}
+.hk-bar i.on b{transform:none}
+.hk-p{position:relative;min-height:600px;min-height:calc(100cqh - 20px);display:flex;flex-direction:column;justify-content:center;scroll-snap-align:start;margin:0 0 12px;padding:40px 18px 26px;border-radius:26px;background:var(--paper);border:1px solid var(--line);overflow:hidden}
+.hk-p:nth-of-type(odd){background:linear-gradient(170deg,var(--paper),var(--bg))}
+.hk-p:first-of-type{margin-top:10px}
+.hk-p>.icard{background:transparent;border:0;box-shadow:none;margin:0;padding:10px 0;overflow:visible}
+.hk-p>.icard .mini{display:none}
+.hk-p>.icard>.label{font-size:12.5px;margin-bottom:16px}
+.hk-p .big{font-size:32px}
+.lay-hikaye .hk-hero{padding:0!important;flex:1;display:flex;flex-direction:column;justify-content:flex-end;text-align:center}
+.hk-p.hk-first{padding:0;background:var(--paper)}
+.hk-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hk-first.img::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.38),transparent 22%,transparent 48%,rgba(0,0,0,.72));pointer-events:none}
+.hk-orn{position:absolute;left:50%;top:44%;width:62%;max-width:250px;aspect-ratio:1;transform:translate(-50%,-50%);opacity:.9}
+.hk-orn::before{content:"";position:absolute;inset:-18%;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--leaf) 28%,transparent),transparent 68%)}
+.hk-orn svg{position:relative;width:100%;height:100%}
+.hk-head{position:absolute;top:30px;inset-inline-start:16px;inset-inline-end:16px;z-index:2;display:flex;align-items:center;gap:10px;text-align:start}
+.hk-av{width:38px;height:38px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--paper);box-shadow:0 0 0 2px var(--gold);font-family:var(--w3-serif);font-style:italic;font-size:14px;color:var(--accent);white-space:nowrap;overflow:hidden}
+.hk-av svg.ini-orn{width:24px;height:24px;color:var(--accent)}
+.hk-who{min-width:0;font-family:var(--w3-sans);line-height:1.25;color:var(--ink)}
+.hk-who b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hk-who small{font-size:12px;opacity:.75}
+.hk-txt{position:relative;z-index:2;padding:0 18px 70px}
+.hk-txt .guest-hi{margin:0 0 10px;padding:0}
+.lay-hikaye .hk-hero .names{font-family:var(--w3-serif);font-size:clamp(44px,13vw,68px)}
+.hk-first.img .hk-who,.hk-first.img .names,.hk-first.img .eyebrow,.hk-first.img .guest-hi,.hk-first.img .hk-swipe{color:#fff;text-shadow:0 1px 12px rgba(0,0,0,.35)}
+.hk-first.img .names .amp{color:color-mix(in srgb,var(--gold) 45%,#fff)}
+.hk-swipe{position:absolute;z-index:2;left:50%;bottom:22px;width:26px;height:26px;margin-left:-13px;color:var(--accent);animation:hksw 1.8s ease-in-out infinite}
+.hk-swipe svg{width:100%;height:100%}
+@keyframes hksw{0%,100%{transform:none;opacity:.9}50%{transform:translateY(-7px);opacity:.45}}
+.hk-quote{text-align:center}
+.hk-quote .hk-q{width:46px;height:46px;display:block;margin:0 auto 18px}
+.lay-hikaye .hk-quote .lead{font-family:var(--w3-serif);font-size:25px;line-height:1.5;color:var(--ink);margin-top:0}
+.lay-hikaye .hk-quote .host{margin-top:22px;font-family:var(--w3-sans);font-size:14px;letter-spacing:.06em}
+.lay-hikaye footer{margin-top:28px}
+
+/* ===== Açılışlar · Dalga 3 ===== */
+.zf2,.mk2,.ori,.dust,.tulip,.lan,.saray,.cfx{position:absolute;inset:0;z-index:50;overflow:hidden;direction:ltr}
+.zf2.gone,.mk2.gone,.ori.gone,.dust.gone,.tulip.gone,.lan.gone,.saray.gone,.cfx.gone{visibility:hidden;pointer-events:none}
+/* Kendi odak nesnesi olan açılışlarda yalnızca "dokunun" ipucu (disk yok) */
+.seal.hint-only{top:auto;bottom:9%;transform:translate(-50%,0)}
+.seal.hint-only .seal-disc{display:none}
+.opened .seal.hint-only{transform:translate(-50%,0) scale(.9)}
+/* 1) Mektup zarfı (zarfacil) */
+.zf2{background:radial-gradient(110% 70% at 50% 42%,var(--paper),var(--bg) 72%);transition:opacity .6s ease 1.8s;cursor:pointer}
+.zf2.open{opacity:0}
+.zf2 .z-st{position:absolute;left:50%;top:45%;width:316px;max-width:86%;aspect-ratio:7/5;transform:translate(-50%,-50%);perspective:1000px}
+.zf2 .z-bk,.zf2 .z-fr,.zf2 .z-lt,.zf2 .z-fl{position:absolute;transition:transform .7s cubic-bezier(.5,0,.3,1) 1.25s,opacity .6s ease 1.3s}
+.zf2 .z-bk{inset:0;border-radius:6px;background:linear-gradient(170deg,var(--door2),color-mix(in srgb,var(--door2) 80%,#000));box-shadow:0 24px 40px -18px rgba(0,0,0,.5);z-index:1}
+.zf2 .z-lt{left:6%;right:6%;top:6%;height:88%;z-index:2;background:var(--paper);border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;padding:8%;transition:transform .85s cubic-bezier(.4,0,.2,1) .5s,opacity .55s ease 1.6s}
+.zf2 .z-lt::before{content:"";position:absolute;inset:7px;border:1px solid var(--gold);opacity:.55;border-radius:2px}
+.zf2 .z-lt svg{width:30px;height:30px}
+.zf2 .z-lt small{font-family:var(--w3-sans);font-size:9px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--accent)}
+.zf2 .z-lt b{font-family:var(--w3-serif);font-style:italic;font-weight:400;font-size:22px;color:var(--accent);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zf2 .z-fr{inset:0;z-index:3;border-radius:6px;background:linear-gradient(20deg,var(--door2),var(--door1) 75%);clip-path:polygon(0 0,50% 54%,100% 0,100% 100%,0 100%)}
+.zf2 .z-fr::before,.zf2 .z-fr::after{content:"";position:absolute;inset:0}
+.zf2 .z-fr::before{background:linear-gradient(60deg,rgba(0,0,0,.14),transparent 60%);clip-path:polygon(0 0,50% 54%,0 100%)}
+.zf2 .z-fr::after{background:linear-gradient(-60deg,rgba(0,0,0,.08),transparent 60%);clip-path:polygon(100% 0,50% 54%,100% 100%)}
+.zf2 .z-to{position:absolute;z-index:4;left:50%;bottom:11%;transform:translateX(-50%);max-width:70%;padding:6px 14px;background:var(--paper);border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.22);font-family:var(--w3-serif);font-style:italic;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .5s ease 1.25s}
+.zf2 .z-fl{left:0;right:0;top:0;height:60%;z-index:5;transform-origin:50% 0;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.55,0,.35,1),opacity .6s ease 1.3s}
+.zf2 .z-fl i{position:absolute;inset:0;clip-path:polygon(0 0,100% 0,50% 100%);backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:6px 6px 0 0}
+.zf2 .z-fl .fo{background:linear-gradient(180deg,var(--door1),color-mix(in srgb,var(--door1) 78%,var(--door2)));box-shadow:inset 0 2px 0 rgba(255,255,255,.12)}
+.zf2 .z-fl .fi{transform:rotateX(180deg);background:radial-gradient(circle,var(--gold) 0 1.4px,transparent 1.9px) 0 0/13px 13px,radial-gradient(circle,color-mix(in srgb,var(--paper) 55%,transparent) 0 1px,transparent 1.5px) 6.5px 6.5px/13px 13px,linear-gradient(180deg,var(--accent),color-mix(in srgb,var(--accent) 70%,#000))}
+.zf2 .z-wx{position:absolute;left:50%;top:100%;width:68px;height:68px;margin:-40px 0 0 -34px;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:translateZ(1px)}
+.zf2 .z-wx span{font-size:19px}
+.zf2.open .z-fl{transform:rotateX(180deg);z-index:1;transition:transform .8s cubic-bezier(.55,0,.35,1),z-index 0s linear .4s,opacity .6s ease 1.3s}
+.zf2.open .z-lt{transform:translateY(-62%)}
+.zf2.open .z-bk,.zf2.open .z-fr{transform:translateY(60px);opacity:0}
+.zf2.open .z-fl{opacity:0}
+.zf2.open .z-to{opacity:0}
+.zf2 .z-wx{transition:opacity .15s linear .28s}.zf2.open .z-wx{opacity:0}
+.zf2.open .z-lt{animation:zfLt 2.2s cubic-bezier(.4,0,.2,1) .5s both}
+@keyframes zfLt{0%{transform:none}38%{transform:translateY(-62%)}60%{transform:translateY(-58%) scale(1.04);opacity:1}100%{transform:translateY(-34%) scale(1.5);opacity:0}}
+/* 2) Mum mühür kırma (muhurkir) */
+.mk2{transition:opacity .5s ease 1.7s;cursor:pointer}
+.mk2.open{opacity:0}
+.mk2 .mh{position:absolute;top:0;bottom:0;width:50.5%;background:radial-gradient(circle,color-mix(in srgb,var(--line) 55%,transparent) 0 .7px,transparent 1.2px) 0 0/9px 9px,linear-gradient(180deg,var(--paper),color-mix(in srgb,var(--paper) 88%,var(--door2)));transition:transform 1.15s cubic-bezier(.6,.02,.3,1) .55s}
+.mk2 .mh.l{left:0;box-shadow:inset -18px 0 26px -20px rgba(0,0,0,.35)}
+.mk2 .mh.r{right:0;box-shadow:inset 18px 0 26px -20px rgba(0,0,0,.35)}
+.mk2 .mh::before{content:"";position:absolute;top:22px;bottom:22px;border:1px solid var(--gold);opacity:.6}
+.mk2 .mh.l::before{left:22px;right:0;border-right:0}
+.mk2 .mh.r::before{right:22px;left:0;border-left:0}
+.mk2 .mh::after{content:"";position:absolute;top:50%;height:16px;margin-top:-8px;width:100%;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 80%,#000),var(--accent) 40%,color-mix(in srgb,var(--accent) 75%,#000));opacity:.92}
+.mk2.open .mh.l{transform:translateX(-104%) rotate(-2deg)}
+.mk2.open .mh.r{transform:translateX(104%) rotate(2deg)}
+.mk2 .ms{position:absolute;left:50%;top:50%;width:156px;height:156px;margin:-78px 0 0 -78px;z-index:2}
+.mk2 .ms-sh{position:absolute;inset:4%;border-radius:50%;background:radial-gradient(circle,rgba(0,0,0,.38),transparent 70%);transform:translateY(8px) scale(1.05);transition:opacity .3s ease .15s}
+.mk2 .sd{position:absolute;inset:0;transition:transform .95s cubic-bezier(.2,.65,.35,1) .16s,opacity .6s ease .45s}
+.mk2 .sd .w3-wax{position:absolute;inset:7%}
+.mk2 .sd .w3-wax span{font-size:44px}
+.mk2 .sd.a{clip-path:polygon(0 0,52% 0,55% 20%,47% 36%,51% 49%,34% 46%,20% 55%,0 48%)}
+.mk2 .sd.b{clip-path:polygon(52% 0,100% 0,100% 50%,80% 45%,66% 52%,51% 49%,47% 36%,55% 20%)}
+.mk2 .sd.c{clip-path:polygon(100% 50%,100% 100%,50% 100%,55% 82%,45% 64%,51% 49%,66% 52%,80% 45%)}
+.mk2 .sd.d{clip-path:polygon(0 48%,20% 55%,34% 46%,51% 49%,45% 64%,55% 82%,50% 100%,0 100%)}
+.mk2 .ck{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:color-mix(in srgb,var(--accent) 50%,#000);stroke-width:1.6;stroke-linejoin:round;opacity:0;transition:opacity .12s ease .02s}
+.mk2.open .ck{opacity:1}
+.mk2.open .ms-sh{opacity:0}
+.mk2.open .sd{opacity:0}
+.mk2.open .sd.a{transform:translate(-74px,-40px) rotate(-30deg)}
+.mk2.open .sd.b{transform:translate(70px,-52px) rotate(26deg)}
+.mk2.open .sd.c{transform:translate(58px,96px) rotate(34deg)}
+.mk2.open .sd.d{transform:translate(-66px,90px) rotate(-24deg)}
+.mk2.open .ck{transition:opacity .12s ease .02s;animation:mkck .5s ease .18s forwards}
+@keyframes mkck{to{opacity:0}}
+/* 3) Katlı kâğıt / origami (kagitkatla) */
+.ori{perspective:1300px;transition:opacity .35s ease 1.65s;cursor:pointer}
+.ori.open{opacity:0}
+.ori .of{position:absolute;inset:0;transition:transform 1.2s cubic-bezier(.5,.05,.3,1),opacity .35s ease .85s;will-change:transform}
+.ori .of::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 2px,transparent 2px 7px),var(--g)}
+.ori .of::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22))}
+.ori .of.t{--g:linear-gradient(180deg,var(--door1),color-mix(in srgb,var(--door1) 60%,var(--door2)));transform-origin:50% 0;z-index:2}
+.ori .of.b{--g:linear-gradient(0deg,var(--door1),color-mix(in srgb,var(--door1) 55%,var(--door2)));transform-origin:50% 100%;z-index:3}
+.ori .of.l{--g:linear-gradient(90deg,var(--door2),color-mix(in srgb,var(--door2) 55%,var(--door1)));transform-origin:0 50%;z-index:1}
+.ori .of.r{--g:linear-gradient(270deg,var(--door2),color-mix(in srgb,var(--door2) 55%,var(--door1)));transform-origin:100% 50%;z-index:1}
+
+
+
+
+.ori .of.t::before{clip-path:polygon(0 0,100% 0,50% 50%)}.ori .of.t::after{clip-path:polygon(0 0,50% 50%,100% 0,100% 1.4%,50% 51.6%,0 1.4%)}
+.ori .of.b::before{clip-path:polygon(0 100%,100% 100%,50% 50%)}.ori .of.b::after{clip-path:polygon(0 100%,50% 50%,100% 100%,100% 98.6%,50% 48.4%,0 98.6%)}
+.ori .of.l::before{clip-path:polygon(0 0,0 100%,50% 50%)}.ori .of.r::before{clip-path:polygon(100% 0,100% 100%,50% 50%)}
+.ori .of.l::after,.ori .of.r::after{display:none}
+.ori .of svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.ori .of polyline{fill:none;stroke:var(--gold);stroke-width:1.6;vector-effect:non-scaling-stroke}.ori .of polyline.in{stroke-width:.8;opacity:.55}
+.ori.open .of.b{transform:rotateX(-172deg);opacity:0;transition-delay:0s,.8s}
+.ori.open .of.t{transform:rotateX(172deg);opacity:0;transition-delay:.18s,.98s}
+.ori.open .of.l{transform:rotateY(172deg);opacity:0;transition-delay:.4s,1.2s}
+.ori.open .of.r{transform:rotateY(-172deg);opacity:0;transition-delay:.4s,1.2s}
+/* 4) Altın toz (parilti) */
+.dust{container-type:size;transition:opacity .35s ease 1.95s;cursor:pointer}
+.dust.open{opacity:0}
+.dust i{position:absolute;left:calc(var(--c)*16.6667%);top:calc(var(--r)*11.1111%);width:calc(16.6667% + 1px);height:calc(11.1111% + 1px);transition:transform 1.25s cubic-bezier(.3,.55,.45,1) var(--d);will-change:transform}
+.dust i::before,.dust i::after{content:"";position:absolute;inset:0}
+.dust i::before{background:radial-gradient(130% 90% at 50% 30%,color-mix(in srgb,var(--door1) 92%,#fff),var(--door2) 65%,color-mix(in srgb,var(--door2) 80%,#000));background-size:600% 900%;background-position:calc(var(--c)*20%) calc(var(--r)*12.5%);transition:opacity .26s ease var(--d)}
+.dust i::after{background:radial-gradient(circle,color-mix(in srgb,var(--gold) 25%,#fff) 0,var(--gold) 12%,transparent 30%);opacity:0;transition:opacity .25s ease var(--d)}
+.dust.open i{transform:translate(calc(var(--x)*1cqw),calc(var(--y)*1cqh)) rotate(var(--a)) scale(.12)}
+.dust.open i::before{opacity:0}
+.dust.open i::after{opacity:1}
+.dust b{position:absolute;inset:0;background:radial-gradient(circle,color-mix(in srgb,var(--gold) 70%,transparent) 0 1px,transparent 1.6px) 0 0/31px 37px,radial-gradient(circle,color-mix(in srgb,var(--gold) 50%,transparent) 0 .8px,transparent 1.4px) 17px 11px/23px 29px;animation:dsTw 3.2s ease-in-out infinite;pointer-events:none;transition:opacity .3s}
+.dust.open b{opacity:0}
+@keyframes dsTw{0%,100%{opacity:.85}50%{opacity:.35}}
+.dust .dg{position:absolute;left:50%;top:50%;width:60cqw;height:60cqw;margin:-30cqw 0 0 -30cqw;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--gold) 40%,#fff) 0,color-mix(in srgb,var(--gold) 60%,transparent) 30%,transparent 68%);transform:scale(.2);opacity:0;transition:transform 1.1s cubic-bezier(.2,.7,.3,1),opacity 1.1s ease}
+.dust.open .dg{transform:scale(2.4);opacity:0;animation:dsGl 1.1s ease-out}
+@keyframes dsGl{0%{opacity:0}18%{opacity:.95}100%{opacity:0}}
+/* 5) Lale (lale) */
+.tulip{background:radial-gradient(85% 60% at 50% 42%,var(--paper),var(--bg) 78%);transition:opacity .6s ease 1.4s;cursor:pointer}
+.tulip::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 22%,transparent) 0 1.3px,transparent 1.8px) 0 0/24px 24px,radial-gradient(circle,color-mix(in srgb,var(--gold) 22%,transparent) 0 1px,transparent 1.5px) 12px 12px/24px 24px;opacity:.7;-webkit-mask:radial-gradient(70% 55% at 50% 45%,transparent 40%,#000);mask:radial-gradient(70% 55% at 50% 45%,transparent 40%,#000)}
+.tulip::after{content:"";position:absolute;inset:16px;border:1px solid color-mix(in srgb,var(--gold) 60%,transparent);border-radius:14px;pointer-events:none}
+.tulip.open{opacity:0}
+.tulip .tg{position:absolute;left:50%;top:44%;width:62%;max-width:260px;aspect-ratio:3/4;transform:translate(-50%,-50%);transition:transform 1.7s cubic-bezier(.5,0,.25,1) .15s}
+.tulip .tw{position:absolute;inset:0;transform-origin:50% 95%;animation:tlSw 5s ease-in-out infinite alternate}
+@keyframes tlSw{from{transform:rotate(-1.4deg)}to{transform:rotate(1.4deg)}}
+.tulip svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;transform-origin:50% 66%;transition:transform 1.25s cubic-bezier(.45,0,.25,1),opacity .7s ease .5s}
+.tulip .tl-p{fill:var(--accent);stroke:var(--gold);stroke-width:1.1;stroke-linejoin:round}
+.tulip .tl-c .tl-p{fill:color-mix(in srgb,var(--accent) 70%,#000)}
+.tulip .tl-v{fill:none;stroke:var(--gold);stroke-width:.8;opacity:.75;stroke-linecap:round}
+.tulip .tl-st path{fill:var(--leaf);stroke:color-mix(in srgb,var(--leaf) 70%,#000);stroke-width:.6}
+.tulip .tl-st .tl-sm{fill:none;stroke:var(--leaf);stroke-width:2.6;stroke-linecap:round}
+.tulip .tl-st{transform-origin:50% 100%}
+.tulip.open .tg{transform:translate(-50%,-50%) scale(2.3)}
+.tulip.open .tl-l{transform:rotate(-46deg) translateX(-14%);opacity:0}
+.tulip.open .tl-r{transform:rotate(46deg) translateX(14%);opacity:0}
+.tulip.open .tl-c{transform:translateY(-26%) scale(1.15);opacity:0}
+.tulip.open .tl-st{transform:translateY(22%) scale(.9);opacity:0;transition-delay:0s,.2s}
+/* 6) Fener (fener) */
+.lan{container-type:size;background:radial-gradient(90% 55% at 50% 30%,color-mix(in srgb,var(--door1) 45%,#140d08),color-mix(in srgb,var(--door2) 35%,#06050a) 72%);transition:opacity .55s ease 1.55s;cursor:pointer}
+.lan.open{opacity:0}
+.lan::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(255,250,235,.8) 0 .8px,transparent 1.3px) 0 0/83px 71px,radial-gradient(circle,rgba(255,250,235,.55) 0 .6px,transparent 1.1px) 37px 29px/59px 53px;-webkit-mask:linear-gradient(#000,transparent 70%);mask:linear-gradient(#000,transparent 70%);transition:opacity .6s ease .3s}
+.lan.open::before{opacity:0}
+.lan .moon{position:absolute;top:7%;right:9%;width:34px;height:34px;fill:var(--gold);opacity:.9;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--gold) 60%,transparent));transition:opacity .5s ease .3s}
+.lan.open .moon{opacity:0}
+.lan .ln{position:absolute;top:0;width:var(--w);margin-left:calc(var(--w)/-2);transform-origin:50% 0;animation:lnSw var(--sw) ease-in-out infinite alternate;transition:opacity .7s ease .85s}
+.lan .ln::before{content:"";position:absolute;left:50%;top:0;width:1.5px;height:var(--ch);margin-left:-.75px;background:linear-gradient(var(--gold),color-mix(in srgb,var(--gold) 60%,transparent))}
+.lan .ln .ln-b{position:relative;margin-top:var(--ch);transition:transform 1.4s cubic-bezier(.5,0,.3,1) .2s}
+.lan .ln svg{display:block;width:100%;height:auto;overflow:visible}
+.lan .ln .ln-g{position:absolute;left:50%;top:48%;width:230%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--gold) 55%,#fff6dc) 0,color-mix(in srgb,var(--gold) 45%,transparent) 22%,transparent 62%);animation:lnFl 2.6s ease-in-out infinite;pointer-events:none}
+@keyframes lnSw{from{transform:rotate(-1.6deg)}to{transform:rotate(1.6deg)}}
+@keyframes lnFl{0%,100%{opacity:.8}40%{opacity:.58}55%{opacity:.95}70%{opacity:.7}}
+.lan .ln-f{position:absolute;left:50%;top:var(--fy);width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:radial-gradient(circle,#fffaf0 0,color-mix(in srgb,var(--gold) 30%,#fff6e0) 30%,color-mix(in srgb,var(--paper) 70%,transparent) 55%,transparent 70%);transform:scale(.4);opacity:0;transition:transform 1.5s cubic-bezier(.55,0,.4,1) .25s,opacity .5s ease .25s}
+.lan.open .ln-f{transform:scale(34);opacity:1}
+.lan.open .ln{opacity:0}
+.lan.open .ln .ln-b{transform:translateY(-34px)}
+/* 7) Saray kapısı (kapikemer) */
+.saray{background:radial-gradient(90% 60% at 50% 50%,var(--door1),var(--door2) 80%);perspective:1300px;transition:opacity .55s ease 1.85s;cursor:pointer}
+.saray::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 26px,rgba(0,0,0,.07) 26px 27px),repeating-linear-gradient(90deg,transparent 0 52px,rgba(0,0,0,.05) 52px 53px)}
+.saray.open{opacity:0}
+.saray .sp{position:absolute;left:9%;right:9%;top:9%;bottom:6%;transition:transform 1.5s cubic-bezier(.55,0,.35,1) .75s;transform-style:preserve-3d}
+.saray.open .sp{transform:scale(1.35)}
+.saray .sl{position:absolute;inset:0;clip-path:var(--arch);background:radial-gradient(60% 50% at 50% 62%,var(--paper),color-mix(in srgb,var(--gold) 40%,var(--paper)) 55%,var(--gold))}
+.saray .dr{position:absolute;top:0;bottom:0;width:50%;background:linear-gradient(180deg,color-mix(in srgb,var(--door1) 85%,#fff),var(--door2));transition:transform 1.55s cubic-bezier(.6,.02,.25,1),filter 1.55s ease;overflow:hidden}
+.saray .dr.l{left:0;transform-origin:0 50%;clip-path:var(--al);box-shadow:inset -10px 0 20px -12px rgba(0,0,0,.45)}
+.saray .dr.r{right:0;transform-origin:100% 50%;clip-path:var(--ar);box-shadow:inset 10px 0 20px -12px rgba(0,0,0,.45)}
+.saray .dr svg{position:absolute;top:0;height:100%;width:200%}
+.saray .dr.l svg{left:0}.saray .dr.r svg{right:0}
+.saray .gr{fill:none;stroke:var(--doorLine);stroke-width:1.1}
+.saray .dr::after{content:"";position:absolute;top:56%;width:13px;height:13px;border-radius:50%;border:2.5px solid var(--gold);box-shadow:0 2px 4px rgba(0,0,0,.35)}
+.saray .dr.l::after{right:10px}.saray .dr.r::after{left:10px}
+.saray .fr{position:absolute;inset:-8px;width:calc(100% + 16px);height:calc(100% + 16px);overflow:visible;pointer-events:none}.saray .fr.i{inset:-2px;width:calc(100% + 4px);height:calc(100% + 4px)}
+.saray .fr path{fill:none;stroke:var(--gold);vector-effect:non-scaling-stroke}
+.saray .fr.o path{stroke-width:3}.saray .fr.i path{stroke-width:1.2;opacity:.75}
+.saray .ks{position:absolute;left:50%;top:-30px;width:44px;height:44px;margin-left:-22px;fill:var(--gold)}
+.saray.open .dr.l{transform:rotateY(-104deg);filter:brightness(.65)}
+.saray.open .dr.r{transform:rotateY(104deg);filter:brightness(.65)}
+/* 8) Konfeti (konfeti) */
+.cfx{container-type:size;transition:opacity .4s ease 2s;cursor:pointer}
+.cfx.open{opacity:0}
+.cfx .cbg{position:absolute;inset:0;background:radial-gradient(circle,var(--doorLine) 0 2px,transparent 2.6px) 0 0/28px 28px,radial-gradient(circle,color-mix(in srgb,var(--gold) 55%,transparent) 0 1.6px,transparent 2.2px) 14px 14px/28px 28px,linear-gradient(160deg,var(--door1),var(--door2));transition:opacity .55s ease .12s}
+.cfx.open .cbg{opacity:0}
+.cfx .bnt{position:absolute;left:-4%;width:108%;top:2%;height:auto;transform-origin:50% 0;animation:cfSw 3.4s ease-in-out infinite alternate;transition:transform .6s ease-in,opacity .4s ease .1s}
+.cfx .bnt.b2{top:9%;animation-duration:4.2s;opacity:.85}
+@keyframes cfSw{from{transform:rotate(-.8deg)}to{transform:rotate(.8deg)}}
+.cfx.open .bnt{transform:translateY(-130%);opacity:0;animation:none}
+.cfx .bnt path{fill:none;stroke:var(--gold);stroke-width:1.4}
+.cfx i{position:absolute;left:var(--ox);top:100%;width:var(--w);height:var(--h);margin:calc(var(--h)/-2) 0 0 calc(var(--w)/-2);background:var(--c);border-radius:var(--br);opacity:0}
+.cfx.open i{animation:cfFly var(--du) cubic-bezier(.2,.6,.35,1) var(--d) both}
+@keyframes cfFly{0%{opacity:1;transform:translate(0,0) rotate(0) rotateX(0)}
+  42%{opacity:1;transform:translate(calc(var(--x)*.62cqw),calc(var(--y)*1cqh)) rotate(calc(var(--r)*.5)) rotateX(540deg);animation-timing-function:cubic-bezier(.45,0,.8,.6)}
+  86%{opacity:1}
+  100%{opacity:0;transform:translate(calc(var(--x)*1cqw),calc(var(--y)*1cqh + 62cqh)) rotate(var(--r)) rotateX(1260deg)}}
+/* Editör: 20 açılış */
+@media (prefers-reduced-motion:reduce){
+  .lay-gece .names,.lay-galeri .gl-scroll i,.hk-swipe{animation:none!important}
+  .hk-bar i b{transition:none}
+  .lay-galeri .gl-gal .gal-it.reveal{transform:none}
+  .cfx.open i{animation:none!important;opacity:0}
+  .dust.open .dg{animation:none!important}
+}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -788,9 +1185,62 @@ Object.assign(G.ar,{rsvpJump:"أكّد حضورك",waHow:"هل فُتح واتس
 const LOCALE={"tr":"tr-TR","en":"en-GB","de":"de-DE","ar":"ar-u-ca-gregory"};
 const THEMES={"papatya":{"name":{"tr":"Papatya","en":"Daisy","de":"Gänseblümchen","ar":"الأقحوان"},"premium":false,"orn":"o-papatya","fall":"o-papatya","v":{"bg":"#fbf8f1","paper":"#fffdf8","ink":"#3b3a33","muted":"#66634f","accent":"#3f5a40","onAccent":"#ffffff","gold":"#b7860f","line":"#e6dfcd","ring":"rgba(63,90,64,.18)","err":"#a2543a","door1":"#9db398","door2":"#7a9475","doorLine":"rgba(255,255,255,.5)","leaf":"#8fa58a"}},"altin":{"name":{"tr":"Altın Gece","en":"Golden Night","de":"Goldene Nacht","ar":"الليلة الذهبية"},"premium":true,"orn":"o-yildiz","fall":"o-yildiz","v":{"bg":"#121829","paper":"#1b2238","ink":"#f3ead8","muted":"#cbbfa5","accent":"#e0bd6a","onAccent":"#121829","gold":"#e0bd6a","line":"rgba(224,189,106,.32)","ring":"rgba(224,189,106,.25)","err":"#f0a58f","door1":"#26304f","door2":"#141a2e","doorLine":"rgba(224,189,106,.55)","leaf":"#c9a24a"}},"kina":{"name":{"tr":"Kına Kırmızısı","en":"Henna Red","de":"Henna-Rot","ar":"أحمر الحناء"},"premium":true,"orn":"o-lale","fall":"o-lale","v":{"bg":"#f8efe6","paper":"#fffaf4","ink":"#3a1d1f","muted":"#6b4a45","accent":"#8a1c2b","onAccent":"#ffffff","gold":"#a87b22","line":"#ead7c4","ring":"rgba(138,28,43,.15)","err":"#8a1c2b","door1":"#9a2333","door2":"#6e1320","doorLine":"rgba(240,210,150,.6)","leaf":"#6d8a45"}},"nazar":{"name":{"tr":"Lacivert Nazar","en":"Navy Evil Eye","de":"Nazar in Marineblau","ar":"عين زرقاء"},"premium":true,"orn":"o-nazar","fall":"o-yildiz","v":{"bg":"#14284b","paper":"#1b3360","ink":"#f5f1e6","muted":"#cdd6e6","accent":"#e4b95f","onAccent":"#14284b","gold":"#e4b95f","line":"rgba(228,185,95,.35)","ring":"rgba(228,185,95,.25)","err":"#f3a28f","door1":"#24447a","door2":"#122444","doorLine":"rgba(228,185,95,.6)","leaf":"#e4b95f"}},"kemer":{"name":{"tr":"Altın Kemer","en":"Golden Arch","de":"Goldener Bogen","ar":"القوس الذهبي"},"premium":true,"orn":"o-kemer","fall":"o-yildiz","v":{"bg":"#0F2E2B","paper":"#143A36","ink":"#F7EDD2","muted":"#D3CBAE","accent":"#E2BE63","onAccent":"#0F2E2B","gold":"#E2BE63","line":"rgba(226,190,99,.32)","ring":"rgba(226,190,99,.25)","err":"#F0A58F","door1":"#1B4A44","door2":"#0A201E","doorLine":"rgba(226,190,99,.55)","leaf":"#C9A24A"}},"yildiz8":{"name":{"tr":"Sekiz Köşeli Yıldız","en":"Eight-Point Star","de":"Achtzackiger Stern","ar":"النجمة الثمانية"},"premium":true,"orn":"o-yildiz8","fall":"o-yildiz8","v":{"bg":"#FBF6EA","paper":"#FFFCF4","ink":"#1B2B3F","muted":"#4E5A6A","accent":"#0F6B66","onAccent":"#FFFFFF","gold":"#B8922F","line":"#E6DCC2","ring":"rgba(15,107,102,.16)","err":"#A2433A","door1":"#2C8B85","door2":"#0F5551","doorLine":"rgba(247,236,200,.6)","leaf":"#5E9C94"}},"bordo":{"name":{"tr":"Bordo Kına","en":"Burgundy Henna","de":"Bordeaux-Henna","ar":"حناء عنابية"},"premium":true,"orn":"o-bordo","fall":"o-bordo","v":{"bg":"#5C1020","paper":"#6B1A2D","ink":"#FBEBD6","muted":"#E6CDB8","accent":"#EBC174","onAccent":"#5C1020","gold":"#EBC174","line":"rgba(235,193,116,.34)","ring":"rgba(235,193,116,.25)","err":"#F5A6A0","door1":"#7A1830","door2":"#45091A","doorLine":"rgba(235,193,116,.55)","leaf":"#D9A95A"}},"bulut":{"name":{"tr":"Tereyağı Bulut","en":"Buttercream Cloud","de":"Buttercreme-Wolke","ar":"سحابة الزبدة"},"premium":true,"orn":"o-bulut","fall":"o-bulut","v":{"bg":"#FFF6D9","paper":"#FFFBEC","ink":"#3D3A52","muted":"#5C5872","accent":"#6B4F8F","onAccent":"#FFFFFF","gold":"#9A7414","line":"#EADFB8","ring":"rgba(107,79,143,.16)","err":"#A2443A","door1":"#9F8AC4","door2":"#6B4F8F","doorLine":"rgba(255,251,236,.6)","leaf":"#B7A6D6"}},"adacayi":{"name":{"tr":"Adaçayı Dalı","en":"Sage Branch","de":"Salbeizweig","ar":"غصن المريمية"},"premium":true,"orn":"o-adacayi","fall":"o-adacayi","v":{"bg":"#F5F3EA","paper":"#FBFAF4","ink":"#2A3A31","muted":"#526055","accent":"#4F6F5B","onAccent":"#FFFFFF","gold":"#9A7C2E","line":"#DFDCCB","ring":"rgba(79,111,91,.16)","err":"#A2543A","door1":"#4B6B57","door2":"#2A4234","doorLine":"rgba(245,243,234,.5)","leaf":"#8FAE98"}},"gul":{"name":{"tr":"Pudra Gül","en":"Powder Rose","de":"Puderrose","ar":"الورد البودري"},"premium":true,"orn":"o-gul","fall":"o-gulyaprak","v":{"bg":"#FBEFEC","paper":"#FFF8F5","ink":"#4A2B33","muted":"#7A4D5A","accent":"#A8405C","onAccent":"#FFFFFF","gold":"#A06A3C","line":"#F0D6D3","ring":"rgba(168,64,92,.16)","err":"#A63A32","door1":"#D98A9B","door2":"#B2566C","doorLine":"rgba(255,248,245,.65)","leaf":"#8FAE8A"}},"okaliptus":{"name":{"tr":"Okaliptüs","en":"Eucalyptus","de":"Eukalyptus","ar":"الأوكالبتوس"},"premium":true,"orn":"o-okaliptus","fall":"o-okaliptusyaprak","v":{"bg":"#FFFFFF","paper":"#F7F9F7","ink":"#24312C","muted":"#50605A","accent":"#4B6E64","onAccent":"#FFFFFF","gold":"#7D6B3A","line":"#DEE6E1","ring":"rgba(75,110,100,.16)","err":"#A5402F","door1":"#DCE9E3","door2":"#AEC8BE","doorLine":"rgba(75,110,100,.55)","leaf":"#9DB8AC"}},"deco":{"name":{"tr":"Art Deco Gece","en":"Art Deco Night","de":"Art-Déco-Nacht","ar":"ليلة الآرت ديكو"},"premium":true,"orn":"o-deco","fall":"o-decoelmas","v":{"bg":"#0E0E11","paper":"#1A1A1F","ink":"#F4ECD8","muted":"#C9BFA6","accent":"#D9B965","onAccent":"#0E0E11","gold":"#D9B965","line":"rgba(217,185,101,.34)","ring":"rgba(217,185,101,.25)","err":"#F2A794","door1":"#2A2A31","door2":"#0B0B0D","doorLine":"rgba(217,185,101,.6)","leaf":"#C9A24A"}},"tezhip":{"name":{"tr":"Tezhip","en":"Ottoman Illumination","de":"Osmanische Buchmalerei","ar":"التذهيب العثماني"},"premium":true,"orn":"o-tezhip","fall":"o-hatayi","v":{"bg":"#F8F0DB","paper":"#FFFAEB","ink":"#16284A","muted":"#475572","accent":"#1D3A6E","onAccent":"#FFFFFF","gold":"#8A6616","line":"#E7D8AE","ring":"rgba(29,58,110,.16)","err":"#A23A32","door1":"#2B4C88","door2":"#13294F","doorLine":"rgba(232,198,115,.7)","leaf":"#B08D3A"}},"lavanta":{"name":{"tr":"Lavanta","en":"Lavender","de":"Lavendel","ar":"اللافندر"},"premium":true,"orn":"o-lavanta","fall":"o-lavantatane","v":{"bg":"#F3EDF9","paper":"#FBF8FE","ink":"#31264A","muted":"#5B5072","accent":"#5E4194","onAccent":"#FFFFFF","gold":"#8A6D2A","line":"#E1D6EF","ring":"rgba(94,65,148,.16)","err":"#A63A3A","door1":"#DCCFF0","door2":"#BBA6DE","doorLine":"rgba(94,65,148,.5)","leaf":"#8DA878"}},"zeytin":{"name":{"tr":"Zeytin Dalı","en":"Olive Branch","de":"Olivenzweig","ar":"غصن الزيتون"},"premium":true,"orn":"o-zeytin","fall":"o-zeytinyaprak","v":{"bg":"#F5EFE0","paper":"#FCF8EE","ink":"#312E1E","muted":"#585433","accent":"#58692A","onAccent":"#FFFFFF","gold":"#86661C","line":"#E4DBC0","ring":"rgba(88,105,42,.16)","err":"#A23F2C","door1":"#E0E4C2","door2":"#BAC38C","doorLine":"rgba(88,105,42,.55)","leaf":"#9AAA6A"}},"balon":{"name":{"tr":"Balon Şenliği","en":"Balloon Party","de":"Ballonfest","ar":"حفلة البالونات"},"premium":true,"orn":"o-balon","fall":"o-konfeti","v":{"bg":"#FFF8EA","paper":"#FFFDF6","ink":"#2B2A4A","muted":"#555377","accent":"#C22F54","onAccent":"#FFFFFF","gold":"#946A00","line":"#F1E3C4","ring":"rgba(194,47,84,.16)","err":"#B02E2E","door1":"#7F6DDB","door2":"#5646B3","doorLine":"rgba(255,255,255,.65)","leaf":"#3FBF8A"}},"mehtap":{"name":{"tr":"Mehtap","en":"Moonlight","de":"Mondschein","ar":"ضوء القمر"},"premium":true,"orn":"o-mehtap","fall":"o-mehtapyildiz","v":{"bg":"#131B47","paper":"#1D2759","ink":"#F2EDFB","muted":"#C6C3E4","accent":"#CDBBF2","onAccent":"#131B47","gold":"#E8D49E","line":"rgba(205,187,242,.32)","ring":"rgba(205,187,242,.25)","err":"#F4A6A0","door1":"#34418F","door2":"#0F1640","doorLine":"rgba(205,187,242,.55)","leaf":"#BBA6E8"}},"cini":{"name":{"tr":"Mavi Çini","en":"Blue Iznik Tile","de":"Blaue Iznik-Kachel","ar":"الخزف الأزرق"},"premium":true,"orn":"o-cini","fall":"o-cinipalmet","v":{"bg":"#F7F4EC","paper":"#FFFDF8","ink":"#14284F","muted":"#495B7C","accent":"#1F4FA3","onAccent":"#FFFFFF","gold":"#8F6A12","line":"#DCD7C6","ring":"rgba(31,79,163,.16)","err":"#A33A32","door1":"#2E62B9","door2":"#163A82","doorLine":"rgba(247,244,236,.6)","leaf":"#2A8FA8"}},"kurugul":{"name":{"tr":"Kuru Gül","en":"Dried Rose","de":"Trockenrose","ar":"الورد المجفف"},"premium":true,"orn":"o-kurugul","fall":"o-kurudal","v":{"bg":"#F3E9DF","paper":"#FBF5EE","ink":"#3D2B24","muted":"#6A5146","accent":"#8A5645","onAccent":"#FFFFFF","gold":"#9A7549","line":"#E3D3C3","ring":"rgba(138,86,69,.17)","err":"#9E3B2D","door1":"#B98B7B","door2":"#8C6050","doorLine":"rgba(251,245,238,.55)","leaf":"#A8946F"}},"orman":{"name":{"tr":"Orman Altını","en":"Forest Gold","de":"Waldgold","ar":"ذهب الغابة"},"premium":true,"orn":"o-orman","fall":"o-ormanyaprak","v":{"bg":"#12301E","paper":"#19402A","ink":"#F3EAD0","muted":"#CEC8AA","accent":"#D9B860","onAccent":"#12301E","gold":"#D9B860","line":"rgba(217,184,96,.32)","ring":"rgba(217,184,96,.25)","err":"#F2A794","door1":"#25503A","door2":"#0B2014","doorLine":"rgba(217,184,96,.55)","leaf":"#BFA24F"}},"kadife":{"name":{"tr":"Gül Kadife","en":"Velvet Rose","de":"Samtrose","ar":"مخمل الورد"},"premium":true,"orn":"o-kadife","fall":"o-kadifeyaprak","v":{"bg":"#2D0A18","paper":"#3C1226","ink":"#F9E9E4","muted":"#E3C4C4","accent":"#F0A3B2","onAccent":"#2D0A18","gold":"#E6B58C","line":"rgba(240,163,178,.3)","ring":"rgba(240,163,178,.24)","err":"#F6AAA0","door1":"#5D1A36","door2":"#230610","doorLine":"rgba(230,181,140,.5)","leaf":"#5E8F66"}},"gunbatimi":{"name":{"tr":"Çöl Günbatımı","en":"Desert Sunset","de":"Wüstensonnenuntergang","ar":"غروب الصحراء"},"premium":true,"orn":"o-gunbatimi","fall":"o-gunbatimiot","v":{"bg":"#F7EBDB","paper":"#FEF7EC","ink":"#46271C","muted":"#765040","accent":"#AC4C2A","onAccent":"#FFFFFF","gold":"#B0792F","line":"#ECD6BA","ring":"rgba(176,78,43,.16)","err":"#A43A2A","door1":"#DE9462","door2":"#AA4E2B","doorLine":"rgba(254,247,236,.6)","leaf":"#C7A06A"}},"mevlit":{"name":{"tr":"Mevlit Zümrüdü","en":"Mevlid Emerald","de":"Mevlid-Smaragd","ar":"زمرد المولد"},"premium":true,"orn":"o-mevlit","fall":"o-mevlityildiz","v":{"bg":"#EDF2E0","paper":"#F8FBF0","ink":"#093A2D","muted":"#3B5C4F","accent":"#0B6B52","onAccent":"#FFFFFF","gold":"#9A7A22","line":"#D2DDBE","ring":"rgba(11,107,82,.16)","err":"#A33A32","door1":"#1C7D63","door2":"#08463A","doorLine":"rgba(248,251,240,.55)","leaf":"#5D9E88"}},"monogram":{"name":{"tr":"Sade Monogram","en":"Simple Monogram","de":"Schlichtes Monogramm","ar":"مونوغرام بسيط"},"premium":true,"orn":"o-monogram","fall":"o-monogramnokta","v":{"bg":"#F5F2ED","paper":"#FDFCFA","ink":"#181310","muted":"#5A5148","accent":"#7A5536","onAccent":"#FFFFFF","gold":"#94744A","line":"#DED7CC","ring":"rgba(122,85,54,.16)","err":"#A33A32","door1":"#3D332B","door2":"#15110E","doorLine":"rgba(190,155,112,.6)","leaf":"#A88961"}},"sakayik":{"name":{"tr":"Şakayık","en":"Peony","de":"Pfingstrose","ar":"الفاوانيا"},"premium":true,"orn":"o-sakayik","fall":"o-sakayikyaprak","v":{"bg":"#FFF0E8","paper":"#FFF9F5","ink":"#46282F","muted":"#77505A","accent":"#B04A58","onAccent":"#FFFFFF","gold":"#AE7A52","line":"#F4D9CD","ring":"rgba(176,74,88,.16)","err":"#A53A32","door1":"#F4BCAB","door2":"#E4908C","doorLine":"rgba(255,249,245,.7)","leaf":"#9DB68E"}},"ayicik":{"name":{"tr":"Mavi Ayıcık","en":"Blue Teddy","de":"Blaues Bärchen","ar":"الدب الأزرق"},"premium":true,"orn":"o-ayicik","fall":"o-ayiciktane","v":{"bg":"#EAF4FC","paper":"#F8FCFF","ink":"#1F3A57","muted":"#4A6783","accent":"#2B6AA3","onAccent":"#FFFFFF","gold":"#946C00","line":"#CFE3F2","ring":"rgba(43,106,163,.18)","err":"#B02E2E","door1":"#8EC5EE","door2":"#5FA3D8","doorLine":"rgba(255,255,255,.65)","leaf":"#6FB0DD"}},"pembebulut":{"name":{"tr":"Pembe Rüya","en":"Pink Dream","de":"Rosa Traum","ar":"الحلم الوردي"},"premium":true,"orn":"o-pembebulut","fall":"o-pembetane","v":{"bg":"#FDF0F2","paper":"#FFF9FA","ink":"#4A2B3A","muted":"#774F62","accent":"#B0426C","onAccent":"#FFFFFF","gold":"#946C00","line":"#F3D5DC","ring":"rgba(176,66,108,.18)","err":"#B02E2E","door1":"#F4B6C6","door2":"#E58DA9","doorLine":"rgba(255,255,255,.7)","leaf":"#E9A1B5"}},"uzay":{"name":{"tr":"Uzay Yolculuğu","en":"Space Journey","de":"Weltraumreise","ar":"رحلة الفضاء"},"premium":true,"orn":"o-uzay","fall":"o-uzayyildiz","v":{"bg":"#101A3F","paper":"#19265A","ink":"#F2F4FF","muted":"#C3CAEE","accent":"#FFD25E","onAccent":"#101A3F","gold":"#FFD25E","line":"rgba(255,210,94,.30)","ring":"rgba(255,210,94,.25)","err":"#FFA39A","door1":"#2B3C8F","door2":"#0C1438","doorLine":"rgba(255,210,94,.55)","leaf":"#8EA2F0"}},"safari":{"name":{"tr":"Safari","en":"Safari","de":"Safari","ar":"السافاري"},"premium":true,"orn":"o-safari","fall":"o-safaritane","v":{"bg":"#F6EBCB","paper":"#FFF8E4","ink":"#3A2E14","muted":"#68582F","accent":"#4A7430","onAccent":"#FFFFFF","gold":"#8A6000","line":"#E6D5A6","ring":"rgba(74,116,48,.2)","err":"#A82E2E","door1":"#8DAA55","door2":"#5E8030","doorLine":"rgba(255,255,255,.6)","leaf":"#7E9E4A"}},"denizalti":{"name":{"tr":"Deniz Altı","en":"Under the Sea","de":"Unter dem Meer","ar":"تحت البحر"},"premium":true,"orn":"o-denizalti","fall":"o-kabarcik","v":{"bg":"#E1F6F5","paper":"#F5FFFE","ink":"#0F3B47","muted":"#3A6370","accent":"#0B7480","onAccent":"#FFFFFF","gold":"#8A6400","line":"#BCE3E3","ring":"rgba(11,116,128,.18)","err":"#B02E2E","door1":"#35C0C9","door2":"#0E8FA0","doorLine":"rgba(255,255,255,.65)","leaf":"#2BB3B3"}},"prens":{"name":{"tr":"Küçük Prens Tacı","en":"Little Prince's Crown","de":"Die Krone des kleinen Prinzen","ar":"تاج الأمير الصغير"},"premium":true,"orn":"o-prens","fall":"o-prensyildiz","v":{"bg":"#0E2257","paper":"#16306F","ink":"#F7EEDB","muted":"#D2CBB4","accent":"#E6C16A","onAccent":"#0E2257","gold":"#E6C16A","line":"rgba(230,193,106,.34)","ring":"rgba(230,193,106,.25)","err":"#F5A89A","door1":"#2A4797","door2":"#0A1A48","doorLine":"rgba(230,193,106,.6)","leaf":"#C9A24A"}},"mezuniyet":{"name":{"tr":"Mezuniyet","en":"Graduation","de":"Abschlussfeier","ar":"حفل التخرج"},"premium":true,"orn":"o-mezuniyet","fall":"o-mezkonfeti","v":{"bg":"#0D0D0F","paper":"#1A1A1E","ink":"#F6F1E4","muted":"#CFC8B4","accent":"#D9B45A","onAccent":"#0D0D0F","gold":"#D9B45A","line":"rgba(217,180,90,.32)","ring":"rgba(217,180,90,.25)","err":"#F5A19A","door1":"#2A2A30","door2":"#0A0A0C","doorLine":"rgba(217,180,90,.55)","leaf":"#C9A24A"}},"yeniev":{"name":{"tr":"Yeni Ev","en":"New Home","de":"Neues Zuhause","ar":"البيت الجديد"},"premium":true,"orn":"o-yeniev","fall":"o-yenievtane","v":{"bg":"#FBF1E2","paper":"#FFF9EE","ink":"#4A2E20","muted":"#76523F","accent":"#B04E2A","onAccent":"#FFFFFF","gold":"#8A6000","line":"#EBD8BC","ring":"rgba(176,78,42,.2)","err":"#A82E2E","door1":"#D98A63","door2":"#B5532F","doorLine":"rgba(255,255,255,.6)","leaf":"#7E9A5B"}},"fener":{"name":{"tr":"Ramazan Feneri","en":"Ramadan Lantern","de":"Ramadan-Laterne","ar":"فانوس رمضان"},"premium":true,"orn":"o-fener","fall":"o-fenerisik","v":{"bg":"#22142F","paper":"#2E1B42","ink":"#F7EBD9","muted":"#D4C3DA","accent":"#E8963A","onAccent":"#22142F","gold":"#E3BC72","line":"rgba(227,188,114,.32)","ring":"rgba(232,150,58,.25)","err":"#F3A592","door1":"#4A2D69","door2":"#1E1029","doorLine":"rgba(227,188,114,.55)","leaf":"#C9A15E"}},"siyahbeyaz":{"name":{"tr":"Siyah Beyaz","en":"Editorial Black & White","de":"Schwarz-Weiß Editorial","ar":"أبيض وأسود"},"premium":true,"orn":"o-siyahbeyaz","fall":"o-sbhalka","v":{"bg":"#ECEAE5","paper":"#FFFFFF","ink":"#0F0F10","muted":"#545149","accent":"#141414","onAccent":"#FFFFFF","gold":"#6F6A60","line":"#D6D3CC","ring":"rgba(20,20,20,.14)","err":"#8C1D2B","door1":"#2C2C2E","door2":"#0F0F10","doorLine":"rgba(255,255,255,.5)","leaf":"#9A9A9A"}},"limon":{"name":{"tr":"Limon Dalı","en":"Lemon Branch","de":"Zitronenzweig","ar":"غصن الليمون"},"premium":true,"orn":"o-limon","fall":"o-limoncicegi","v":{"bg":"#F6F2D2","paper":"#FFFDF2","ink":"#2F3A1C","muted":"#575F36","accent":"#607316","onAccent":"#FFFFFF","gold":"#8F6F0C","line":"#DEDDB0","ring":"rgba(227,185,43,.25)","err":"#A63D2A","door1":"#EBCB5A","door2":"#B98F12","doorLine":"rgba(255,253,242,.6)","leaf":"#7C8F3F"}},"pampas":{"name":{"tr":"Pampas Boho","en":"Boho Pampas","de":"Boho Pampasgras","ar":"بوهو بامباس"},"premium":true,"orn":"o-pampas","fall":"o-pampastuy","v":{"bg":"#EBDAC6","paper":"#F8F0E4","ink":"#4A2E22","muted":"#6E4E3E","accent":"#9B4629","onAccent":"#FFFFFF","gold":"#8F6330","line":"#D9B99B","ring":"rgba(176,80,47,.18)","err":"#A33A28","door1":"#CE7A55","door2":"#9E4A2C","doorLine":"rgba(248,240,228,.6)","leaf":"#B08A5F"}},"nar":{"name":{"tr":"Nar","en":"Pomegranate","de":"Granatapfel","ar":"الرمان"},"premium":true,"orn":"o-nar","fall":"o-nartanesi","v":{"bg":"#F1DFD0","paper":"#FBF3EA","ink":"#43171B","muted":"#6E4A48","accent":"#B8282F","onAccent":"#FFFFFF","gold":"#946A22","line":"#DDBFA8","ring":"rgba(184,40,47,.16)","err":"#A32B2B","door1":"#C23A41","door2":"#8A1B24","doorLine":"rgba(251,243,234,.6)","leaf":"#5E6B3C"}},"safak":{"name":{"tr":"Şafak","en":"Dawn","de":"Morgenröte","ar":"الفجر"},"premium":true,"orn":"o-safak","fall":"o-safakkivilcim","v":{"bg":"#1B261F","paper":"#26342B","ink":"#F6EDD8","muted":"#CFC9B0","accent":"#E3B25A","onAccent":"#1B261F","gold":"#E3B25A","line":"rgba(227,178,90,.32)","ring":"rgba(227,178,90,.25)","err":"#F2A794","door1":"#3A4D3C","door2":"#141C17","doorLine":"rgba(227,178,90,.55)","leaf":"#9DB07F"}},"avize":{"name":{"tr":"Kristal Avize","en":"Crystal Chandelier","de":"Kristalllüster","ar":"ثريا كريستال"},"premium":true,"orn":"o-avize","fall":"o-avizeparilti","v":{"bg":"#F6EEE6","paper":"#FFFBF5","ink":"#4B3A33","muted":"#6D5A50","accent":"#975A54","onAccent":"#FFFFFF","gold":"#936B3E","line":"#E5D3C4","ring":"rgba(164,98,91,.16)","err":"#A63A32","door1":"#D9B7A6","door2":"#B98B7A","doorLine":"rgba(255,251,245,.65)","leaf":"#C9A27A"}},"sadu":{"name":{"tr":"Sadu Dokuma","en":"Sadu Weave","de":"Sadu-Gewebe","ar":"سدو"},"premium":true,"orn":"o-sadu","fall":"o-saduelmas","v":{"bg":"#F1E6D3","paper":"#FAF3E6","ink":"#2A1A14","muted":"#5E463B","accent":"#A3261F","onAccent":"#FFFFFF","gold":"#9A6612","line":"#D9C4A5","ring":"rgba(163,38,31,.16)","err":"#A3261F","door1":"#A3261F","door2":"#5B1410","doorLine":"rgba(215,154,43,.7)","leaf":"#D79A2B"}},"kelebek":{"name":{"tr":"Kelebek","en":"Butterfly","de":"Schmetterling","ar":"فراشة"},"premium":true,"orn":"o-kelebek","fall":"o-kelebekmini","v":{"bg":"#E4EBD3","paper":"#FBF8EE","ink":"#33422F","muted":"#55664F","accent":"#A34867","onAccent":"#FFFFFF","gold":"#8F7335","line":"#CBD8B8","ring":"rgba(176,78,112,.16)","err":"#A63A32","door1":"#F0A9BF","door2":"#7FAAD3","doorLine":"rgba(255,255,255,.7)","leaf":"#7E9B6B"}},"bugday":{"name":{"tr":"Buğday Başağı","en":"Wheat Ear","de":"Weizenähre","ar":"سنبلة القمح"},"premium":true,"orn":"o-bugday","fall":"o-bugdaytanesi","v":{"bg":"#E9D3A0","paper":"#FAF2DE","ink":"#4A3418","muted":"#6B5230","accent":"#9F3729","onAccent":"#FFFFFF","gold":"#8F6612","line":"#D8C08E","ring":"rgba(166,58,43,.16)","err":"#A32B2B","door1":"#D9B25C","door2":"#A67A1E","doorLine":"rgba(250,242,222,.6)","leaf":"#B58B2E"}}};
 const PH={"tr":{"ph1":"İsim","ph2":"İsim","phOne":"İsim"},"en":{"ph1":"Name","ph2":"Name","phOne":"Name"},"de":{"ph1":"Name","ph2":"Name","phOne":"Name"},"ar":{"ph1":"الاسم","ph2":"الاسم","phOne":"الاسم"}};
-const LAYOUTS=["klasik","kemer","monogram","editoryal","kartpostal","zamancizelgesi","bilet"];
-const OPENINGS=["door","env","perde","kitap","muhur","isik","sarmasik","cicek","kurdele","kelebek","yildiz","pencere"];
-const OPEN_MS={door:2300,env:2300,perde:2100,kitap:2200,muhur:1600,isik:2100,sarmasik:2300,cicek:2000,kurdele:2500,kelebek:2400,yildiz:2200,pencere:2400};
+const LAYOUTS=["klasik","kemer","monogram","editoryal","kartpostal","zamancizelgesi","bilet","galeri","mektup","davetkarti","minimal","gece","hikaye"];
+const OPENINGS=["door","env","perde","kitap","muhur","isik","sarmasik","cicek","kurdele","kelebek","yildiz","pencere","zarfacil","muhurkir","kagitkatla","parilti","lale","fener","kapikemer","konfeti"];
+const OPEN_MS={door:2300,env:2300,perde:2100,kitap:2200,muhur:1600,isik:2100,sarmasik:2300,cicek:2000,kurdele:2500,kelebek:2400,yildiz:2200,pencere:2400,zarfacil:2500,muhurkir:2200,kagitkatla:2000,parilti:2300,lale:2100,fener:2200,kapikemer:2400,konfeti:2400};
+const OPEN_HINT_ONLY=["zarfacil","muhurkir","lale"];
+function opEnvelope(ini,names,to,eyebrowTxt,orn){
+  return `<div class="zf2 op" data-gate><div class="z-st"><div class="z-bk"></div><div class="z-lt">${orn}<small>${eyebrowTxt}</small><b dir="auto">${names}</b></div><div class="z-fr"></div>${to?`<div class="z-to" dir="auto">${to}</div>`:""}<div class="z-fl"><i class="fo"></i><i class="fi"></i><div class="w3-wax z-wx"><span>${ini}</span></div></div></div></div>`;
+}
+function opWaxSeal(ini){
+  const sh=k=>`<div class="sd ${k}"><div class="w3-wax"><span>${ini}</span></div></div>`;
+  return `<div class="mk2 op" data-gate><div class="mh l"></div><div class="mh r"></div><div class="ms"><div class="ms-sh"></div>${sh("a")+sh("b")+sh("c")+sh("d")}<svg class="ck" viewBox="0 0 100 100" aria-hidden="true"><path d="M52 0L55 20 47 36 51 49 34 46 20 55 0 48M51 49L66 52 80 45 100 50M51 49L45 64 55 82 50 100M47 36L38 30M66 52L70 63M45 64L36 70"/></svg></div></div>`;
+}
+function opOrigami(){const E={t:"0,0 50,50 100,0",b:"0,100 50,50 100,100",l:"0,0 50,50 0,100",r:"100,0 50,50 100,100"},I={t:"7,0 50,43 93,0",b:"7,100 50,57 93,100",l:"0,9 41,50 0,91",r:"100,9 59,50 100,91"};
+  return `<div class="ori op" data-gate>${["l","r","t","b"].map(k=>`<div class="of ${k}"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${E[k]}"/><polyline class="in" points="${I[k]}"/></svg></div>`).join("")}</div>`}
+function opDust(){const r=opRng(5);let h="";
+  for(let row=0;row<9;row++)for(let c=0;c<6;c++){const cx=(c+.5)/6-.5,cy=(row+.5)/9-.5,dist=Math.hypot(cx,cy*1.25);
+    h+=`<i style="--c:${c};--r:${row};--d:${opF((dist*.95+r()*.16)*100)/100}s;--x:${opF(cx*46+r()*24-12)};--y:${opF(-30-r()*42+cy*18)};--a:${Math.round(r()*300-150)}deg"></i>`}
+  return `<div class="dust op" data-gate>${h}<b></b><div class="dg"></div></div>`;
+}
+function opTulip(){
+  const pc=`<path class="tl-p" d="M60 20C71 40 75 70 69 99C66 110 54 110 51 99C45 70 49 40 60 20Z"/><path class="tl-v" d="M60 34V100"/>`;
+  const pl=`<path class="tl-p" d="M58 109C34 106 22 82 27 54C29 40 26 27 17 12C38 22 50 44 54 66C56 80 58 95 58 109Z"/><path class="tl-v" d="M24 22C38 40 46 62 52 100"/>`;
+  const pr=`<path class="tl-p" d="M62 109C86 106 98 82 93 54C91 40 94 27 103 12C82 22 70 44 66 66C64 80 62 95 62 109Z"/><path class="tl-v" d="M96 22C82 40 74 62 68 100"/>`;
+  const st=`<path class="tl-sm" d="M60 104C60 124 58 140 60 160"/><path d="M59 152C40 143 27 124 24 98C40 110 53 126 59 146Z"/><path d="M61 158C78 150 92 134 98 112C82 120 68 136 61 152Z"/>`;
+  const sv=(k,b)=>`<svg class="${k}" viewBox="0 0 120 160" aria-hidden="true">${b}</svg>`;
+  return `<div class="tulip op" data-gate><div class="tg"><div class="tw">${sv("tl-st",st)+sv("tl-c",pc)+sv("tl-l",pl)+sv("tl-r",pr)}</div></div></div>`;
+}
+function opLantern(){
+  const sym=`<defs><radialGradient id="zfLnG" cx="50%" cy="50%" r="60%"><stop offset="0" style="stop-color:#fff8e4"/><stop offset=".45" style="stop-color:var(--gold)"/><stop offset="1" style="stop-color:var(--gold);stop-opacity:.35"/></radialGradient><symbol id="zfLan" viewBox="0 0 60 116" overflow="visible"><g style="fill:none;stroke:var(--gold);stroke-width:1.6;stroke-linejoin:round"><circle cx="30" cy="5" r="3.6"/><path style="fill:var(--gold)" d="M18 23Q30 6 42 23Z"/><rect style="fill:var(--gold)" x="15" y="23" width="30" height="5" rx="1"/><path style="fill:url(#zfLnG);fill-opacity:.92" d="M16 28H44L49 48Q49 70 41 79H19Q11 70 11 48Z"/><path d="M23 30V77M30 29V79M37 30V77M13 48H47" style="stroke-opacity:.75;stroke-width:1.1"/><path d="M19 34Q23 30 26 34V46H19ZM34 34Q37 30 41 34V46H34Z" style="stroke-opacity:.6;stroke-width:.9"/><rect style="fill:var(--gold)" x="17" y="79" width="26" height="5" rx="1"/><path style="fill:var(--gold)" d="M23 84Q30 99 37 84Z"/><path d="M30 97V110"/><circle style="fill:var(--gold)" cx="30" cy="112" r="2.4"/></g></symbol></defs>`;
+  const L=[[50,104,"12cqh","5.2s"],[17,66,"6cqh","4.4s"],[83,70,"9cqh","4.8s"]];
+  const ln=L.map(([x,w,ch,sw],i)=>`<div class="ln" style="left:${x}%;--w:${w}px;--ch:${ch};--sw:${sw}"><div class="ln-b"><i class="ln-g"></i><svg viewBox="0 0 60 116" aria-hidden="true">${i===0?sym:""}<use href="#zfLan"/></svg></div></div>`).join("");
+  return `<div class="lan op" data-gate><svg class="moon" viewBox="0 0 40 40" aria-hidden="true"><path d="M27 4A16 16 0 1 0 36 31 13 13 0 1 1 27 4Z"/></svg>${ln}<i class="ln-f" style="--fy:calc(12cqh + 56px)"></i></div>`;
+}
+function opPalace(){
+  /* Sivri kemer: yaylanma 30%, kübik eğri; % koordinatlı poligon (Flutter: aynı noktalar Path ile) */
+  const S=30,cub=(t,a,b,c,d)=>(1-t)**3*a+3*(1-t)**2*t*b+3*(1-t)*t*t*c+t**3*d;
+  const arc=[];for(let i=0;i<=12;i++){const t=i/12;arc.push([cub(t,0,0,36,50),cub(t,S,S*.5,S*.32,0)])}
+  const P=a=>a.map(([x,y])=>`${opF(x)}% ${opF(y)}%`).join(",");
+  const full=`polygon(0 100%,${P(arc)},${P(arc.slice(0,-1).reverse().map(([x,y])=>[100-x,y]))},100% 100%)`;
+  const al=`polygon(0 100%,${P(arc.map(([x,y])=>[x*2,y]))},100% 100%)`;
+  const ar=`polygon(100% 100%,${P(arc.map(([x,y])=>[100-x*2,y]))},0 100%)`;
+  const d=`M0 100V${S}C0 ${S*.5} 36 ${opF(S*.32)} 50 0C64 ${opF(S*.32)} 100 ${S*.5} 100 ${S}V100`;
+  const pat=`<defs><pattern id="zfGirih" width="34" height="34" patternUnits="userSpaceOnUse"><path class="gr" d="M17 4L30 17 17 30 4 17Z M8 8H26V26H8Z M0 0L8 8M34 0L26 8M0 34L8 26M34 34L26 26"/></pattern></defs>`;
+  const door=(k,first)=>`<div class="dr ${k}"><svg aria-hidden="true">${first?pat:""}<rect width="100%" height="100%" fill="url(#zfGirih)"/></svg></div>`;
+  const star=`<svg class="ks" viewBox="-20 -20 40 40" aria-hidden="true"><path d="M0-18L5-5 18 0 5 5 0 18-5 5-18 0-5-5ZM-12.7-12.7L0-6 12.7-12.7 6 0 12.7 12.7 0 6-12.7 12.7-6 0Z"/></svg>`;
+  return `<div class="saray op" data-gate><div class="sp" style="--arch:${full};--al:${al};--ar:${ar}"><div class="sl"></div>${door("l",true)}${door("r",false)}<svg class="fr o" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${d}"/></svg><svg class="fr i" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${d}"/></svg>${star}</div></div>`;
+}
+function opConfetti(){const r=opRng(9),cs=["var(--accent)","var(--gold)","var(--leaf)","var(--door1)","color-mix(in srgb,var(--accent) 50%,var(--gold))","var(--muted)"];let h="";
+  for(let i=0;i<36;i++){const side=i%2?1:-1,kind=i%3,w=kind===1?11:kind===2?6:10,hh=kind===1?11:kind===2?22:16;
+    h+=`<i style="--ox:${side>0?88:12}%;--w:${w}px;--h:${hh}px;--br:${kind===1?"50%":"1.5px"};--c:${cs[i%6]};--x:${opF(-side*(10+r()*80))};--y:${opF(-(46+r()*46))};--r:${Math.round(r()*900-450)}deg;--d:${opF(r()*.28*100)/100}s;--du:${opF((1.6+r()*.45)*100)/100}s"></i>`}
+  const flags=(y0,n,off)=>{let f="",pts=[];for(let k=0;k<n;k++){const x=k*(400/(n-1)),y=y0+Math.sin(k/(n-1)*Math.PI)*22;pts.push([x,y])}
+    for(let k=0;k<n-1;k++){const [x1,y1]=pts[k],[x2,y2]=pts[k+1],mx=(x1+x2)/2,my=(y1+y2)/2;f+=`<polygon points="${opF(x1+6)},${opF(y1+1)} ${opF(x2-6)},${opF(y2+1)} ${opF(mx)},${opF(my+26)}" style="fill:${cs[(k+off)%5]}"/>`}
+    return `<path d="M${pts.map(p=>opF(p[0])+" "+opF(p[1])).join("L")}"/>`+f};
+  return `<div class="cfx op" data-gate><div class="cbg"></div><svg class="bnt" viewBox="0 0 400 70" aria-hidden="true">${flags(6,8,0)}</svg><svg class="bnt b2" viewBox="0 0 400 70" aria-hidden="true">${flags(4,6,2)}</svg>${h}</div>`;
+}
+
+/* Açılış şablonları (dalga 1): sarmasik, cicek, kurdele, kelebek, yildiz, pencere — sabit tohumlu, her açılışta aynı görünür */
 /* Açılış şablonları (dalga 1): sarmasik, cicek, kurdele, kelebek, yildiz, pencere — sabit tohumlu, her açılışta aynı görünür */
 const opRng=s=>()=>(s=(s*16807)%2147483647)/2147483647;
 const opF=n=>Math.round(n*10)/10;
@@ -1081,6 +1531,59 @@ function mountInvite(host,inv,isGuest){
     page=`<section class="hero${cover?" has-cv":""}">${wreath}${cover?`<div class="cv-frame"><img src="${cover}" alt=""></div>`:""}${eyebrow}<h1 class="names">${namesH}</h1>${hostH}${leadH}</section>
       ${divider}${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${divider}${galC}${rsvpC}${footer}`;
   }
+  /* ===== Dalga 3 düzenleri: galeri, mektup, davetkarti, minimal, gece, hikaye ===== */
+  let dLong="",dWk="",dNum="";
+  if(p){const fl=new Intl.DateTimeFormat(LOCALE[inv.lang],{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"});dLong=fl.format(p.noon);
+    dWk=new Intl.DateTimeFormat(LOCALE[inv.lang],{weekday:"long",timeZone:"UTC"}).format(p.noon);
+    const pd=n=>String(n).padStart(2,"0");dNum=`${p.y}. ${pd(p.m)}. ${pd(p.d)}`}
+  const tmS=p?esc(inv.time+(inv.end?" – "+inv.end:"")):"";
+  const W3_IN=["galeri","mektup","davetkarti","hikaye"];
+  if(lay==="galeri"){
+    const gcv=cover||photos[0]||"";
+    const galG=photos.length?`<p class="label gl-lab reveal">${L.gallery}</p><section class="gl-gal">${photos.map((d,i)=>`<button class="gal-it reveal" type="button" data-gi="${i}" aria-label="${L.enlarge} ${i+1}/${photos.length}"><img src="${d}" alt="" loading="lazy"></button>`).join("")}</section>`:"";
+    page=`<section class="hero gl-hero ${gcv?"has-img":"no-img"}"><div class="gl-cv">${gcv?`<img src="${gcv}" alt="">`:`<div class="gl-orn">${orn()}</div>`}</div>
+        <div class="gl-txt">${hiH}${eyebrow}<h1 class="names">${namesH}</h1>${dLong?`<p class="gl-date">${esc(dLong)}</p>`:""}<div class="gl-scroll" aria-hidden="true"><i></i></div></div></section>
+      <section class="gl-intro reveal">${hostH}${leadH}</section>${galG}
+      ${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${rsvpC}${footer}`;
+  }else if(lay==="mektup"){
+    page=`<section class="hero mk"><div class="mk-sheet">
+        <div class="mk-head">${eyebrow}${dLong?`<span class="mk-date">${esc(dLong)}</span>`:""}</div>
+        ${hiH}${leadH}${hostH}${cover?`<figure class="mk-photo"><img src="${cover}" alt=""><i></i></figure>`:""}
+        <div class="mk-sign"><span class="mk-love">${L.love}</span><h1 class="names">${namesH}</h1></div>
+        <div class="w3-wax mk-wax" aria-hidden="true"><span>${ini}</span></div></div></section>
+      ${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${galC}${rsvpC}${footer}`;
+  }else if(lay==="davetkarti"){
+    const dl=p?`${esc(dWk)} · ${esc(dLong)}${inv.time?` · <bdi dir="ltr">${esc(inv.time)}</bdi>`:""}`:"";
+    page=`<div class="dk-wrap"><section class="hero dk-card"><div class="dk-frame">${hiH}
+        <div class="dk-crest">${cover?`<img class="dk-img" src="${cover}" alt="">`:orn()}</div>
+        ${eyebrow}<h1 class="names">${namesH}</h1>${dl?`<p class="dk-date">${dl}</p>`:""}${hostH}${leadH}</div></section></div>
+      <div class="dk-wrap"><div class="dk-insert">${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${galC}${rsvpC}${footer}</div></div>`;
+  }else if(lay==="minimal"){
+    let calC="";
+    if(p){const first=new Date(Date.UTC(p.y,p.m-1,1,12)),days=new Date(Date.UTC(p.y,p.m,0,12)).getUTCDate();
+      const ws=inv.lang==="tr"||inv.lang==="de"?1:0,lead0=(first.getUTCDay()-ws+7)%7;
+      const wf=new Intl.DateTimeFormat(LOCALE[inv.lang],{weekday:"narrow",timeZone:"UTC"});
+      const heads=Array.from({length:7},(_,i)=>{const dd=new Date(Date.UTC(2024,0,7+ws+i,12));return `<small>${esc(wf.format(dd))}</small>`}).join("");
+      let cells="";for(let i=0;i<lead0;i++)cells+="<span></span>";
+      for(let d=1;d<=days;d++){const wd=(lead0+d-1)%7,we=ws===1?wd>=5:(wd===0||wd===6);cells+=`<span class="${d===p.d?"on":we?"we":""}">${d}</span>`}
+      const mon=new Intl.DateTimeFormat(LOCALE[inv.lang],{month:"long",year:"numeric",timeZone:"UTC"}).format(p.noon);
+      calC=`<section class="icard reveal mn-cal"><p class="label">${L.dateL}</p><p class="mn-mon">${esc(mon)}</p><div class="mn-grid" role="presentation">${heads}${cells}</div><p class="mn-dday">${esc(dWk)} · <b dir="ltr">${tmS}</b></p></section>`}
+    page=`<section class="hero mn">${eyebrow}<h1 class="names">${namesH}</h1>${dNum?`<p class="mn-date" dir="ltr">${dNum}</p>`:""}
+        ${cover?`<div class="mn-photo"><img src="${cover}" alt=""></div>`:""}${hostH}${leadH}</section>
+      ${calC}${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${galC}${rsvpC}${footer}`;
+  }else if(lay==="gece"){
+    page=`<section class="hero gc"><div class="gc-frame">${cover?`<div class="gc-photo"><img src="${cover}" alt=""></div>`:orn("gc-orn")}
+        ${eyebrow}<h1 class="names">${namesH}</h1><div class="gc-rule" aria-hidden="true"><i></i>${orn()}<i></i></div>${dLong?`<p class="gc-date">${esc(dWk)} · ${esc(dLong)}</p>`:""}${hostH}${leadH}</div></section>
+      ${divider}${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${divider}${galC}${rsvpC}${footer}`;
+  }else if(lay==="hikaye"){
+    const hero=`<section class="hero hk-hero">${cover?`<img class="hk-img" src="${cover}" alt="">`:`<div class="hk-orn">${orn()}</div>`}
+        <div class="hk-head"><span class="hk-av">${noName?ini:esc(couple?r1.charAt(0)+"&"+r2.charAt(0):r1.charAt(0))}</span><span class="hk-who"><b dir="auto">${couple?`${n1} &amp; ${n2}`:n1}</b><small>${esc(dShort)}</small></span></div>
+        <div class="hk-txt">${hiH}${eyebrow}<h1 class="names">${namesH}</h1></div>
+        <span class="hk-swipe" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></section>`;
+    const quote=(inv.msg.trim()||inv.host.trim())?`<section class="hk-quote reveal">${orn("hk-q")}${leadH}${hostH}</section>`:"";
+    const pans=[hero,quote,whenC,whereC,liveC,progC,notesC,giftC,galC,rsvpC+footer].filter(Boolean);
+    page=`<div class="hk-bar" aria-hidden="true">${pans.map(()=>"<i><b></b></i>").join("")}</div>${pans.map((x,i)=>`<div class="hk-p${i===0?` hk-first${cover?" img":""}`:""}">${x}</div>`).join("")}`;
+  }
   /* Açılış */
   const corner=`<svg class="corner" viewBox="0 0 200 200"><use href="#${o}" x="110" y="10" width="72" height="72"/><use href="#${o}" x="60" y="60" width="52" height="52"/><use href="#${o}" x="20" y="120" width="40" height="40"/></svg>`;
   const openers={
@@ -1090,15 +1593,17 @@ function mountInvite(host,inv,isGuest){
     kitap:`<div class="book op" data-gate><div class="page"></div><div class="bcover"><div class="bframe">${orn("t")}${orn("b")}</div></div></div>`,
     muhur:`<div class="sealcover op" data-gate><i></i></div>`,
     isik:`<div class="light op" data-gate><div class="spot"></div></div>`,
-    sarmasik:opIvy(),cicek:opBloom(),kurdele:opRibbon(),kelebek:opFlutter(),yildiz:opStars(),pencere:opWindow()
+    sarmasik:opIvy(),cicek:opBloom(),kurdele:opRibbon(),kelebek:opFlutter(),yildiz:opStars(),pencere:opWindow(),
+    zarfacil:opEnvelope(ini,couple?`${n1} &amp; ${n2}`:n1,guestN?esc(guestN):"",EYEBROW[inv.lang][inv.type],orn()),muhurkir:opWaxSeal(ini),kagitkatla:opOrigami(),parilti:opDust(),lale:opTulip(),fener:opLantern(),kapikemer:opPalace(),konfeti:opConfetti()
   };
   const disc=`<div class="seal-disc"><svg viewBox="0 0 180 180" aria-hidden="true">${ring(12,80,90,16)}</svg><span>${ini}</span></div>`;
   const sealH=opn==="muhur"
     ?`<div class="seal split" data-seal role="button" tabindex="0" aria-label="${L.tap}"><div class="seal-wrap"><div class="half l">${disc}</div><div class="half r">${disc}</div></div><div class="seal-hint">${L.tap}</div></div>`
-    :`<div class="seal" data-seal role="button" tabindex="0" aria-label="${L.tap}">${disc}<div class="seal-hint">${L.tap}</div></div>`;
+    :`<div class="seal${OPEN_HINT_ONLY.includes(opn)?" hint-only":""}" data-seal role="button" tabindex="0" aria-label="${L.tap}">${disc}<div class="seal-hint">${L.tap}</div></div>`;
   const lbH=photos.length?`<div class="lb" data-lb hidden role="dialog" aria-modal="true" aria-label="${L.gallery}"><img alt=""><button type="button" class="lb-x" data-lbx aria-label="${L.close}"><svg><use href="#i-x"/></svg></button>${photos.length>1?`<button type="button" class="lb-p" data-lbp aria-label="${L.prev}"><svg><use href="#i-back"/></svg></button><button type="button" class="lb-n" data-lbn aria-label="${L.next}"><svg><use href="#i-back"/></svg></button>`:""}<div class="lb-c" data-lbc></div></div>`:"";
-  host.innerHTML=`<div class="inv-host L-${lay}" dir="${inv.lang==="ar"?"rtl":"ltr"}" lang="${inv.lang}">
-   <div class="inv-scroll"><div class="inv lay-${lay}">${hiH}${page}</div></div>
+  const lumOf=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||"");if(!m)return 1;const n=parseInt(m[1],16),c=x=>{x/=255;return x<=.03928?x/12.92:((x+.055)/1.055)**2.4};return .2126*c(n>>16&255)+.7152*c(n>>8&255)+.0722*c(n&255)};
+  host.innerHTML=`<div class="inv-host L-${lay} ${lumOf(v.bg)<.2?"th-dark":"th-light"}" dir="${inv.lang==="ar"?"rtl":"ltr"}" lang="${inv.lang}">
+   <div class="inv-scroll"><div class="inv lay-${lay}">${W3_IN.includes(lay)?"":hiH}${page}</div></div>
    <div class="petals" data-petals></div>
    ${openers[opn]}
    ${sealH}
@@ -1128,6 +1633,10 @@ function mountInvite(host,inv,isGuest){
   seal.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}});
   root.querySelector("[data-replay]").addEventListener("click",()=>{clearTimeout(goneT);scroller.scrollTop=0;gate.classList.remove("open","gone");root.classList.remove("opened","revealed")});
   io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{root:scroller,threshold:.12});
+  /* Hikâye düzeni: üstteki ilerleme çubukları (Instagram hikâyesi gibi) */
+  if(lay==="hikaye"&&"IntersectionObserver" in window){const pans=[...root.querySelectorAll(".hk-p")],segs=[...root.querySelectorAll(".hk-bar i")];
+    const ho=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){const k=pans.indexOf(e.target);segs.forEach((s,j)=>s.classList.toggle("on",j<=k))}}),{root:scroller,rootMargin:"-45% 0px -45% 0px",threshold:0});
+    pans.forEach(x=>ho.observe(x));segs[0]&&segs[0].classList.add("on")}
   root.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   /* Galeri büyük görünüm */
   const lb=root.querySelector("[data-lb]");

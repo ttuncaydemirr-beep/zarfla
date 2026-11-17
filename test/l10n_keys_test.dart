@@ -44,8 +44,8 @@ void main() {
 
   // Marka adı / ortak sözcük olduğu için diller arasında aynı kalabilen anahtarlar (açık istisna listesi).
   // amp: "&" işareti; shareHead/shareWhen: yalnız yer tutucu + simgeden oluşan paylaşım kalıpları;
-  // flt_modern: "Modern" tr/en/de'de aynı sözcük.
-  const sameAllowed = {'app', 'premiumOn', 'lay_monogram', 'type_baby', 'amp', 'shareHead', 'shareWhen', 'flt_modern', 'versionLbl', 'errLogDetails'};
+  // flt_modern: "Modern" tr/en/de'de aynı sözcük. lay_hikaye: "Story" en/de'de aynı (onaylı önizleme).
+  const sameAllowed = {'app', 'premiumOn', 'lay_monogram', 'type_baby', 'amp', 'shareHead', 'shareWhen', 'flt_modern', 'lay_hikaye', 'versionLbl', 'errLogDetails'};
 
   test('hiçbir değer başka dilin metniyle aynı değil (istisnalar hariç)', () {
     final maps = {

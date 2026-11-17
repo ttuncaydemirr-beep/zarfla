@@ -26,13 +26,14 @@ void main() {
     }
   });
 
-  test('dalga 1: 10 yeni tasarım, 12 açılış, hazır notlar (4 dilde 6 öneri), tür simgeleri', () {
+  test('dalga 1: 10 yeni tasarım, açılışlar (dalga 1 + dalga 3), hazır notlar (4 dilde 6 öneri), tür simgeleri', () {
     const wave1 = ['fener', 'siyahbeyaz', 'limon', 'pampas', 'nar', 'safak', 'avize', 'sadu', 'kelebek', 'bugday'];
     for (final id in wave1) {
       expect(kThemes[id], isNotNull, reason: id);
       expect(kThemes[id]!.premium, isTrue, reason: id);
     }
-    expect(kOpenings, ['door', 'env', 'perde', 'kitap', 'muhur', 'isik', 'sarmasik', 'cicek', 'kurdele', 'kelebek', 'yildiz', 'pencere']);
+    expect(kOpenings, ['door', 'env', 'perde', 'kitap', 'muhur', 'isik', 'sarmasik', 'cicek', 'kurdele', 'kelebek', 'yildiz', 'pencere', 'zarfacil', 'muhurkir', 'kagitkatla', 'parilti', 'lale', 'fener', 'kapikemer', 'konfeti']);
+    expect(kLayouts, ['klasik', 'kemer', 'monogram', 'editoryal', 'kartpostal', 'zamancizelgesi', 'bilet', 'galeri', 'mektup', 'davetkarti', 'minimal', 'gece', 'hikaye']);
     for (final l in kLangs) {
       expect(kNoteSuggestions[l]!.length, 6, reason: l);
       for (final m in kNoteSuggestions[l]!) {
