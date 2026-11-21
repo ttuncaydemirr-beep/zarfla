@@ -314,6 +314,69 @@ describe('voided / ücretsiz sınır / storage', () => {
     assert.equal(await S.enforceFreeLimit(makeDeps({ db: db2, now: () => NOW }), 'NEWNEW123456', fresh), false);
   });
 
+  test('enforceFreeLimit N-1: günlük sınır (20) aşılınca yeni belge silinir, sayaç quota/{uid} içinde', async () => {
+    const db = new FakeDb();
+    const deps = makeDeps({ db, now: () => NOW });
+    for (let i = 0; i < 20; i++) {
+      const id = `DOC${String(i).padStart(9, '0')}`;
+      // her biri kendi (süresi dolmuş) belge: "1 açık ücretsiz" kuralı devreye girmesin
+      const d = { ownerUid: 'mallory', plan: 'free', createdAt: new Ts(NOW), expiresAt: new Ts(NOW - 1) };
+      db.put('invites', id, d);
+      assert.equal(await S.enforceFreeLimit(deps, id, d), false);
+    }
+    assert.equal(db.data('quota', 'mallory').dayCount, 20);
+    const over = { ownerUid: 'mallory', plan: 'free', createdAt: new Ts(NOW), expiresAt: new Ts(NOW + D) };
+    db.put('invites', 'OVEROVER1234', over);
+    assert.equal(await S.enforceFreeLimit(deps, 'OVEROVER1234', over), 'deleted');
+    assert.equal(db.data('invites', 'OVEROVER1234'), undefined);
+    assert.equal(db.data('quota', 'mallory').dayCount, 21);
+    // başka kullanıcı etkilenmez
+    const b = { ownerUid: 'bob', plan: 'free', createdAt: new Ts(NOW), expiresAt: new Ts(NOW + D) };
+    db.put('invites', 'BOBBOB123456', b);
+    assert.equal(await S.enforceFreeLimit(deps, 'BOBBOB123456', b), false);
+    // ertesi gün sayaç sıfırlanır
+    const next = makeDeps({ db, now: () => NOW + 2 * D });
+    const n = { ownerUid: 'mallory', plan: 'free', createdAt: new Ts(NOW + 2 * D), expiresAt: new Ts(NOW + 3 * D) };
+    db.put('invites', 'NEXTDAY12345', n);
+    assert.equal(await S.enforceFreeLimit(next, 'NEXTDAY12345', n), false);
+    assert.equal(db.data('quota', 'mallory').dayCount, 1);
+  });
+
+  test('enforceFreeLimit N-1: okuma sayısı sabit (n² değil); ücretli belge sayaç/sorgu kullanmaz', async () => {
+    const db = new FakeDb();
+    const deps = makeDeps({ db, now: () => NOW });
+    // 300 eski, süresi dolmuş ücretsiz belge + sınırlı sorgu: en çok FREE_OPEN_CAP+1 okuma
+    for (let i = 0; i < 300; i++) db.put('invites', `OLD${String(i).padStart(9, '0')}`, { ownerUid: 'mallory', plan: 'free', createdAt: new Ts(NOW - 5 * D), expiresAt: new Ts(NOW - 4 * D) });
+    const fresh = { ownerUid: 'mallory', plan: 'free', createdAt: new Ts(NOW), expiresAt: new Ts(NOW + D) };
+    db.put('invites', 'FRESH1234567', fresh);
+    db.queryReads = 0;
+    await S.enforceFreeLimit(deps, 'FRESH1234567', fresh);
+    assert.ok(db.queryReads <= L.FREE_OPEN_CAP + 1, `okuma ${db.queryReads}`);
+    // ücretli: hiçbir şeye dokunmaz
+    const db2 = new FakeDb();
+    const paid = { ownerUid: 'alice', plan: 'paid', createdAt: new Ts(NOW), expiresAt: new Ts(NOW + D) };
+    db2.put('invites', 'PAIDPAID1234', paid);
+    assert.equal(await S.enforceFreeLimit(makeDeps({ db: db2, now: () => NOW }), 'PAIDPAID1234', paid), false);
+    assert.equal(db2.data('quota', 'alice'), undefined);
+    assert.equal(db2.queryReads || 0, 0);
+  });
+
+  test('enforceFreeLimit N-1: açık sınırı (50) aşılınca yeni belge silinir', async () => {
+    const db = new FakeDb();
+    for (let i = 0; i < 50; i++) db.put('invites', `OPN${String(i).padStart(9, '0')}`, { ownerUid: 'eve', plan: 'free', createdAt: new Ts(NOW - 3600e3), expiresAt: new Ts(NOW + 23 * 3600e3) });
+    const x = { ownerUid: 'eve', plan: 'free', createdAt: new Ts(NOW), expiresAt: new Ts(NOW + D) };
+    db.put('invites', 'XTRAXTRA1234', x);
+    assert.equal(await S.enforceFreeLimit(makeDeps({ db, now: () => NOW }), 'XTRAXTRA1234', x), 'deleted');
+    assert.equal(db.data('invites', 'XTRAXTRA1234'), undefined);
+  });
+
+  test('nextQuota: gün değişince sıfırlanır, bozuk belge 1 sayılır', () => {
+    assert.deepEqual(L.nextQuota(null, NOW), { day: L.quotaDay(NOW), dayCount: 1 });
+    assert.equal(L.nextQuota({ day: L.quotaDay(NOW), dayCount: 5 }, NOW).dayCount, 6);
+    assert.equal(L.nextQuota({ day: '2000-01-01', dayCount: 99 }, NOW).dayCount, 1);
+    assert.equal(L.nextQuota({ day: L.quotaDay(NOW), dayCount: 'x' }, NOW).dayCount, 1);
+  });
+
   test('cleanupStorage: belgesi olmayan / deleteAt geçmiş dosyalar silinir, yeni ve canlılar kalır', async () => {
     const db = new FakeDb();
     db.put('invites', 'LIVELIVE1234', { deleteAt: new Ts(NOW + D) });

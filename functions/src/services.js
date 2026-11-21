@@ -18,6 +18,7 @@ const INVITES = 'invites';
 const PURCHASES = 'purchases';
 const USERS = 'users';
 const CREDITS = 'credits';
+const QUOTA = 'quota';
 
 function publisherError(err) {
   const status = Number((err && (err.code || (err.response && err.response.status))) || 0);
@@ -427,19 +428,51 @@ async function processVoided(deps) {
 }
 
 /**
- * enforceFreeLimit (invites/{id} oluşturulunca): kurallar kullanıcının diğer belgelerini sayamaz.
- * Aynı sahibin daha önce açılmış ve hâlâ açık ücretsiz davetiyesi varsa YENİ belge hemen kapatılır
- * (expiresAt = şimdi, deleteAt = +1 gün; status/plan değişmez → sahibi silebilir). Uygulama zaten
- * bunu engellediği için yalnız kuralları doğrudan çağıran kötüye kullanımı etkiler.
+ * enforceFreeLimit (invites/{id} oluşturulunca). Kurallar kullanıcının diğer belgelerini sayamaz; bu işlev sayar.
+ * Maliyet sabittir (N-1: eskiden sahibin TÜM belgeleri okunurdu → n² okuma):
+ *  1) quota/{uid} sayaç belgesi işlemle (transaction) artırılır: 1 okuma + 1 yazma. UTC günü başına en çok
+ *     FREE_DAILY_CAP (20) ücretsiz belge; aşan yeni belge SİLİNİR (Storage dosyalarını cleanupStorage süpürür).
+ *  2) Aynı sahibin açık ücretsiz belgeleri sınırlı sorguyla okunur (plan==free, yalnız 3 alan, en çok
+ *     FREE_OPEN_CAP+1 belge): FREE_OPEN_CAP'ı aşarsa yeni belge silinir; daha önce açılmış açık bir ücretsiz
+ *     varsa yeni belge eskisi gibi kapatılır (expiresAt = şimdi, deleteAt = +1 gün; sahibi silebilir).
+ * Normal kullanıcı için davranış aynıdır (günde 1-2 belge). quota/{uid} istemciye kapalıdır (firestore.rules).
+ * Dönüş: false (dokunulmadı) | true (kapatıldı) | 'deleted' (sınır aşıldı, silindi).
  */
 async function enforceFreeLimit(deps, id, docData) {
   const { db, fv, now, log } = deps;
   if (!docData || docData.plan !== 'free' || !docData.ownerUid) return false;
   const nowMs = now();
-  const q = await db.collection(INVITES).where('ownerUid', '==', docData.ownerUid).get();
-  const others = q.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const uid = docData.ownerUid;
+  const iRef = db.collection(INVITES).doc(id);
+
+  const qRef = db.collection(QUOTA).doc(uid);
+  const q = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(qRef);
+    const next = L.nextQuota(snap.exists ? snap.data() : null, nowMs);
+    tx.set(qRef, { ...next, updatedAt: fv.serverTimestamp() });
+    return next;
+  });
+  if (q.dayCount > L.FREE_DAILY_CAP) {
+    await iRef.delete();
+    log.warn('free limit: daily cap exceeded, invite deleted', { id, dayCount: q.dayCount });
+    return 'deleted';
+  }
+
+  const res = await db
+    .collection(INVITES)
+    .where('ownerUid', '==', uid)
+    .where('plan', '==', 'free')
+    .select('plan', 'expiresAt', 'createdAt')
+    .limit(L.FREE_OPEN_CAP + 1)
+    .get();
+  if (res.docs.length > L.FREE_OPEN_CAP) {
+    await iRef.delete();
+    log.warn('free limit: open cap exceeded, invite deleted', { id });
+    return 'deleted';
+  }
+  const others = res.docs.map((d) => ({ id: d.id, ...d.data() }));
   if (!L.shouldRevokeFree({ id, ...docData }, others, nowMs)) return false;
-  await db.collection(INVITES).doc(id).update({ expiresAt: fv.ts(nowMs), deleteAt: fv.ts(nowMs + 24 * 3600 * 1000) });
+  await iRef.update({ expiresAt: fv.ts(nowMs), deleteAt: fv.ts(nowMs + 24 * 3600 * 1000) });
   log.warn('free limit: new free invite closed', { id });
   return true;
 }

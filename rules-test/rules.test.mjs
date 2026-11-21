@@ -591,6 +591,21 @@ describe('Firestore · Aşama 3 (ödeme, sunucu yazımı, users/purchases)', () 
 
 // ============================================================================
 // stats/**: günlük özet sayımları yalnız sunucuya (Admin) açık; istemci okuyamaz, yazamaz, listeleyemez.
+describe('Firestore · quota (yalnız sunucu, N-1)', () => {
+  test('QU1 istemci quota/{uid} okuyamaz, yazamaz, sıfırlayamaz, silemez, listeleyemez', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'quota', 'alice'), { day: '2026-11-22', dayCount: 20 });
+    });
+    await assertFails(getDoc(doc(db('alice'), 'quota', 'alice')));
+    await assertFails(getDoc(doc(db(null), 'quota', 'alice')));
+    await assertFails(setDoc(doc(db('alice'), 'quota', 'alice'), { day: '2026-11-22', dayCount: 0 }));
+    await assertFails(updateDoc(doc(db('alice'), 'quota', 'alice'), { dayCount: 0 }));
+    await assertFails(setDoc(doc(db('bob'), 'quota', 'bob'), { day: '2026-11-22', dayCount: 0 }));
+    await assertFails(deleteDoc(doc(db('alice'), 'quota', 'alice')));
+    await assertFails(getDocs(collection(db('alice'), 'quota')));
+  });
+});
+
 describe('Firestore · stats (yalnız sunucu)', () => {
   const DAY = ['stats', 'daily', 'days', '2026-11-14'];
 

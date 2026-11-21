@@ -38,22 +38,35 @@ class FakeDb {
   }
   collection(col) {
     const db = this;
+    const query = (filters, lim) => ({
+      where(field, op, value) {
+        if (op !== '==') throw new Error('only ==');
+        return query([...filters, [field, op, value]], lim);
+      },
+      select() {
+        return query(filters, lim);
+      },
+      limit(n) {
+        return query(filters, n);
+      },
+      async get() {
+        db.queryReads = (db.queryReads || 0);
+        const docs = [];
+        for (const [k, v] of db.store) {
+          const [c, id] = k.split('/');
+          if (c === col && filters.every(([f, , val]) => v[f] === val)) docs.push(new Snap(id, v));
+          if (lim && docs.length >= lim) break;
+        }
+        db.queryReads += docs.length;
+        return { docs };
+      },
+    });
     return {
       doc(id) {
         return db._ref(col, id);
       },
       where(field, op, value) {
-        if (op !== '==') throw new Error('only ==');
-        return {
-          async get() {
-            const docs = [];
-            for (const [k, v] of db.store) {
-              const [c, id] = k.split('/');
-              if (c === col && v[field] === value) docs.push(new Snap(id, v));
-            }
-            return { docs };
-          },
-        };
+        return query([[field, op, value]]);
       },
     };
   }
@@ -71,6 +84,9 @@ class FakeDb {
       },
       async update(data) {
         db._update(key, data);
+      },
+      async delete() {
+        db.store.delete(key);
       },
     };
   }

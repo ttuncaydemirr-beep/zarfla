@@ -186,6 +186,12 @@ service cloud.firestore {
       allow list, write: if false;
     }
 
+    // quota/{uid}: enforceFreeLimit'in günlük ücretsiz davetiye sayacı (N-1 maliyet sınırı). Yalnız sunucu
+    // (Admin SDK) yazar; istemci okuyamaz, yazamaz, silemez (sayacı sıfırlayıp sınırı aşamasın).
+    match /quota/{uid} {
+      allow read, write: if false;
+    }
+
     // purchases/{sha256(jeton)}: satın alma kayıtları — yalnız sunucu (istemciye tamamen kapalı).
     match /purchases/{hash} {
       allow read, write: if false;

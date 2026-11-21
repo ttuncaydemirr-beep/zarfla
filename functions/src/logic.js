@@ -22,6 +22,10 @@ const TTL_GRACE_MS = 30 * D;
 const VOIDED_GRACE_MS = 24 * H;
 /** Ücretsiz sınır denetiminde saat farkı toleransı (istemci saati ile sunucu saati). */
 const FREE_LIMIT_SKEW_MS = 15 * 60 * 1000;
+// N-1 maliyet kötüye kullanımı: anonim uid başına günlük ücretsiz davetiye açma sınırı ve aynı anda açık/bekleyen
+// ücretsiz belge sınırı. Sınırı aşan yeni belge silinir (normal kullanıcı: günde 1-2 davetiye).
+const FREE_DAILY_CAP = 20;
+const FREE_OPEN_CAP = 50;
 const MAX_DATA_CHARS = 200000;
 const MAX_NAME = 120;
 
@@ -280,6 +284,18 @@ function shouldRevokeFree(newDoc, others, nowMs) {
   });
 }
 
+/** UTC gün anahtarı (yyyy-mm-dd): quota/{uid} günlük sayacı için. */
+function quotaDay(nowMs) {
+  return new Date(nowMs).toISOString().slice(0, 10);
+}
+
+/** quota/{uid} belgesinin bir sonraki hali: gün değiştiyse sayaç sıfırlanır, sonra 1 artar. */
+function nextQuota(cur, nowMs) {
+  const day = quotaDay(nowMs);
+  const same = cur && cur.day === day && Number.isFinite(cur.dayCount);
+  return { day, dayCount: (same ? cur.dayCount : 0) + 1 };
+}
+
 /** Storage nesne adlarını davetiye kimliğine göre gruplar: invites/{id}/{dosya}. */
 function groupFilesByInvite(names) {
   const m = new Map();
@@ -317,6 +333,10 @@ module.exports = {
   TTL_GRACE_MS,
   VOIDED_GRACE_MS,
   FREE_LIMIT_SKEW_MS,
+  FREE_DAILY_CAP,
+  FREE_OPEN_CAP,
+  quotaDay,
+  nextQuota,
   RedeemError,
   sha256,
   isValidInviteId,
