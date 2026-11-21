@@ -1398,7 +1398,18 @@ function setupMusic(root,inv,L){
 }
 /*MUSIC-END*/
 let tickTimer=null,io=null;
-const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+/*SAFE-BEGIN*/
+/* Güvenlik (H-1): davetiye verisi güvenilmez (herkes anonim hesapla belge yazabilir). Metin → esc(), öznitelik → attr(),
+   görsel adresi → safeImg() (yalnız Zarfla Storage kovası ya da önizlemenin base64 data:image'ı), kimlikler → beyaz liste. */
+const esc=s=>String(s==null?"":s).replace(/[&<>"'`]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;","`":"&#96;"}[c]));
+const attr=esc;
+const IMG_URL_RE=/^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/zarfla-37da9\.firebasestorage\.app\/o\/invites%2F[A-Za-z0-9]{4,64}%2F(?:cover|g[1-6])\.(?:webp|jpe?g|png|gif)\?alt=media(?:&token=[0-9A-Fa-f-]{8,64})?$/;
+const IMG_DATA_RE=/^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+\/]+={0,2}$/;
+const IMG_MAX=12*1024*1024,MAX_PHOTOS=6;
+function safeImg(u){if(typeof u!=="string")return"";u=u.trim();if(!u||u.length>IMG_MAX)return"";return(IMG_URL_RE.test(u)||IMG_DATA_RE.test(u))?u:""}
+function ownKey(o,k){return typeof k==="string"&&o!=null&&Object.prototype.hasOwnProperty.call(o,k)}
+const ID_RE=/^[A-Za-z0-9_-]{1,64}$/,DATE_RE=/^\d{4}-\d{2}-\d{2}$/,TIME_RE=/^\d{1,2}:\d{2}$/;
+/*SAFE-END*/
 function shiftDate(s,days){const [y,m,d]=s.split("-").map(Number);return new Date(Date.UTC(y,m-1,d+days)).toISOString().slice(0,10)}
 function fmtISO(s,lang){if(!s)return"";const [y,m,d]=s.split("-").map(Number);return new Intl.DateTimeFormat(LOCALE[lang],{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(y,m-1,d,12)))}
 function parts(inv){
@@ -1410,16 +1421,21 @@ function parts(inv){
 function normInv(i){
   const str=k=>{if(typeof i[k]!=="string")i[k]=i[k]==null?"":String(i[k])};
   ["id","type","theme","lang","n1","n2","host","msg","date","time","end","venue","address","wa","opening","layout","cover","status"].forEach(str);
-  if(!i.id)i.id="zarfla";
-  if(!THEMES[i.theme])i.theme="papatya";
-  if(!G[i.lang])i.lang="tr";
-  if(!EYEBROW.tr[i.type])i.type="diger";
+  if(!ID_RE.test(i.id))i.id="zarfla";
+  if(!ownKey(THEMES,i.theme))i.theme="papatya";
+  if(!ownKey(G,i.lang))i.lang="tr";
+  if(!ownKey(EYEBROW.tr,i.type))i.type="diger";
   if(!LAYOUTS.includes(i.layout))i.layout="klasik";
   if(!OPENINGS.includes(i.opening))i.opening="door";
+  if(!DATE_RE.test(i.date))i.date="";
+  if(!TIME_RE.test(i.time))i.time="";
+  if(!TIME_RE.test(i.end))i.end="";
+  i.wa=i.wa.replace(/[^\d+]/g,"");
+  i.cover=safeImg(i.cover);
   if(!Array.isArray(i.photos))i.photos=[];
-  i.photos=i.photos.filter(x=>typeof x==="string"&&x);
+  i.photos=i.photos.map(safeImg).filter(Boolean).slice(0,MAX_PHOTOS);
   if(!Array.isArray(i.program))i.program=[];
-  i.program=i.program.filter(Boolean).map(s=>({t:String(s.t||""),x:String(s.x||"")}));
+  i.program=i.program.filter(s=>s&&typeof s==="object").map(s=>({t:String(s.t==null?"":s.t),x:String(s.x==null?"":s.x)}));
   i.notes=cleanNotes(i.notes);
   return i;
 }
@@ -1474,7 +1490,7 @@ function mountInvite(host,inv,isGuest){
   const lv=cleanLive(inv.live),gf=cleanGift(inv.gift,paidInv);
   const liveC=lv?`<section class="icard reveal live-card"><svg class="lv-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.3" fill="currentColor"/><path d="M8 8a5.6 5.6 0 0 0 0 8M16 8a5.6 5.6 0 0 1 0 8M5.2 5.2a9.6 9.6 0 0 0 0 13.6M18.8 5.2a9.6 9.6 0 0 1 0 13.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><p class="label">${L.streamT}</p>${lv.note?`<p class="sub" dir="auto">${esc(lv.note)}</p>`:""}<div class="brow"><a class="ibtn ibtn-primary" data-live target="_blank" rel="noopener noreferrer" href="${esc(lv.url)}">${L.streamBtn}</a></div></section>`:"";
   const giftC=gf?`<section class="icard reveal gift-card"><svg class="gf-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="9" width="17" height="11" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 13h17M12 9v11M12 9c-1.2-3.6-5-4.2-5-1.8 0 1.4 2 1.8 5 1.8zm0 0c1.2-3.6 5-4.2 5-1.8 0 1.4-2 1.8-5 1.8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><p class="label">${L.giftT}</p><p class="sub">${L.giftHolderT}</p><p class="big gf-holder" dir="auto">${esc(gf.holder)}</p>${gf.bank?`<p class="sub" dir="auto">${esc(gf.bank)}</p>`:""}<p class="iban" dir="ltr" data-iban>${esc(ibanFmt(gf.iban))}</p><div class="brow"><button class="ibtn ibtn-ghost" type="button" data-copy="${esc(gf.iban)}">${L.copy}</button></div><p class="gift-disc" dir="auto">${L.giftDisc}</p></section>`:"";
-  const galC=photos.length?`<section class="icard reveal"><p class="label">${L.gallery}</p><div class="gal">${photos.map((d,i)=>`<button class="gal-it" type="button" data-gi="${i}" aria-label="${L.enlarge} ${i+1}/${photos.length}"><img src="${d}" alt="" loading="lazy"></button>`).join("")}</div></section>`:"";
+  const galC=photos.length?`<section class="icard reveal"><p class="label">${L.gallery}</p><div class="gal">${photos.map((d,i)=>`<button class="gal-it" type="button" data-gi="${i}" aria-label="${L.enlarge} ${i+1}/${photos.length}"><img src="${attr(d)}" alt="" loading="lazy"></button>`).join("")}</div></section>`:"";
   const rsvpC=`<section class="icard reveal" data-rsvpsec><p class="label">${L.rsvpT}</p><p class="big" style="font-size:25px">${L.rsvpQ}</p><p class="sub">${L.rsvpNote}</p>
       <form novalidate data-rsvp>
         <div class="ifield"><label for="rn${inv.id}">${L.name}</label><input id="rn${inv.id}" data-r="name" autocomplete="name" placeholder="${L.namePh}" maxlength="60" value="${esc(guestN)}"></div><div class="ierr" data-e="name">${L.errName}</div>
@@ -1497,21 +1513,21 @@ function mountInvite(host,inv,isGuest){
   /* Düzene göre sayfa */
   let page="";
   if(lay==="kemer"){
-    page=`<section class="hero hero-kemer"><div class="arch"><div class="arch-in">${cover?`<img class="arch-img" src="${cover}" alt="">`:`<div class="arch-orn">${orn()}</div>`}
+    page=`<section class="hero hero-kemer"><div class="arch"><div class="arch-in">${cover?`<img class="arch-img" src="${attr(cover)}" alt="">`:`<div class="arch-orn">${orn()}</div>`}
         <div class="arch-txt">${eyebrow}<h1 class="names">${namesH}</h1></div></div></div>${hostH}${leadH}</section>
       ${divider}${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${divider}${galC}${rsvpC}${footer}`;
   }else if(lay==="monogram"){
     page=`<section class="hero hero-mono">${eyebrow}<div class="mono"><svg class="mono-ring" viewBox="0 0 230 230" aria-hidden="true"><circle cx="115" cy="115" r="96" fill="${v.paper}" stroke="${v.gold}" stroke-width="1.6"/><circle cx="115" cy="115" r="89" fill="none" stroke="${v.line}"/>${ring(16,106,115,16)}</svg>
-        ${cover?`<img class="mono-img" src="${cover}" alt="">`:`<span class="mono-ini">${ini}</span>`}</div>
+        ${cover?`<img class="mono-img" src="${attr(cover)}" alt="">`:`<span class="mono-ini">${ini}</span>`}</div>
         <h1 class="names mono-names">${couple?`${n1}<span class="amp">&amp;</span>${n2}`:n1}</h1>${hostH}${leadH}</section>
       ${divider}${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${divider}${galC}${rsvpC}${footer}`;
   }else if(lay==="editoryal"){
     page=`<section class="hero ed"><div class="ed-top"><span class="ed-vert">${EYEBROW[inv.lang][inv.type]}</span><div class="ed-main">
-        ${cover?`<img class="ed-cover" src="${cover}" alt="">`:orn("ed-orn")}
+        ${cover?`<img class="ed-cover" src="${attr(cover)}" alt="">`:orn("ed-orn")}
         <div class="ed-rule"></div><h1 class="names ed-names">${namesH}</h1><div class="ed-rule"></div>${hostH}${leadH}</div></div></section>
       ${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${galC}${rsvpC}${footer}`;
   }else if(lay==="kartpostal"){
-    page=`<div class="pc"><div class="pc-top">${cover?`<img class="pc-photo" src="${cover}" alt="">`:`<div class="pc-art">${orn()}</div>`}
+    page=`<div class="pc"><div class="pc-top">${cover?`<img class="pc-photo" src="${attr(cover)}" alt="">`:`<div class="pc-art">${orn()}</div>`}
         <div class="pc-stamp" aria-hidden="true"><div>${orn()}</div></div>
         <div class="pc-mark" aria-hidden="true"><span>${esc(dShort)}</span></div></div>
       <section class="hero">${eyebrow}<h1 class="names">${namesH}</h1>${hostH}${leadH}</section></div>
@@ -1519,17 +1535,17 @@ function mountInvite(host,inv,isGuest){
   }else if(lay==="zamancizelgesi"){
     const it=(c,cls="")=>`<div class="tl-it ${cls}"><span class="tl-dot" aria-hidden="true"></span>${c}</div>`;
     const steps=prog.length?it(`<p class="label">${L.program}</p>`,"tl-head")+prog.map(st=>it(`<b>${esc(st.t||"")}</b><span dir="auto">${esc(st.x)}</span>`,"tl-step reveal")).join(""):"";
-    page=`<section class="hero">${cover?`<div class="tl-cover"><img src="${cover}" alt=""></div>`:wreath}${eyebrow}<h1 class="names">${namesH}</h1>${hostH}${leadH}</section>
+    page=`<section class="hero">${cover?`<div class="tl-cover"><img src="${attr(cover)}" alt=""></div>`:wreath}${eyebrow}<h1 class="names">${namesH}</h1>${hostH}${leadH}</section>
       <div class="tl">${it(whenC)}${steps}${it(whereC)}${liveC?it(liveC):""}${notesC?it(notesC):""}${giftC?it(giftC):""}${galC?it(galC):""}${it(rsvpC)}</div>${footer}`;
   }else if(lay==="bilet"){
-    page=`<section class="hero"><div class="tk">${cover?`<img class="tk-cover" src="${cover}" alt="">`:`<div class="tk-band">${orn()}</div>`}
+    page=`<section class="hero"><div class="tk">${cover?`<img class="tk-cover" src="${attr(cover)}" alt="">`:`<div class="tk-band">${orn()}</div>`}
         <div class="tk-main">${eyebrow}<h1 class="names">${namesH}</h1>${hostH}</div>
         <div class="tk-perf" aria-hidden="true"><i></i></div>
         <div class="tk-stub"><div><small>${L.dateL}</small><b>${esc(dShort)}</b></div><div><small>${L.timeW}</small><b dir="ltr">${esc(inv.time||"—")}</b></div><div><small>${L.ticketNo}</small><b dir="ltr">${esc(inv.id.slice(0,4).toUpperCase())}</b></div></div></div>
         ${leadH}</section>
       ${divider}${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${divider}${galC}${rsvpC}${footer}`;
   }else{
-    page=`<section class="hero${cover?" has-cv":""}">${wreath}${cover?`<div class="cv-frame"><img src="${cover}" alt=""></div>`:""}${eyebrow}<h1 class="names">${namesH}</h1>${hostH}${leadH}</section>
+    page=`<section class="hero${cover?" has-cv":""}">${wreath}${cover?`<div class="cv-frame"><img src="${attr(cover)}" alt=""></div>`:""}${eyebrow}<h1 class="names">${namesH}</h1>${hostH}${leadH}</section>
       ${divider}${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${divider}${galC}${rsvpC}${footer}`;
   }
   /* ===== Dalga 3 düzenleri: galeri, mektup, davetkarti, minimal, gece, hikaye ===== */
@@ -1541,22 +1557,22 @@ function mountInvite(host,inv,isGuest){
   const W3_IN=["galeri","mektup","davetkarti","hikaye"];
   if(lay==="galeri"){
     const gcv=cover||photos[0]||"";
-    const galG=photos.length?`<p class="label gl-lab reveal">${L.gallery}</p><section class="gl-gal">${photos.map((d,i)=>`<button class="gal-it reveal" type="button" data-gi="${i}" aria-label="${L.enlarge} ${i+1}/${photos.length}"><img src="${d}" alt="" loading="lazy"></button>`).join("")}</section>`:"";
-    page=`<section class="hero gl-hero ${gcv?"has-img":"no-img"}"><div class="gl-cv">${gcv?`<img src="${gcv}" alt="">`:`<div class="gl-orn">${orn()}</div>`}</div>
+    const galG=photos.length?`<p class="label gl-lab reveal">${L.gallery}</p><section class="gl-gal">${photos.map((d,i)=>`<button class="gal-it reveal" type="button" data-gi="${i}" aria-label="${L.enlarge} ${i+1}/${photos.length}"><img src="${attr(d)}" alt="" loading="lazy"></button>`).join("")}</section>`:"";
+    page=`<section class="hero gl-hero ${gcv?"has-img":"no-img"}"><div class="gl-cv">${gcv?`<img src="${attr(gcv)}" alt="">`:`<div class="gl-orn">${orn()}</div>`}</div>
         <div class="gl-txt">${hiH}${eyebrow}<h1 class="names">${namesH}</h1>${dLong?`<p class="gl-date">${esc(dLong)}</p>`:""}<div class="gl-scroll" aria-hidden="true"><i></i></div></div></section>
       <section class="gl-intro reveal">${hostH}${leadH}</section>${galG}
       ${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${rsvpC}${footer}`;
   }else if(lay==="mektup"){
     page=`<section class="hero mk"><div class="mk-sheet">
         <div class="mk-head">${eyebrow}${dLong?`<span class="mk-date">${esc(dLong)}</span>`:""}</div>
-        ${hiH}${leadH}${hostH}${cover?`<figure class="mk-photo"><img src="${cover}" alt=""><i></i></figure>`:""}
+        ${hiH}${leadH}${hostH}${cover?`<figure class="mk-photo"><img src="${attr(cover)}" alt=""><i></i></figure>`:""}
         <div class="mk-sign"><span class="mk-love">${L.love}</span><h1 class="names">${namesH}</h1></div>
         <div class="w3-wax mk-wax" aria-hidden="true"><span>${ini}</span></div></div></section>
       ${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${galC}${rsvpC}${footer}`;
   }else if(lay==="davetkarti"){
     const dl=p?`${esc(dWk)} · ${esc(dLong)}${inv.time?` · <bdi dir="ltr">${esc(inv.time)}</bdi>`:""}`:"";
     page=`<div class="dk-wrap"><section class="hero dk-card"><div class="dk-frame">${hiH}
-        <div class="dk-crest">${cover?`<img class="dk-img" src="${cover}" alt="">`:orn()}</div>
+        <div class="dk-crest">${cover?`<img class="dk-img" src="${attr(cover)}" alt="">`:orn()}</div>
         ${eyebrow}<h1 class="names">${namesH}</h1>${dl?`<p class="dk-date">${dl}</p>`:""}${hostH}${leadH}</div></section></div>
       <div class="dk-wrap"><div class="dk-insert">${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${galC}${rsvpC}${footer}</div></div>`;
   }else if(lay==="minimal"){
@@ -1570,14 +1586,14 @@ function mountInvite(host,inv,isGuest){
       const mon=new Intl.DateTimeFormat(LOCALE[inv.lang],{month:"long",year:"numeric",timeZone:"UTC"}).format(p.noon);
       calC=`<section class="icard reveal mn-cal"><p class="label">${L.dateL}</p><p class="mn-mon">${esc(mon)}</p><div class="mn-grid" role="presentation">${heads}${cells}</div><p class="mn-dday">${esc(dWk)} · <b dir="ltr">${tmS}</b></p></section>`}
     page=`<section class="hero mn">${eyebrow}<h1 class="names">${namesH}</h1>${dNum?`<p class="mn-date" dir="ltr">${dNum}</p>`:""}
-        ${cover?`<div class="mn-photo"><img src="${cover}" alt=""></div>`:""}${hostH}${leadH}</section>
+        ${cover?`<div class="mn-photo"><img src="${attr(cover)}" alt=""></div>`:""}${hostH}${leadH}</section>
       ${calC}${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${galC}${rsvpC}${footer}`;
   }else if(lay==="gece"){
-    page=`<section class="hero gc"><div class="gc-frame">${cover?`<div class="gc-photo"><img src="${cover}" alt=""></div>`:orn("gc-orn")}
+    page=`<section class="hero gc"><div class="gc-frame">${cover?`<div class="gc-photo"><img src="${attr(cover)}" alt=""></div>`:orn("gc-orn")}
         ${eyebrow}<h1 class="names">${namesH}</h1><div class="gc-rule" aria-hidden="true"><i></i>${orn()}<i></i></div>${dLong?`<p class="gc-date">${esc(dWk)} · ${esc(dLong)}</p>`:""}${hostH}${leadH}</div></section>
       ${divider}${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${divider}${galC}${rsvpC}${footer}`;
   }else if(lay==="hikaye"){
-    const hero=`<section class="hero hk-hero">${cover?`<img class="hk-img" src="${cover}" alt="">`:`<div class="hk-orn">${orn()}</div>`}
+    const hero=`<section class="hero hk-hero">${cover?`<img class="hk-img" src="${attr(cover)}" alt="">`:`<div class="hk-orn">${orn()}</div>`}
         <div class="hk-head"><span class="hk-av">${noName?ini:esc(couple?r1.charAt(0)+"&"+r2.charAt(0):r1.charAt(0))}</span><span class="hk-who"><b dir="auto">${couple?`${n1} &amp; ${n2}`:n1}</b><small>${esc(dShort)}</small></span></div>
         <div class="hk-txt">${hiH}${eyebrow}<h1 class="names">${namesH}</h1></div>
         <span class="hk-swipe" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></section>`;

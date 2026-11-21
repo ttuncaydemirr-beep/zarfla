@@ -11,7 +11,7 @@ import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebas
 import {
   Timestamp, collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc,
 } from 'firebase/firestore';
-import { deleteObject, getMetadata, ref, uploadBytes } from 'firebase/storage';
+import { deleteObject, getMetadata, listAll, ref, uploadBytes } from 'firebase/storage';
 
 // Sunucu fonksiyonunun (redeemPurchase) saf mantığı: ücretli belgeyi nasıl kurduğunu kurallarla sınamak için.
 const serverLogic = createRequire(import.meta.url)('../functions/src/logic.js');
@@ -647,6 +647,50 @@ describe('Storage', () => {
     await assertSucceeds(getMetadata(fref(null, 'g1.jpg')));
     await assertFails(deleteObject(fref('bob', 'g1.jpg')));
     await assertSucceeds(deleteObject(fref('alice', 'g1.jpg')));
+  });
+  // ---- Güvenlik denetimi M-3 ----
+  test('S8 SVG/GIF/HTML içerik türü reddedilir (uzantı .png olsa da)', async () => {
+    await seed(ID, seededFree('alice'));
+    await assertFails(uploadBytes(fref('alice', 'cover.png'), jpg, { contentType: 'image/svg+xml' }));
+    await assertFails(uploadBytes(fref('alice', 'cover.png'), jpg, { contentType: 'image/gif' }));
+    await assertFails(uploadBytes(fref('alice', 'cover.gif'), jpg, { contentType: 'image/gif' }));
+    await assertFails(uploadBytes(fref('alice', 'cover.jpg'), jpg, { contentType: 'text/html' }));
+    await assertFails(uploadBytes(fref('alice', 'cover.svg'), jpg, { contentType: 'image/svg+xml' }));
+  });
+  test('S9 uzantı ile içerik türü eşleşmeli; jpeg/png/webp kabul', async () => {
+    await seed(ID, seededFree('alice'));
+    await assertFails(uploadBytes(fref('alice', 'g1.png'), jpg, { contentType: 'image/jpeg' }));
+    await assertFails(uploadBytes(fref('alice', 'g2.jpg'), jpg, { contentType: 'image/webp' }));
+    await assertSucceeds(uploadBytes(fref('alice', 'g1.jpeg'), jpg, { contentType: 'image/jpeg' }));
+    await assertSucceeds(uploadBytes(fref('alice', 'g2.png'), jpg, { contentType: 'image/png' }));
+    await assertSucceeds(uploadBytes(fref('alice', 'g3.webp'), jpg, { contentType: 'image/webp' }));
+  });
+  test('S10 boş dosya reddedilir; 2 MB altı kabul', async () => {
+    await seed(ID, seededFree('alice'));
+    await assertFails(uploadBytes(fref('alice', 'cover.jpg'), new Uint8Array(0), meta));
+    await assertSucceeds(uploadBytes(fref('alice', 'cover.jpg'), new Uint8Array(2 * 1024 * 1024 - 1), meta));
+  });
+  test('S11 klasör listeleme: herkese kapalı, yalnız sahibi (silme temizliği)', async () => {
+    await seed(ID, seededFree('alice'));
+    await assertSucceeds(uploadBytes(fref('alice', 'g1.jpg'), jpg, meta));
+    await assertFails(listAll(ref(st(null), `invites/${ID}`)));
+    await assertFails(listAll(ref(st('bob'), `invites/${ID}`)));
+    await assertFails(listAll(ref(st('bob'), 'invites')));
+    await assertSucceeds(listAll(ref(st('alice'), `invites/${ID}`)));
+  });
+  test('S12 süresi dolmuş davetiyeye yükleme yok; sahibi yine de silebilir', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await uploadBytes(ref(ctx.storage(), `invites/${ID}/g1.jpg`), jpg, meta);
+    });
+    await seed(ID, seededFree('alice', { expMs: Date.now() - H }));
+    await assertFails(uploadBytes(fref('alice', 'cover.jpg'), jpg, meta));
+    await assertSucceeds(deleteObject(fref('alice', 'g1.jpg')));
+  });
+  test('S13 ücretli (1 yıl) davetiyeye sahibi yükler, başkası okur ama yazamaz', async () => {
+    await seed(ID, seededPaid('alice'));
+    await assertSucceeds(uploadBytes(fref('alice', 'cover.webp'), jpg, { contentType: 'image/webp' }));
+    await assertSucceeds(getMetadata(fref('bob', 'cover.webp')));
+    await assertFails(uploadBytes(fref('bob', 'cover.webp'), jpg, { contentType: 'image/webp' }));
   });
 });
 

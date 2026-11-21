@@ -31,7 +31,7 @@ class PhotoStore {
 
   /// Baytları kaydeder, dosya adını döner. Yer yoksa FileSystemException fırlatır.
   Future<String> saveBytes(Uint8List bytes) async {
-    if (bytes.isEmpty || sniffMime(bytes) == null) {
+    if (bytes.isEmpty || !isUploadable(sniffMime(bytes))) {
       throw const FormatException('not an image');
     }
     final ext = _extFor(sniffMime(bytes)!);
@@ -83,6 +83,9 @@ class PhotoStore {
         return 'jpg';
     }
   }
+
+  /// Buluta yüklenebilen türler (storage.rules ile aynı: yalnız JPEG, PNG, WebP; GIF/SVG yok).
+  static bool isUploadable(String? mime) => mime == 'image/jpeg' || mime == 'image/png' || mime == 'image/webp';
 
   /// Dosya imzasından görüntü türü.
   static String? sniffMime(List<int> b) {

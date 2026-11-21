@@ -95,14 +95,14 @@ jobs:
       # --force: etkileşimsiz modda Artifact Registry temizlik politikasını (eski kapsayıcı görüntüleri) onaylar.
       - name: Yayınla
         run: >
-          npx -y firebase-tools@latest deploy
+          npx -y firebase-tools@15.37 deploy
           --project zarfla-37da9
           --only "${{ inputs.only }}"
           --non-interactive --force
 
       - name: Hosting siteleri (tanı)
         if: always() && contains(inputs.only, 'hosting')
-        run: npx -y firebase-tools@latest hosting:sites:list --project zarfla-37da9 || true
+        run: npx -y firebase-tools@15.37 hosting:sites:list --project zarfla-37da9 || true
 
       - name: Davetli sayfası canlı denetim
         if: success() && contains(inputs.only, 'hosting')
@@ -126,7 +126,7 @@ jobs:
 
       - name: Fonksiyon listesi
         if: success() && contains(inputs.only, 'functions')
-        run: npx -y firebase-tools@latest functions:list --project zarfla-37da9 || true
+        run: npx -y firebase-tools@15.37 functions:list --project zarfla-37da9 || true
 
       - name: Kimlik dosyasını sil
         if: always()

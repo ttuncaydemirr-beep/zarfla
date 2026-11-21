@@ -36,7 +36,7 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
           cache: true
@@ -63,7 +63,12 @@ jobs:
         run: flutter pub get
 
       - name: Çözülen Firebase ve faturalandırma sürümleri
-        run: grep -A6 -E '^  (firebase_core|firebase_auth|cloud_firestore|firebase_storage|cloud_functions|in_app_purchase|in_app_purchase_android):' pubspec.lock || true
+        run: |
+          grep -A8 -E '^  (firebase_core|firebase_auth|cloud_firestore|firebase_storage|cloud_functions|in_app_purchase|in_app_purchase_android):' pubspec.lock || true
+          echo "---- in_app_purchase (pub deps) ----"
+          flutter pub deps --style=compact | grep -E 'in_app_purchase' || true
+          echo "---- Play Billing Library (in_app_purchase_android/android) ----"
+          grep -rhoE "com\.android\.billingclient:billing[^'\"]*" "${PUB_CACHE:-$HOME/.pub-cache}"/hosted/pub.dev/in_app_purchase_android-*/android/ 2>/dev/null | sort -u || true
 
       - name: Analiz (uyarılar geçer, hatalar durdurur)
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
@@ -185,7 +190,7 @@ jobs:
 
       - name: Kural testleri (emülatör)
         run: >
-          npx -y firebase-tools@latest emulators:exec --project demo-zarfla --only firestore,storage
+          npx -y firebase-tools@15.37 emulators:exec --project demo-zarfla --only firestore,storage
           "node --test --test-reporter=spec rules-test/rules.test.mjs"
 
   # Cloud Functions (functions/): sözdizimi denetimi, sahte Google Play API ile birim testleri,
@@ -215,6 +220,9 @@ jobs:
       - name: Davetli sayfası (invite.html) JS testleri
         run: node --test test/js/*.test.mjs
 
+      - name: Davetli sayfası CSP özeti firebase.json ile aynı mı
+        run: python3 tools/build_hosting.py --check-csp
+
   # Google Play kapalı test (alpha) yüklemesi: yalnızca elle başlatılan çalışmada, play=true ise.
   # PLAY_SERVICE_ACCOUNT_JSON secret'ı (play-yukleyici hizmet hesabı) gerekir.
   play:
@@ -233,7 +241,7 @@ jobs:
           name: zarfla-r8-mapping
           path: dist-mapping
       - name: Play'e yükle (alpha)
-        uses: r0adkll/upload-google-play@v1.1.3
+        uses: r0adkll/upload-google-play@935ef9c68bb393a8e6116b1575626a7f5be3a7fb # v1.1.3
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.demirgamesstudio.zarfla

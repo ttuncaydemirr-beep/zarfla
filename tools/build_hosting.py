@@ -17,8 +17,11 @@ Yeni parça EKLENMEZ: manifestteki kimlikler motorun MUSIC listesiyle birebir ay
 
 Çalıştırma:  python3 tools/build_hosting.py --site ../ttuncaydemirr-beep.github.io
              (yerel deneme için dosyalar eksikse: --allow-missing)
+             invite.html / loader.js değişince: --write-firebase-json ile CSP özetini firebase.json'a yazıp commit edin
+             (CI: --check-csp, firebase.json eskiyse durur).
 """
 import argparse
+import base64
 import hashlib
 import json
 import re
@@ -31,11 +34,31 @@ ENGINE = ROOT / "assets" / "invite" / "invite.html"
 HSRC = ROOT / "hosting-src"
 HOST_URL = "https://zarfla-37da9.web.app"
 
-INVITE_CSP = ("default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; "
-              "img-src 'self' data: https://firebasestorage.googleapis.com; font-src 'self'; media-src 'self'; "
-              "connect-src https://firestore.googleapis.com; base-uri 'none'; form-action 'none'")
-# Başlıktaki CSP = meta CSP + frame-ancestors (meta etiketinde frame-ancestors çalışmaz).
-INVITE_CSP_HEADER = INVITE_CSP + "; frame-ancestors 'none'"
+# CSP (güvenlik denetimi M-1): betiklerde 'unsafe-inline' YOK. script-src yalnız sayfadaki satır içi <script> bloklarının
+# sha256 özetleri; özetler her üretimde hesaplanır ve hem meta etikete hem firebase.json başlığına aynı değer yazılır.
+# Satır içi olay işleyicisi (onclick= vb.) kullanılamaz: motor addEventListener kullanır (üretim bunu da denetler).
+# style-src 'unsafe-inline' bilinçli olarak kalır: motor çok sayıda style="" özniteliği ve JS ile stil ataması kullanır
+# (stil enjeksiyonu betik çalıştıramaz; tüm metin/öznitelik verisi zaten kaçışlı).
+INVITE_CSP_TMPL = ("default-src 'none'; script-src {script}; style-src 'unsafe-inline'; "
+                   "img-src 'self' data: https://firebasestorage.googleapis.com; font-src 'self'; media-src 'self'; "
+                   "connect-src https://firestore.googleapis.com; base-uri 'none'; form-action 'none'; object-src 'none'")
+CSP_PLACEHOLDER = "__ZARFLA_INVITE_CSP__"
+
+
+def invite_csp(html):
+    """Meta CSP ve başlık CSP'si (başlık = meta + frame-ancestors; meta etiketinde frame-ancestors çalışmaz)."""
+    blocks = re.findall(r"<script>(.*?)</script>", html, re.S)
+    if re.search(r"<script(?!>)[^>]*>", html):
+        fail("davetiye sayfasında öznitelikli/harici <script> var — yalnız düz satır içi <script> desteklenir")
+    if not blocks:
+        fail("davetiye sayfasında satır içi betik bulunamadı")
+    hashes = sorted({"'sha256-" + base64.b64encode(hashlib.sha256(b.encode("utf-8")).digest()).decode() + "'"
+                     for b in blocks})
+    meta = INVITE_CSP_TMPL.format(script=" ".join(hashes))
+    return meta, meta + "; frame-ancestors 'none'"
+
+
+INLINE_HANDLER = re.compile(r"""<[a-zA-Z][^<>]*?\son[a-z]+\s*=""")
 INVITE_TITLE = "Davetiye · Zarfla"
 INVITE_DESC = "Size özel bir davetiye var."
 
@@ -61,7 +84,7 @@ def build_invite(out):
 
     sub('<meta name="robots" content="noindex">', '<meta name="robots" content="noindex,nofollow">')
     sub("<title>Zarfla</title>", f"<title>{INVITE_TITLE}</title>")
-    head = f"""<meta http-equiv="Content-Security-Policy" content="{INVITE_CSP}">
+    head = f"""<meta http-equiv="Content-Security-Policy" content="{CSP_PLACEHOLDER}">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#F7F1E8">
 <meta name="description" content="{INVITE_DESC}">
@@ -84,11 +107,20 @@ def build_invite(out):
     j = h.index("</script>", i)
     h = h[:i] + (HSRC / "loader.js").read_text(encoding="utf-8") + h[j:]
     sub("<body>\n", "<body>\n<noscript><div class=\"zs-nojs\">JavaScript gerekli · JavaScript required</div></noscript>\n")
+    # Statik işaretlemede satır içi olay işleyicisi olmamalı (CSP'de 'unsafe-inline' yok, çalışmaz).
+    static = re.sub(r"<script>.*?</script>", "", h, flags=re.S)
+    m = INLINE_HANDLER.search(static)
+    if m:
+        fail(f"satır içi olay işleyicisi bulundu (addEventListener kullanın): {m.group(0)[:80]!r}")
+    meta_csp, header_csp = invite_csp(h)
+    sub(CSP_PLACEHOLDER, meta_csp)
+    if invite_csp(h) != (meta_csp, header_csp):
+        fail("CSP özeti meta eklendikten sonra değişti")
     d = out / "davetiye"
     d.mkdir(parents=True, exist_ok=True)
     (d / "index.html").write_text(h, encoding="utf-8")
     shutil.copyfile(HSRC / "og.png", d / "og.png")
-    return h
+    return header_csp
 
 
 def engine_music_ids():
@@ -157,21 +189,39 @@ def build_fonts(out, site, allow_missing):
     return n
 
 
-def check_firebase_json():
-    cfg = json.loads((ROOT / "firebase.json").read_text(encoding="utf-8"))
-    hs = cfg["hosting"]
-    if hs.get("public") != "hosting":
-        fail("firebase.json hosting.public 'hosting' olmalı")
-    found = False
-    for rule in hs.get("headers", []):
+def firebase_csp_values(cfg):
+    vals = []
+    for rule in cfg["hosting"].get("headers", []):
         if rule["source"].startswith("/davetiye"):
             for kv in rule["headers"]:
                 if kv["key"] == "Content-Security-Policy":
-                    found = True
-                    if kv["value"] != INVITE_CSP_HEADER:
-                        fail("firebase.json'daki davetiye CSP başlığı build_hosting.py INVITE_CSP_HEADER ile aynı değil")
-    if not found:
+                    vals.append(kv["value"])
+    return vals
+
+
+def check_firebase_json(header_csp, write):
+    """firebase.json'daki /davetiye CSP başlıkları üretilen sayfanın özetleriyle aynı olmalı.
+    write=True: farklıysa firebase.json'u yerinde günceller (biçim korunur; değişikliği commit edin)."""
+    path = ROOT / "firebase.json"
+    raw = path.read_text(encoding="utf-8")
+    cfg = json.loads(raw)
+    if cfg["hosting"].get("public") != "hosting":
+        fail("firebase.json hosting.public 'hosting' olmalı")
+    vals = firebase_csp_values(cfg)
+    if not vals:
         fail("firebase.json'da /davetiye için CSP başlığı yok")
+    if all(v == header_csp for v in vals):
+        return False
+    if not write:
+        fail("firebase.json'daki davetiye CSP başlığı üretilen sayfanın betik özetleriyle aynı değil — "
+             "python3 tools/build_hosting.py --write-firebase-json ... çalıştırıp firebase.json'u commit edin")
+    for old in set(vals):
+        raw = raw.replace('"value": ' + json.dumps(old, ensure_ascii=False), '"value": ' + json.dumps(header_csp, ensure_ascii=False))
+    if firebase_csp_values(json.loads(raw)) != [header_csp] * len(vals):
+        fail("firebase.json CSP güncellenemedi")
+    path.write_text(raw, encoding="utf-8")
+    print("firebase.json davetiye CSP başlığı güncellendi (commit edin)")
+    return True
 
 
 def main():
@@ -180,13 +230,24 @@ def main():
                     help="stüdyo sitesi deposu (müzik ve yazı tipi kaynağı)")
     ap.add_argument("--out", default=str(ROOT / "hosting"))
     ap.add_argument("--allow-missing", action="store_true", help="eksik müzik/yazı tipi dosyalarını atla (yalnız yerel deneme)")
+    ap.add_argument("--write-firebase-json", action="store_true",
+                    help="firebase.json'daki davetiye CSP başlığını betik özetleriyle güncelle")
+    ap.add_argument("--check-csp", action="store_true",
+                    help="yalnız davetiye sayfasını geçici klasörde üret ve firebase.json CSP'sini denetle (CI)")
     a = ap.parse_args()
     site, out = Path(a.site).resolve(), Path(a.out).resolve()
-    check_firebase_json()
+    if a.check_csp:
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            header_csp = build_invite(Path(t))
+        check_firebase_json(header_csp, a.write_firebase_json)
+        print("CSP tamam: " + header_csp)
+        return
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
-    build_invite(out)
+    header_csp = build_invite(out)
+    check_firebase_json(header_csp, a.write_firebase_json)
     nm, tm = build_music(out, site, a.allow_missing)
     nf = build_fonts(out, site, a.allow_missing)
     (out / "assets" / "icons").mkdir(parents=True)

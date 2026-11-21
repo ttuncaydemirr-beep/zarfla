@@ -61,7 +61,7 @@
           },
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: https://firebasestorage.googleapis.com; font-src 'self'; media-src 'self'; connect-src https://firestore.googleapis.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+            "value": "default-src 'none'; script-src 'sha256-js/gapnaS4GDfk/EFbvWQSzxdTKDjXe2MIADdS35iV4='; style-src 'unsafe-inline'; img-src 'self' data: https://firebasestorage.googleapis.com; font-src 'self'; media-src 'self'; connect-src https://firestore.googleapis.com; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'none'"
           }
         ]
       },
@@ -78,7 +78,7 @@
           },
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: https://firebasestorage.googleapis.com; font-src 'self'; media-src 'self'; connect-src https://firestore.googleapis.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+            "value": "default-src 'none'; script-src 'sha256-js/gapnaS4GDfk/EFbvWQSzxdTKDjXe2MIADdS35iV4='; style-src 'unsafe-inline'; img-src 'self' data: https://firebasestorage.googleapis.com; font-src 'self'; media-src 'self'; connect-src https://firestore.googleapis.com; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'none'"
           }
         ]
       },
@@ -95,7 +95,7 @@
           },
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: https://firebasestorage.googleapis.com; font-src 'self'; media-src 'self'; connect-src https://firestore.googleapis.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+            "value": "default-src 'none'; script-src 'sha256-js/gapnaS4GDfk/EFbvWQSzxdTKDjXe2MIADdS35iV4='; style-src 'unsafe-inline'; img-src 'self' data: https://firebasestorage.googleapis.com; font-src 'self'; media-src 'self'; connect-src https://firestore.googleapis.com; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'none'"
           }
         ]
       },

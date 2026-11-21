@@ -6,25 +6,54 @@ rules_version = '2';
 // oluşturur, sonra fotoğrafları yükler; silerken önce fotoğrafları, sonra belgeyi siler.
 // Not: firestore.get() ilk yayında Firebase konsolu "Storage'ın Firestore'u okumasına izin ver"
 // iznini ister — onaylayın.
+//
+// Güvenlik denetimi M-3:
+//  - Yalnız JPEG, PNG, WebP (SVG/GIF/HTML yok); uzantı ile içerik türü eşleşmeli.
+//  - Boyut: 0 < boyut < 2 MB (uygulama: 1600 px, kalite 82 sıkıştırma + kMaxUploadBytes = 2 MB).
+//  - Herkes tek dosyayı okur (get); klasör listeleme yalnız davetiyenin sahibine (silme temizliği için).
+//  - Süresi dolmuş davetiyeye yükleme yok; silme süre dolduktan sonra da serbest (temizlik).
 
 service firebase.storage {
   match /b/{bucket}/o {
 
+    function inviteDoc(id) {
+      return firestore.get(/databases/(default)/documents/invites/$(id));
+    }
+
+    function ownsInvite(id) {
+      return request.auth != null
+          && inviteDoc(id).data.ownerUid == request.auth.uid;
+    }
+
+    function ownsActiveInvite(id) {
+      let d = inviteDoc(id).data;
+      return request.auth != null
+          && d.ownerUid == request.auth.uid
+          && d.expiresAt > request.time;
+    }
+
+    function imageMatchesName(file) {
+      let ct = request.resource.contentType;
+      return (file.matches('(cover|g[1-6])\\.webp') && ct == 'image/webp')
+          || (file.matches('(cover|g[1-6])\\.(jpg|jpeg)') && ct == 'image/jpeg')
+          || (file.matches('(cover|g[1-6])\\.png') && ct == 'image/png');
+    }
+
     match /invites/{id}/{file} {
+      allow get: if true;
+      allow list: if ownsInvite(id);
 
-      function ownsInvite() {
-        return request.auth != null
-            && firestore.get(/databases/(default)/documents/invites/$(id)).data.ownerUid == request.auth.uid;
-      }
+      allow create, update: if ownsActiveInvite(id)
+                            && imageMatchesName(file)
+                            && request.resource.size > 0
+                            && request.resource.size < 2 * 1024 * 1024;
 
-      allow read: if true;
+      allow delete: if ownsInvite(id);
+    }
 
-      allow create, update: if ownsInvite()
-                            && file.matches('(cover|g[1-6])\\.(webp|jpg|jpeg|png|gif)')
-                            && request.resource.size < 2 * 1024 * 1024
-                            && request.resource.contentType.matches('image/.*');
-
-      allow delete: if ownsInvite();
+    // Klasör listeleme isteği (invites/{id}/) için: yalnız sahibi.
+    match /invites/{id} {
+      allow list: if ownsInvite(id);
     }
 
     // Diğer her şey kapalı

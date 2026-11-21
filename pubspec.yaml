@@ -33,8 +33,11 @@ dependencies:
   # Aşama 3: redeemPurchase çağrısı (europe-west3) ve Google Play Faturalandırma (resmî eklenti, yalnız Android).
   # in_app_purchase_android doğrudan kullanılır (tüketme: consumePurchase, sahip olunan alımlar: queryPastPurchases).
   cloud_functions: ">=6.0.0"
-  in_app_purchase: ">=3.2.0"
-  in_app_purchase_android: ">=0.4.0"
+  # Güvenlik denetimi M-4 / Play Billing: faturalandırma eklentileri caret ile sabit. in_app_purchase_android 0.5.5 =
+  # Play Billing Library 9.1.0 (0.5.0+ = PBL 8; Google 31 Ağustos 2026'dan beri PBL 8+ şart). 0.4.x (PBL 7) ya da
+  # kırıcı 0.6 kendiliğinden gelmez; yükseltme bilinçli yapılır. Çözülen sürüm ve PBL sürümü CI günlüğüne yazılır.
+  in_app_purchase: ^3.2.0
+  in_app_purchase_android: ^0.5.5
   # Yerel hatırlatma bildirimleri (sunucu/FCM yok). API: 20+ adlandırılmış parametreli (initialize/zonedSchedule/cancel).
   # 23+ Flutter 3.44 / AGP 9.1 / compileSdk 37 (androidx.core 1.19) ister; uygulama compileSdk'ı Flutter varsayılanında
   # (36) kalsın diye üst sınır 23'ün altında. CI'da bu şart yüzünden Debug APK düştü (17 Kasım 2026, 23.x çözülmüştü).

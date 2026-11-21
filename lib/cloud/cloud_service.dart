@@ -402,7 +402,8 @@ class CloudService {
       return null; // yerel dosya yok → atla
     }
     final mime = PhotoStore.sniffMime(bytes);
-    if (mime == null) return null;
+    // storage.rules yalnız JPEG/PNG/WebP kabul eder; eski bir yerel GIF varsa atlanır (yükleme reddedilirdi).
+    if (mime == null || !PhotoStore.isUploadable(mime)) return null;
     if (bytes.length >= kMaxUploadBytes) throw const CloudError('photoTooBig');
     final path = storagePath(id, storageFileName(slot, mime));
     final ref = _st.ref(path);
