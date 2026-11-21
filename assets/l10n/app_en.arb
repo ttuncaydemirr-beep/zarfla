@@ -442,5 +442,7 @@
   "creditOne": "1 pass",
   "creditNone": "You have no Invitation Passes left. A new purchase is needed to publish.",
   "restoreCreditsLeft": "Purchases checked. Invitation Passes remaining: {n}",
-  "withdrawalConsent": "By purchasing, you confirm that the service starts immediately and acknowledge that your right of withdrawal therefore ends. Refund requests are handled through Google Play."
+  "withdrawalConsent": "By purchasing, you confirm that the service starts immediately and acknowledge that your right of withdrawal therefore ends. Refund requests are handled through Google Play.",
+  "termsConsent": "By publishing, you accept the {n}.",
+  "termsLinkText": "Terms of Use"
 }

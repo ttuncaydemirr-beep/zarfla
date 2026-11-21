@@ -442,5 +442,7 @@
   "creditOne": "1 hak",
   "creditNone": "Kullanılabilir Davetiye Hakkınız kalmadı. Yayınlamak için yeni bir satın alma gerekiyor.",
   "restoreCreditsLeft": "Satın alımlarınız kontrol edildi. Kalan Davetiye Hakkı: {n}",
-  "withdrawalConsent": "Satın alarak hizmetin hemen başlamasını onaylıyor ve bu nedenle cayma hakkınızın sona ereceğini kabul ediyorsunuz. İade talepleri Google Play üzerinden yapılır."
+  "withdrawalConsent": "Satın alarak hizmetin hemen başlamasını onaylıyor ve bu nedenle cayma hakkınızın sona ereceğini kabul ediyorsunuz. İade talepleri Google Play üzerinden yapılır.",
+  "termsConsent": "Yayınlayarak {n} kabul edersiniz.",
+  "termsLinkText": "Kullanım Koşulları'nı"
 }

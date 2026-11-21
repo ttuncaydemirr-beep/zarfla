@@ -15,6 +15,7 @@ import '../widgets/consent_note.dart';
 import '../widgets/invite_mini.dart';
 import '../widgets/ornament.dart';
 import '../widgets/restore_purchases.dart';
+import '../widgets/terms_note.dart';
 import 'done_screen.dart';
 
 /// Yayınla (paywall): kullanıcının KENDİ davetiyesinin kahraman önizlemesi, önerilen zümrüt "1 Davetiye Hakkı"
@@ -53,6 +54,16 @@ class _PublishScreenState extends State<PublishScreen> {
   bool _busy = false;
   String? _status;
   final _scroll = ScrollController();
+  // İlk yayında koşul satırı (null: henüz okunmadı → gizli, yanıp sönmesin).
+  bool? _termsAccepted;
+
+  @override
+  void initState() {
+    super.initState();
+    TermsConsent.isAccepted().then((v) {
+      if (mounted) setState(() => _termsAccepted = v);
+    });
+  }
 
   @override
   void dispose() {
@@ -65,6 +76,11 @@ class _PublishScreenState extends State<PublishScreen> {
     final st = context.read<AppState>();
     final inv = st.byId(widget.invId);
     if (inv == null) return;
+    // Yayınla düğmesine basmak Kullanım Koşulları'nın kabulüdür (yalnız yerelde saklanır).
+    if (_termsAccepted != true) {
+      unawaited(TermsConsent.accept());
+      _termsAccepted = true;
+    }
     setState(() {
       _busy = true;
       _status = null;
@@ -201,6 +217,7 @@ class _PublishScreenState extends State<PublishScreen> {
             _PayBar(
               lockLine: paid ? context.t('lockRulesShort') : null,
               consent: paid && !st.hasCredit,
+              terms: _termsAccepted == false,
               button: PrimaryButton(
                 label: label,
                 block: true,
@@ -520,10 +537,11 @@ class _FreeCard extends StatelessWidget {
 
 /// Alt çubuk: (ücretli seçiliyse) düğmenin hemen üstünde kilit kuralları + ana düğme.
 class _PayBar extends StatelessWidget {
-  const _PayBar({required this.button, this.lockLine, this.consent = false});
+  const _PayBar({required this.button, this.lockLine, this.consent = false, this.terms = false});
 
   final Widget button;
   final bool consent;
+  final bool terms;
   final String? lockLine;
 
   @override

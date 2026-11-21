@@ -442,5 +442,7 @@
   "creditOne": "1 Recht",
   "creditNone": "Du hast keine Einladungsrechte mehr. Zum Veröffentlichen ist ein neuer Kauf nötig.",
   "restoreCreditsLeft": "Käufe geprüft. Verbleibende Einladungsrechte: {n}",
-  "withdrawalConsent": "Mit dem Kauf bestätigen Sie, dass die Leistung sofort beginnt, und erkennen an, dass Ihr Widerrufsrecht dadurch erlischt. Erstattungen werden über Google Play beantragt."
+  "withdrawalConsent": "Mit dem Kauf bestätigen Sie, dass die Leistung sofort beginnt, und erkennen an, dass Ihr Widerrufsrecht dadurch erlischt. Erstattungen werden über Google Play beantragt.",
+  "termsConsent": "Mit der Veröffentlichung akzeptieren Sie die {n}.",
+  "termsLinkText": "Nutzungsbedingungen"
 }
