@@ -10,9 +10,9 @@ on:
         type: boolean
         default: false
       track:
-        description: "Play kanalı (internal = dahili test, alpha = kapalı test)"
+        description: "Play kanalı (internal = dahili test, alpha = kapalı test: Google TEST reklamı; production = GERÇEK reklam birimi)"
         type: choice
-        options: [internal, alpha]
+        options: [internal, alpha, production]
         default: alpha
       play_check:
         description: "Yalnızca Play API erişimini sına (yükleme yapmaz)"
@@ -106,8 +106,37 @@ jobs:
       # Hakkında ekranında hangi derlemenin yüklü olduğu görünsün). ZARFLA_BUILD aynı kodu Dart tarafına verir.
       # R8 küçültme + gizleme açık (patch_android.py: isMinifyEnabled/isShrinkResources, proguard-rules.pro).
       # Dart gizleme: --obfuscate + --split-debug-info (semboller artifact olarak saklanır, çökme izi için gerekir).
+      # Reklam (denetim N-6): internal/alpha (ve kanalı bilinmeyen push) derlemeleri Google TEST banner birimiyle yapılır
+      # (--dart-define=ZARFLA_TEST_ADS=true): testçiler gerçek reklama dokunup AdMob hesabını riske atmasın.
+      # Gerçek reklam birimi YALNIZ track=production seçilen elle çalıştırmada derlenir. Varsayılan kanal alpha → test reklamı.
       - name: Release AAB
-        run: flutter build appbundle --release --obfuscate --split-debug-info=build/symbols --build-name=1.0.$((GITHUB_RUN_NUMBER + 100)) --build-number=$((GITHUB_RUN_NUMBER + 100)) --dart-define=ZARFLA_BUILD=$((GITHUB_RUN_NUMBER + 100))
+        env:
+          TRACK: ${{ inputs.track }}
+        run: |
+          TEST_ADS_FLAG=""
+          if [ "$TRACK" != "production" ]; then
+            TEST_ADS_FLAG="--dart-define=ZARFLA_TEST_ADS=true"
+            echo "::notice::Test reklamı AÇIK (kanal: ${TRACK:-bilinmiyor}). Gerçek reklam için track=production seçin."
+          else
+            echo "::warning::PRODUCTION derlemesi: GERÇEK AdMob birimi kullanılır."
+          fi
+          flutter build appbundle --release --obfuscate --split-debug-info=build/symbols --build-name=1.0.$((GITHUB_RUN_NUMBER + 100)) --build-number=$((GITHUB_RUN_NUMBER + 100)) --dart-define=ZARFLA_BUILD=$((GITHUB_RUN_NUMBER + 100)) $TEST_ADS_FLAG
+
+      # Tehlikeli yön: production DIŞI derlemede gerçek reklam birimi AAB'de bulunmamalı (bulunursa durur).
+      # Production derlemede bulunmaması yalnız uyarıdır (dizge yakalanamamış olabilir).
+      - name: Reklam birimi denetimi
+        env:
+          TRACK: ${{ inputs.track }}
+        run: |
+          AAB=build/app/outputs/bundle/release/app-release.aab
+          REAL='ca-app-pub-3269207938446570/5079566629'
+          n=$(unzip -p "$AAB" 'base/lib/*/libapp.so' 2>/dev/null | grep -a -c "$REAL" || true)
+          if [ "$TRACK" != "production" ]; then
+            if [ "${n:-0}" -gt 0 ]; then echo "::error::Test reklamı derlemesinde GERÇEK reklam birimi bulundu"; exit 1; fi
+            echo "Reklam: test birimi (gerçek birim AAB'de yok)."
+          else
+            if [ "${n:-0}" -eq 0 ]; then echo "::warning::Production derlemesinde gerçek reklam birimi dizgesi bulunamadı (kontrol edin)"; else echo "Reklam: gerçek birim var (production)."; fi
+          fi
 
       - name: İmzayı doğrula
         env:

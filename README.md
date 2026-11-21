@@ -66,6 +66,20 @@ Elle derleme başlatmak için: Actions → Derleme → **Run workflow**.
 - **Play App Signing kullanılacak:** Play Console'a bu anahtarla imzalı AAB yüklenir; Google uygulama imza anahtarını kendisi tutar, bizim anahtarımız yalnızca *yükleme anahtarı*dır.
 - **Anahtar kaybı:** Parola ya da anahtar kaybolursa Play Console → Uygulama bütünlüğü → Uygulama imzalama → **Yükleme anahtarını sıfırla** ile yeni yükleme anahtarı tanımlanır (uygulama imzası etkilenmez). Parolayı güvenli bir yerde yedekleyin.
 
+## Reklam: test ve üretim derlemesi (denetim N-6)
+
+- **Kural:** dahili/kapalı test (internal, alpha) derlemeleri Google **test** banner birimini gösterir; testçiler ve aile gerçek
+  reklama dokunup AdMob "geçersiz trafik" uyarısı/askıya alma riski doğurmaz. Bayrak: `--dart-define=ZARFLA_TEST_ADS=true`
+  (`lib/ads/ad_config.dart`: `kTestAds`, `bannerAdUnitIdFor`). Bayrak açıkken release derleme bile test birimini kullanır.
+- **CI (`build.yml`):** "Release AAB" adımı kanal `production` DEĞİLSE bayrağı ekler. Varsayılan kanal `alpha`; `push` ile
+  tetiklenen derlemelerde de bayrak açıktır (güvenli yön). "Reklam birimi denetimi" adımı production dışı AAB'de gerçek birim
+  dizgesi bulunursa derlemeyi durdurur.
+- **ÜRETİM:** gerçek reklam geliri için Actions → Derleme → Run workflow → `track = production` seçilmeli (bayrak eklenmez,
+  gerçek birim `kBannerAdUnitIdRelease` derlenir). Elle `flutter build appbundle` ile üretim derlerken `ZARFLA_TEST_ADS`
+  verilmemelidir. Production kanala Play yüklemesi `play=true` ve onayla ayrıca yapılır; bayrak YOKKEN yüklenen internal/alpha
+  AAB'de gerçek reklam olacağı için ikisini karıştırmayın (internal/alpha için production seçmeyin).
+- AdMob'da Ayarlar → Test cihazları ile sahibin telefonları ayrıca eklenir (konsol işlemi).
+
 ## Yerelde derleme (bilgisayar varsa)
 
 ```
