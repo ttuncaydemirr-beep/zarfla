@@ -35,7 +35,7 @@ dependencies:
   cloud_functions: ">=6.0.0"
   # App Check (İZLEME kipi): istemci Play Integrity jetonu gönderir; sunucu henüz ZORLAMAZ (functions ENFORCE_APP_CHECK=false,
   # Firestore/Storage zorlaması konsoldan sonra). Sürüm CI'da firebase_core ile uyumlu en yeni olarak çözülür.
-  firebase_app_check: ">=0.4.0"
+  firebase_app_check: ">=0.5.0"
   # Güvenlik denetimi M-4 / Play Billing: faturalandırma eklentileri caret ile sabit. in_app_purchase_android 0.5.5 =
   # Play Billing Library 9.1.0 (0.5.0+ = PBL 8; Google 31 Ağustos 2026'dan beri PBL 8+ şart). 0.4.x (PBL 7) ya da
   # kırıcı 0.6 kendiliğinden gelmez; yükseltme bilinçli yapılır. Çözülen sürüm ve PBL sürümü CI günlüğüne yazılır.

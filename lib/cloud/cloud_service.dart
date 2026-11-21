@@ -68,7 +68,7 @@ class CloudService {
   Future<void> _activateAppCheck() async {
     try {
       await FirebaseAppCheck.instance
-          .activate(androidProvider: kReleaseMode ? AndroidProvider.playIntegrity : AndroidProvider.debug)
+          .activate(providerAndroid: kReleaseMode ? const AndroidPlayIntegrityProvider() : const AndroidDebugProvider())
           .timeout(const Duration(seconds: 10));
       await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
     } catch (e) {
