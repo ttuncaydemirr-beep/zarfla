@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -49,6 +50,7 @@ class CloudService {
   Future<void> init() async {
     try {
       await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      await _activateAppCheck();
       _db.settings = const Settings(persistenceEnabled: false);
       _st.setMaxUploadRetryTime(const Duration(seconds: 40));
       _st.setMaxOperationRetryTime(const Duration(seconds: 20));
@@ -57,6 +59,20 @@ class CloudService {
     } catch (e) {
       _initError = e;
       debugPrint('Firebase init failed: $e');
+    }
+  }
+
+  /// App Check (izleme kipi). Release: Play Integrity; debug/profile: debug sağlayıcı (jeton logcat'e yazılır,
+  /// Firebase konsolunda kayıtlanır). ASLA açılışı bozmaz: hata olursa uygulama jetonsuz çalışmaya devam eder
+  /// (sunucu zorlamıyor). Zorlama açılınca jetonsuz istekler reddedilir; o zaman bu davranış yeniden gözden geçirilir.
+  Future<void> _activateAppCheck() async {
+    try {
+      await FirebaseAppCheck.instance
+          .activate(androidProvider: kReleaseMode ? AndroidProvider.playIntegrity : AndroidProvider.debug)
+          .timeout(const Duration(seconds: 10));
+      await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+    } catch (e) {
+      debugPrint('App Check activation failed (continuing without token): $e');
     }
   }
 

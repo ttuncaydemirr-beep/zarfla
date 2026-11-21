@@ -18,11 +18,17 @@ const { google } = require('googleapis');
 const L = require('./src/logic');
 const S = require('./src/services');
 const ST = require('./src/stats');
+const AC = require('./src/appcheck');
 
 const REGION = 'europe-west3';
 const PROJECT_ID = 'zarfla-37da9';
 const BUCKET = 'zarfla-37da9.firebasestorage.app';
 const SERVICE_ACCOUNT = `zarfla-functions@${PROJECT_ID}.iam.gserviceaccount.com`;
+
+// App Check: false = İZLEME (istekler jetonsuz da çalışır; doğrulanmış/doğrulanmamış sayısı günlüğe yazılır).
+// true = ZORLAMA (jetonsuz/geçersiz istek reddedilir). Zorlamadan önce istemci sürümü yaygınlaşmış ve metrikler
+// temiz olmalı; aksi halde eski sürümler kırılır. Firestore/Storage zorlaması ayrı (konsoldan).
+const ENFORCE_APP_CHECK = false;
 
 setGlobalOptions({ region: REGION, serviceAccount: SERVICE_ACCOUNT, maxInstances: 5, memory: '256MiB' });
 
@@ -69,7 +75,8 @@ function deps() {
 
 /** Uygulama: satın alma → redeemPurchase → başarıda tüketme. Girdi: { inviteId, purchaseToken, productId, data }.
  *  productId zarfla_invite_1 (tek davetiye, doğrudan) ya da zarfla_invite_3 (3 hak → credits/{uid}; inviteId varsa 1'i hemen kullanılır). */
-exports.redeemPurchase = onCall({ timeoutSeconds: 60 }, async (req) => {
+exports.redeemPurchase = onCall(AC.callOptions(ENFORCE_APP_CHECK, { timeoutSeconds: 60 }), async (req) => {
+  AC.monitorAppCheck(req, 'redeemPurchase', logger);
   const uid = req.auth && req.auth.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'no-auth');
   try {
@@ -82,7 +89,8 @@ exports.redeemPurchase = onCall({ timeoutSeconds: 60 }, async (req) => {
 });
 
 /** Paket hakkı kullan: { inviteId, data } → credits/{uid}'den 1 hak düşer, davetiye ücretli yazılır (Play'e gidilmez). */
-exports.useCredit = onCall({ timeoutSeconds: 30 }, async (req) => {
+exports.useCredit = onCall(AC.callOptions(ENFORCE_APP_CHECK, { timeoutSeconds: 30 }), async (req) => {
+  AC.monitorAppCheck(req, 'useCredit', logger);
   const uid = req.auth && req.auth.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'no-auth');
   try {

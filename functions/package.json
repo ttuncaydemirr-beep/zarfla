@@ -7,7 +7,7 @@
     "node": "22"
   },
   "scripts": {
-    "check": "node --check index.js && node --check src/logic.js && node --check src/services.js && node --check src/stats.js",
+    "check": "node --check index.js && node --check src/logic.js && node --check src/services.js && node --check src/stats.js && node --check src/appcheck.js",
     "test": "node --test --test-reporter=spec test/*.test.js",
     "verify": "npm run check && npm test && node -e \"require('./index.js'); console.log('index.js loads')\""
   },

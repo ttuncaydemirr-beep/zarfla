@@ -64,7 +64,7 @@ jobs:
 
       - name: Çözülen Firebase ve faturalandırma sürümleri
         run: |
-          grep -A8 -E '^  (firebase_core|firebase_auth|cloud_firestore|firebase_storage|cloud_functions|in_app_purchase|in_app_purchase_android):' pubspec.lock || true
+          grep -A8 -E '^  (firebase_core|firebase_auth|cloud_firestore|firebase_storage|cloud_functions|firebase_app_check|in_app_purchase|in_app_purchase_android):' pubspec.lock || true
           echo "---- in_app_purchase (pub deps) ----"
           flutter pub deps --style=compact | grep -E 'in_app_purchase' || true
           echo "---- Play Billing Library (in_app_purchase_android/android) ----"
