@@ -569,6 +569,8 @@ class _PayBar extends StatelessWidget {
                 ),
               if (consent)
                 const Padding(padding: EdgeInsets.only(bottom: AppSpace.x2), child: WithdrawalConsentNote()),
+              if (terms)
+                const Padding(padding: EdgeInsets.only(bottom: AppSpace.x2), child: TermsConsentNote()),
               button,
             ],
           ),
