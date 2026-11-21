@@ -50,3 +50,25 @@ test('ücretli davetiyede alt yazı çağrılmaz; dört dilde CTA metni var', ()
     assert.ok(html.includes(s), s);
   }
 });
+
+test('Bildir bağlantısı: mailto destek adresine, konu "Zarfla bildirim <kimlik>", dört dilde etiket, her planda çağrılır', () => {
+  const a2 = html.indexOf('const REPORT_MAIL=');
+  const b2 = html.indexOf('/*MUSIC-BEGIN*/');
+  assert.ok(a2 > 0 && b2 > a2);
+  const run = (win) => {
+    const ctx = { window: win };
+    vm.createContext(ctx);
+    vm.runInContext(html.slice(a2, b2) + '\nthis.api={reportUrl,reportHtml};', ctx);
+    return ctx.api;
+  };
+  const { reportUrl, reportHtml } = run({});
+  assert.equal(reportUrl('AbCdEf123456'), 'mailto:nilkaren.tuncay.demir@gmail.com?subject=Zarfla%20bildirim%20AbCdEf123456');
+  // kimlikte tırnak/boşluk/& olamaz
+  assert.equal(reportUrl('"><x&y=1 z'), 'mailto:nilkaren.tuncay.demir@gmail.com?subject=Zarfla%20bildirim%20xy1z');
+  const h = reportHtml({ id: 'AbCdEf123456' }, { report: 'Bildir' });
+  assert.match(h, /^<a class="reportlnk" href="mailto:[^"]+" rel="noopener">Bildir<\/a>$/);
+  assert.equal(run({ ZarflaApp: {} }).reportHtml({ id: 'x' }, { report: 'Bildir' }), '');
+  // footer'da koşulsuz (showMade'e bağlı değil): ücretli davetiyede de görünür
+  assert.ok(html.includes('${reportHtml(inv,L)}</footer>`'));
+  for (const s of ['"report":"Bildir"', '"report":"Report"', '"report":"Melden"', '"report":"إبلاغ"']) assert.ok(html.includes(s), s);
+});
