@@ -13,6 +13,10 @@ on:
         description: "Mağaza görsellerini de değiştir (phoneScreenshots + featureGraphic; play-meta/storeshots/). Varsayılan KAPALI"
         type: boolean
         default: false
+      only_images:
+        description: "Yalnızca görselleri işle (listings/products adımlarını atla)"
+        type: boolean
+        default: true
       ref:
         description: "Betik ve veri dosyalarının bulunduğu dal"
         type: string
@@ -40,9 +44,11 @@ jobs:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           APPLY: ${{ inputs.apply }}
           IMAGES: ${{ inputs.images }}
+          ONLY: ${{ inputs.only_images }}
         run: |
           if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then echo "::error::PLAY_SERVICE_ACCOUNT_JSON secret'ı yok"; exit 1; fi
           ARGS=""
           if [ "$APPLY" = "true" ]; then ARGS="$ARGS --apply"; fi
           if [ "$IMAGES" = "true" ]; then ARGS="$ARGS --images"; fi
+          if [ "$IMAGES" = "true" ] && [ "$ONLY" = "true" ]; then ARGS="$ARGS --only-images"; fi
           python3 scripts/play_store_meta.py $ARGS

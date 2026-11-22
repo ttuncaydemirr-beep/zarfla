@@ -9,7 +9,8 @@ from google.auth.transport.requests import AuthorizedSession
 PKG = "com.demirgamesstudio.zarfla"
 BASE = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/" + PKG
 APPLY = "--apply" in sys.argv
-IMAGES = "--images" in sys.argv  # mağaza görsellerini (phoneScreenshots + featureGraphic) değiştir; varsayılan KAPALI
+IMAGES = "--images" in sys.argv
+ONLY_IMAGES = "--only-images" in sys.argv  # mağaza görsellerini (phoneScreenshots + featureGraphic) değiştir; varsayılan KAPALI
 DATA = json.load(open(os.path.join(os.path.dirname(__file__), "..", "play-meta", "data.json"), encoding="utf-8"))
 LIMITS = {"title": 30, "shortDescription": 80, "fullDescription": 4000}
 PRODUCT_LIMITS = {"title": 55, "description": 200}
@@ -262,7 +263,8 @@ def step_images():
             d = os.path.join(IMG_DIR, loc)
             shots = sorted(glob.glob(os.path.join(d, "0[1-8].png")))
             cur = call("GET", "/edits/%s/listings/%s/phoneScreenshots" % (eid, loc)).get("images", [])
-            print("  %s: mevcut telefon görseli=%d -> yeni=%d + feature" % (loc, len(cur), len(shots)))
+            fg = call("GET", "/edits/%s/listings/%s/featureGraphic" % (eid, loc)).get("images", [])
+            print("  %s: mevcut telefon görseli=%d, featureGraphic=%d -> yeni=%d + feature" % (loc, len(cur), len(fg), len(shots)))
             if not APPLY:
                 continue
             call("DELETE", "/edits/%s/listings/%s/phoneScreenshots" % (eid, loc))
@@ -285,7 +287,7 @@ def step_images():
                 pass
 
 
-STEPS = [("listings", step_listings), ("products", step_products)]
+STEPS = [] if ONLY_IMAGES else [("listings", step_listings), ("products", step_products)]
 if IMAGES:
     STEPS.append(("images", step_images))
 for name, fn in STEPS:
