@@ -9,7 +9,8 @@ OUT="$ROOT/out"
 LANGS="${LANGS:-tr en de ar es pt id}"
 mkdir -p "$OUT"
 
-adb install -r -g app-debug.apk >/dev/null && echo "APK kuruldu"
+adb root >/dev/null 2>&1; sleep 3; adb wait-for-device
+adb install -r -g app.apk >/dev/null && echo "APK kuruldu"
 # Temiz durum çubuğu (demo modu) ve hareketli gezinme
 adb shell settings put global sysui_demo_allowed 1
 adb shell am broadcast -a com.android.systemui.demo -e command enter >/dev/null
@@ -38,8 +39,8 @@ reseed() {
   adb shell pm clear $PKG >/dev/null
   adb push "$OUT/$1/prefs.xml" /data/local/tmp/fsp.xml >/dev/null
   adb shell chmod 644 /data/local/tmp/fsp.xml
-  adb shell run-as $PKG mkdir -p shared_prefs
-  adb shell run-as $PKG cp /data/local/tmp/fsp.xml shared_prefs/FlutterSharedPreferences.xml
+  UID_=$(adb shell stat -c %u /data/data/$PKG | tr -d '\r')
+  adb shell "mkdir -p /data/data/$PKG/shared_prefs && cp /data/local/tmp/fsp.xml /data/data/$PKG/shared_prefs/FlutterSharedPreferences.xml && chown -R $UID_:$UID_ /data/data/$PKG/shared_prefs && chmod 660 /data/data/$PKG/shared_prefs/*.xml && restorecon -R /data/data/$PKG/shared_prefs"
 }
 
 for L in $LANGS; do
@@ -82,6 +83,12 @@ for L in $LANGS; do
   shot $L 06_paywall
   swipe_up; shot $L 06b_paywall
   swipe_up; shot $L 06c_paywall
+  echo "--- JPEG base64 ($L)"
+  for f in ${EMIT:-01_home 03_gallery 03b_gallery 04_editor 04b_editor 04c_editor 05_open_2 05_open_4 05_open_6 06_paywall 06b_paywall}; do
+    [ -f "$OUT/$L/$f.png" ] || continue
+    python3 -c "from PIL import Image;Image.open('$OUT/$L/$f.png').convert('RGB').save('/tmp/e.jpg','JPEG',quality=93)"
+    echo "=====B64 $L/$f"; base64 -w 3000 /tmp/e.jpg; echo "=====END"
+  done
 done
 adb shell am broadcast -a com.android.systemui.demo -e command exit >/dev/null
 adb logcat -d | grep -E "flutter|AndroidRuntime|FATAL" | tail -40 || true

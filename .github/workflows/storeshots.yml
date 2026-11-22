@@ -1,6 +1,7 @@
 name: Mağaza görselleri (emülatör çekimi)
 # Yalnız `storeshots` dalında, .github/storeshots_run_id değişince çalışır. Play'e hiçbir şey yüklemez.
-# Satır 1: zarfla-debug-apk artifact'ının bulunduğu Derleme çalışmasının kimliği. Satır 2 (isteğe bağlı): diller.
+# Satır 1: "build" (APK'yı bu çalışmada derle) ya da önceki bir storeshots çalışmasının kimliği (onun shot-apk'sını kullan).
+# Satır 2 (isteğe bağlı): diller. Satır 3 (isteğe bağlı): EMIT için görsel adları.
 on:
   push:
     branches: [storeshots]
@@ -9,24 +10,57 @@ permissions:
   actions: read
   contents: read
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    outputs:
+      src: ${{ steps.p.outputs.src }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        run: |
+          R="$(sed -n 1p .github/storeshots_run_id)"
+          if [ "$R" = build ]; then echo "src=${{ github.run_id }}" >> $GITHUB_OUTPUT; echo "do=true" >> $GITHUB_OUTPUT; else echo "src=$R" >> $GITHUB_OUTPUT; echo "do=false" >> $GITHUB_OUTPUT; fi
+      - if: steps.p.outputs.do == 'true'
+        uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: "21" }
+      - if: steps.p.outputs.do == 'true'
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with: { channel: stable, cache: true }
+      - if: steps.p.outputs.do == 'true'
+        name: Hazırlık
+        run: |
+          bash scripts/fetch_fonts.sh
+          bash scripts/prepare_android.sh
+          flutter pub get
+          python3 tools/storeshots/apply_patch.py lib/state/app_state.dart
+      - if: steps.p.outputs.do == 'true'
+        name: Release APK (test reklamı, fiyatlar yamalı; Play'e GİTMEZ)
+        run: flutter build apk --release --dart-define=ZARFLA_TEST_ADS=true --dart-define-from-file=tools/storeshots/shot_defines.json
+      - if: steps.p.outputs.do == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: shot-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7
   emu:
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - id: rid
         run: |
-          echo "id=$(sed -n 1p .github/storeshots_run_id)" >> $GITHUB_OUTPUT
           L="$(sed -n 2p .github/storeshots_run_id)"; echo "langs=${L:-tr en de ar es pt id}" >> $GITHUB_OUTPUT
+          echo "emit=$(sed -n 3p .github/storeshots_run_id)" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@v4
         with:
-          name: zarfla-debug-apk
+          name: shot-apk
           path: dist
-          run-id: ${{ steps.rid.outputs.id }}
+          run-id: ${{ needs.build.outputs.src }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-      - name: APK
-        run: ls -la dist && cp "$(ls dist/*.apk | head -1)" app-debug.apk
+      - run: cp dist/app-release.apk app.apk && pip install -q pillow
       - name: KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -35,16 +69,14 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         env:
           LANGS: ${{ steps.rid.outputs.langs }}
+          EMIT: ${{ steps.rid.outputs.emit }}
         with:
           api-level: 34
           arch: x86_64
           target: google_apis
           profile: pixel_2
-          disable-animations: false
+          ram-size: 4096M
+          heap-size: 576M
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
           script: bash tools/storeshots/capture.sh
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: storeshots-raw
-          path: out
-          retention-days: 14

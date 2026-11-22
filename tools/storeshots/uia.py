@@ -6,7 +6,10 @@ import xml.etree.ElementTree as ET
 
 
 def adb(*a, check=False):
-    return subprocess.run(["adb", *a], capture_output=True, text=True, check=check).stdout
+    try:
+        return subprocess.run(["adb", *a], capture_output=True, text=True, check=check, timeout=45).stdout
+    except subprocess.TimeoutExpired:
+        return ""
 
 
 def nodes():
@@ -37,7 +40,7 @@ def main():
         x, ns = nodes()
         open(sys.argv[2], "w", encoding="utf-8").write(x)
         print("  UI düğümleri (%d):" % len(ns))
-        for t, cx, cy, b, cl in ns[:60]:
+        for t, cx, cy, b, cl in ns[:30]:
             print("   ", repr(t[:60].replace("\n", " ")), b)
         return 0
     if cmd == "tap":
