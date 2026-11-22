@@ -40,7 +40,7 @@ def main():
         x, ns = nodes()
         open(sys.argv[2], "w", encoding="utf-8").write(x)
         print("  UI düğümleri (%d):" % len(ns))
-        for t, cx, cy, b, cl in ns[:30]:
+        for t, cx, cy, b, cl in ns[:24]:
             print("   ", repr(t[:60].replace("\n", " ")), b)
         return 0
     if cmd == "tap":

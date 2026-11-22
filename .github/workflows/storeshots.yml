@@ -34,7 +34,10 @@ jobs:
           bash scripts/prepare_android.sh
           flutter pub get
           python3 tools/storeshots/apply_patch.py lib/state/app_state.dart
-      - if: steps.p.outputs.do == 'true'
+          # Emülatörde Impeller/Vulkan emülatörü çökertiyor: yalnız bu derlemede Skia kullan
+          M=android/app/src/main/AndroidManifest.xml
+          grep -q EnableImpeller $M || sed -i '0,/<application/s//<application/;/<\/application>/i\        <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false"/>' $M
+          grep -n -i impeller $M      - if: steps.p.outputs.do == 'true'
         name: Release APK (test reklamı, fiyatlar yamalı; Play'e GİTMEZ)
         run: flutter build apk --release --dart-define=ZARFLA_TEST_ADS=true --dart-define-from-file=tools/storeshots/shot_defines.json
       - if: steps.p.outputs.do == 'true'
@@ -75,6 +78,7 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: pixel_2
+          cores: 4
           ram-size: 4096M
           heap-size: 576M
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
