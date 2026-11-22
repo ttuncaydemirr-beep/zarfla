@@ -1,0 +1,50 @@
+name: Mağaza görselleri (emülatör çekimi)
+# Yalnız `storeshots` dalında, .github/storeshots_run_id değişince çalışır. Play'e hiçbir şey yüklemez.
+# Satır 1: zarfla-debug-apk artifact'ının bulunduğu Derleme çalışmasının kimliği. Satır 2 (isteğe bağlı): diller.
+on:
+  push:
+    branches: [storeshots]
+    paths: ['.github/storeshots_run_id']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  emu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - id: rid
+        run: |
+          echo "id=$(sed -n 1p .github/storeshots_run_id)" >> $GITHUB_OUTPUT
+          L="$(sed -n 2p .github/storeshots_run_id)"; echo "langs=${L:-tr en de ar es pt id}" >> $GITHUB_OUTPUT
+      - uses: actions/download-artifact@v4
+        with:
+          name: zarfla-debug-apk
+          path: dist
+          run-id: ${{ steps.rid.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+      - name: APK
+        run: ls -la dist && cp "$(ls dist/*.apk | head -1)" app-debug.apk
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Emülatörde çek
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          LANGS: ${{ steps.rid.outputs.langs }}
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          disable-animations: false
+          script: bash tools/storeshots/capture.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: storeshots-raw
+          path: out
+          retention-days: 14
