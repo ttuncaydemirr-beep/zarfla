@@ -72,8 +72,12 @@ def step_listings():
             same = loc in curmap and all(curmap[loc].get(k) == body[k] for k in LIMITS)
             print("  %s: %s%s title=%r short=%d full=%d" % (loc, state, " [ZATEN AYNI]" if same else "", l["title"], len(l["shortDescription"]), len(l["fullDescription"])))
             call("PUT", "/edits/%s/listings/%s" % (eid, loc), json=body)
-        v = call("POST", "/edits/%s:validate" % eid)
-        print("edits.validate: OK", v.get("id"))
+        try:
+            v = call("POST", "/edits/%s:validate" % eid)
+            print("edits.validate: OK", v.get("id"))
+        except Exception as e:
+            print("UYARI validate basarisiz:", str(e)[:200])
+            raise
         if APPLY:
             c = call("POST", "/edits/%s:commit" % eid)
             committed = True
@@ -137,11 +141,22 @@ def summarize(p, pid):
 
 def step_products():
     print("=== 2. TEK SEFERLIK URUNLER (monetization.onetimeproducts) ===")
-    ver, conv = regions_version()
-    print("regionsVersion:", ver)
+    try:
+        ver, conv = regions_version()
+        print("regionsVersion:", ver)
+    except Exception as e:
+        if APPLY:
+            raise
+        ver = None
+        print("UYARI regionsVersion alinamadi (dry-run devam):", str(e)[:200])
     for pid in ("zarfla_invite_1", "zarfla_invite_3"):
         print("--- %s ---" % pid)
-        cur = call("GET", "/onetimeproducts/%s" % pid)
+        try:
+            cur = call("GET", "/onetimeproducts/%s" % pid)
+        except Exception as e:
+            print("UYARI GET basarisiz:", str(e)[:200])
+            handle("products-get-" + pid, e)
+            continue
         print("GET (mevcut):")
         print(json.dumps(cur, ensure_ascii=False, indent=1)[:6000])
         new, po = build_product(cur, pid)
