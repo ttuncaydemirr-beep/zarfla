@@ -37,7 +37,8 @@ jobs:
           # Emülatörde Impeller/Vulkan emülatörü çökertiyor: yalnız bu derlemede Skia kullan
           M=android/app/src/main/AndroidManifest.xml
           grep -q EnableImpeller $M || sed -i '0,/<application/s//<application/;/<\/application>/i\        <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false"/>' $M
-          grep -n -i impeller $M      - if: steps.p.outputs.do == 'true'
+          grep -n -i impeller $M
+      - if: steps.p.outputs.do == 'true'
         name: Release APK (test reklamı, fiyatlar yamalı; Play'e GİTMEZ)
         run: flutter build apk --release --dart-define=ZARFLA_TEST_ADS=true --dart-define-from-file=tools/storeshots/shot_defines.json
       - if: steps.p.outputs.do == 'true'
