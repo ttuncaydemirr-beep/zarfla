@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Play Store meta: mağaza girişleri (listings), tek seferlik ürün çevirileri ve bölgesel fiyatlar.
 SA JSON yalnızca PLAY_SERVICE_ACCOUNT_JSON ortam değişkeninden okunur, asla yazdırılmaz.
-Kullanım: play_store_meta.py [--apply]"""
-import json, os, sys, copy
+Kullanım: play_store_meta.py [--apply] [--images]   (--images: play-meta/storeshots/ görselleri; varsayılan kapalı)"""
+import json, os, sys, copy, struct, glob
 from google.oauth2 import service_account
 from google.auth.transport.requests import AuthorizedSession
 
 PKG = "com.demirgamesstudio.zarfla"
 BASE = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/" + PKG
 APPLY = "--apply" in sys.argv
+IMAGES = "--images" in sys.argv  # mağaza görsellerini (phoneScreenshots + featureGraphic) değiştir; varsayılan KAPALI
 DATA = json.load(open(os.path.join(os.path.dirname(__file__), "..", "play-meta", "data.json"), encoding="utf-8"))
 LIMITS = {"title": 30, "shortDescription": 80, "fullDescription": 4000}
 PRODUCT_LIMITS = {"title": 55, "description": 200}
@@ -204,7 +205,90 @@ def step_products():
         print("Kontrol ES fiyati (degismemeli):", fmt_money(es) if es else "-")
 
 
-for name, fn in (("listings", step_listings), ("products", step_products)):
+
+# ---------------------------------------------------------------- 3. Mağaza görselleri (varsayılan KAPALI)
+UPLOAD_BASE = "https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/" + PKG
+IMG_DIR = os.path.join(os.path.dirname(__file__), "..", "play-meta", "storeshots")
+SHOT_LOCALES = ["tr-TR", "en-US", "de-DE", "ar", "es-419", "pt-BR", "id"]
+
+
+def png_info(path):
+    """(genislik, yukseklik, alfa_var_mi) — yalnız PNG başlığından; bağımlılık yok."""
+    b = open(path, "rb").read()
+    assert b[:8] == b"\x89PNG\r\n\x1a\n", "PNG degil: " + path
+    w, h, depth, ctype = struct.unpack(">IIBB", b[16:26])
+    alpha = ctype in (4, 6) or b"tRNS" in b[:2000]
+    return w, h, alpha, len(b)
+
+
+def validate_images():
+    ok = True
+    for loc in SHOT_LOCALES:
+        d = os.path.join(IMG_DIR, loc)
+        shots = sorted(glob.glob(os.path.join(d, "0[1-8].png")))
+        feat = os.path.join(d, "feature.png")
+        if not (2 <= len(shots) <= 8) or not os.path.exists(feat):
+            print("::error::[images] %s: 2-8 ekran görüntüsü ve feature.png gerekli (bulunan: %d)" % (loc, len(shots)))
+            ok = False
+            continue
+        for f in shots:
+            w, h, a, n = png_info(f)
+            lo, hi = min(w, h), max(w, h)
+            good = lo >= 320 and hi <= 3840 and hi <= 2 * lo and not a and n <= 8 * 1024 * 1024
+            print("  %s/%s %dx%d alfa=%s %.1fMB %s" % (loc, os.path.basename(f), w, h, a, n / 1048576, "OK" if good else "HATALI"))
+            ok &= good
+        w, h, a, n = png_info(feat)
+        good = (w, h) == (1024, 500) and not a and n <= 15 * 1024 * 1024
+        print("  %s/feature.png %dx%d alfa=%s %s" % (loc, w, h, a, "OK" if good else "HATALI"))
+        ok &= good
+    return ok
+
+
+def upload_image(eid, loc, itype, path):
+    r = S.post("%s/edits/%s/listings/%s/%s?uploadType=media" % (UPLOAD_BASE, eid, loc, itype),
+               data=open(path, "rb").read(), headers={"Content-Type": "image/png"}, timeout=120)
+    if r.status_code >= 400:
+        raise RuntimeError("%d|POST upload %s/%s -> %s" % (r.status_code, loc, itype, r.text[:300]))
+
+
+def step_images():
+    print("=== 3. MAGAZA GORSELLERI (edits.images: deleteall + upload) ===")
+    if not validate_images():
+        raise RuntimeError("1|gorsel dogrulama basarisiz")
+    eid = call("POST", "/edits", json={})["id"]
+    committed = False
+    try:
+        for loc in SHOT_LOCALES:
+            d = os.path.join(IMG_DIR, loc)
+            shots = sorted(glob.glob(os.path.join(d, "0[1-8].png")))
+            cur = call("GET", "/edits/%s/listings/%s/phoneScreenshots" % (eid, loc)).get("images", [])
+            print("  %s: mevcut telefon görseli=%d -> yeni=%d + feature" % (loc, len(cur), len(shots)))
+            if not APPLY:
+                continue
+            call("DELETE", "/edits/%s/listings/%s/phoneScreenshots" % (eid, loc))
+            for f in shots:
+                upload_image(eid, loc, "phoneScreenshots", f)
+            call("DELETE", "/edits/%s/listings/%s/featureGraphic" % (eid, loc))
+            upload_image(eid, loc, "featureGraphic", os.path.join(d, "feature.png"))
+        if APPLY:
+            call("POST", "/edits/%s:validate" % eid)
+            c = call("POST", "/edits/%s:commit" % eid)
+            committed = True
+            print("images edits.commit: OK", c.get("id"))
+        else:
+            print("apply=false: yükleme atlandı (yalnız doğrulama).")
+    finally:
+        if not committed:
+            try:
+                call("DELETE", "/edits/%s" % eid)
+            except Exception:
+                pass
+
+
+STEPS = [("listings", step_listings), ("products", step_products)]
+if IMAGES:
+    STEPS.append(("images", step_images))
+for name, fn in STEPS:
     try:
         fn()
     except Exception as e:
