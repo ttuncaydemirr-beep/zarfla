@@ -152,7 +152,7 @@ def step_products():
     for pid in ("zarfla_invite_1", "zarfla_invite_3"):
         print("--- %s ---" % pid)
         try:
-            cur = call("GET", "/onetimeproducts/%s" % pid)
+            cur = call("GET", "/oneTimeProducts/%s" % pid)
         except Exception as e:
             print("UYARI GET basarisiz:", str(e)[:200])
             handle("products-get-" + pid, e)
@@ -166,9 +166,9 @@ def step_products():
             print("apply=false: PATCH atlandi.")
         else:
             q = "?updateMask=listings,purchaseOptions&regionsVersion.version=%s&latencyTolerance=PRODUCT_UPDATE_LATENCY_TOLERANCE_LATENCY_SENSITIVE" % ver
-            out = call("PATCH", "/onetimeproducts/%s%s" % (pid, q), json=new)
+            out = call("PATCH", "/oneTimeProducts/%s%s" % (pid, q), json=new)
             print("PATCH: OK")
-        chk = call("GET", "/onetimeproducts/%s" % pid)
+        chk = call("GET", "/oneTimeProducts/%s" % pid)
         got = {x["languageCode"]: x for x in chk.get("listings", [])}
         ok_l = all(loc in got and got[loc]["title"] == t["title"] and got[loc]["description"] == t["description"] for loc, t in DATA["products"][pid].items())
         rc = {}
