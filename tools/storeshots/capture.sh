@@ -29,7 +29,7 @@ shot() { # $1 dil, $2 ad
   adb exec-out screencap -p > "$OUT/$1/$2.png"
   python3 "$TOOLS/uia.py" dump "$OUT/$1/$2.xml" || true
 }
-swipe_up() { adb shell input swipe 540 1500 540 700 450; sleep 1; }
+swipe_up() { adb shell input swipe 540 1250 540 450 500; sleep 1.2; }
 launch() {
   adb shell am force-stop $PKG
   adb shell am start -n $PKG/.MainActivity >/dev/null 2>&1 || adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
@@ -48,7 +48,7 @@ reseed() {
 tapx() { python3 "$TOOLS/uia.py" tap "$@"; }
 emit() { # $1 dil
   echo "--- JPEG base64 ($1)"
-  for f in ${EMIT:-01_home 03_gallery 03b_gallery 04_editor 04b_editor 04c_editor 05_open_2 05_open_4 05_open_6 06_paywall 06b_paywall}; do
+  for f in ${EMIT:-01_home 03_gallery 03b_gallery 04_editor 04b_editor 06_paywall 06b_paywall 06c_paywall 06d_paywall}; do
     [ -f "$OUT/$1/$f.png" ] || continue
     python3 -c "from PIL import Image;Image.open('$OUT/$1/$f.png').convert('RGB').save('/tmp/e.jpg','JPEG',quality=93)" || continue
     echo "=====B64 $1/$f"; base64 -w 3000 /tmp/e.jpg; echo "=====END"
@@ -67,7 +67,7 @@ step_preview() { alive || return 1
   for k in 0 1 2 3 4 5 6 7; do adb exec-out screencap -p > "$OUT/$L/05_open_$k.png"; sleep 0.9; done; }
 step_paywall() { alive || return 1
   tapx "^$(lab $L publish)\$" last; sleep 4; shot $L 06_paywall
-  swipe_up; shot $L 06b_paywall; swipe_up; shot $L 06c_paywall; }
+  swipe_up; shot $L 06b_paywall; swipe_up; shot $L 06c_paywall; swipe_up; shot $L 06d_paywall; }
 
 for L in $LANGS; do
   echo "################ DİL: $L"
@@ -77,7 +77,7 @@ for L in $LANGS; do
   mv "$OUT/$L/prefs.xml.meta.json" "$OUT/$L/meta.json"
   reseed $L
   N1=$(python3 -c "import json;print(json.load(open('$OUT/$L/meta.json'))['n1'])")
-  for st in home gallery editor preview paywall; do echo "--- $st"; step_$st || break; emit_now=1; done
+  for st in home gallery editor paywall; do echo "--- $st"; step_$st || break; emit_now=1; done
   emit $L
 done
 adb shell am broadcast -a com.android.systemui.demo -e command exit >/dev/null 2>&1
