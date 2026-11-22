@@ -46,7 +46,9 @@ test('ücretli davetiyede alt yazı çağrılmaz; dört dilde CTA metni var', ()
   assert.ok(html.includes('${showMade?madeByHtml(inv,L):""}'));
   assert.ok(html.includes('const showMade=inv.plan!=="premium";'));
   for (const s of ['"madeCta":"Sen de 2 dakikada hazırla"', '"madeCta":"Make yours in 2 minutes"',
-    '"madeCta":"Erstelle deine in 2 Minuten"', '"madeCta":"حضّر دعوتك في دقيقتين"']) {
+    '"madeCta":"Erstelle deine in 2 Minuten"', '"madeCta":"حضّر دعوتك في دقيقتين"',
+    '"madeCta":"Crea la tuya en 2 minutos"', '"madeCta":"Crie o seu em 2 minutos"',
+    '"madeCta":"Buat undangan Anda sendiri dalam 2 menit"']) {
     assert.ok(html.includes(s), s);
   }
 });
@@ -70,5 +72,6 @@ test('Bildir bağlantısı: mailto destek adresine, konu "Zarfla bildirim <kimli
   assert.equal(run({ ZarflaApp: {} }).reportHtml({ id: 'x' }, { report: 'Bildir' }), '');
   // footer'da koşulsuz (showMade'e bağlı değil): ücretli davetiyede de görünür
   assert.ok(html.includes('${reportHtml(inv,L)}</footer>`'));
-  for (const s of ['"report":"Bildir"', '"report":"Report"', '"report":"Melden"', '"report":"إبلاغ"']) assert.ok(html.includes(s), s);
+  for (const s of ['"report":"Bildir"', '"report":"Report"', '"report":"Melden"', '"report":"إبلاغ"',
+    '"report":"Reportar"', '"report":"Laporkan"']) assert.ok(html.includes(s), s);
 });

@@ -26,7 +26,7 @@ void main() {
     }
   });
 
-  test('dalga 1: 10 yeni tasarım, açılışlar (dalga 1 + dalga 3), hazır notlar (4 dilde 6 öneri), tür simgeleri', () {
+  test('dalga 1: 10 yeni tasarım, açılışlar (dalga 1 + dalga 3), hazır notlar (her dilde 6 öneri), tür simgeleri', () {
     const wave1 = ['fener', 'siyahbeyaz', 'limon', 'pampas', 'nar', 'safak', 'avize', 'sadu', 'kelebek', 'bugday'];
     for (final id in wave1) {
       expect(kThemes[id], isNotNull, reason: id);
@@ -66,7 +66,7 @@ void main() {
     expect(kTypeIconDark.difference(kEventTypes.toSet()), isEmpty);
   });
 
-  test('her tasarımda tüm renk alanları, 4 dilde ad ve süs dosyaları var', () {
+  test('her tasarımda tüm renk alanları, tüm dillerde ad ve süs dosyaları var', () {
     for (final th in kThemes.values) {
       expect(th.css.keys.toSet(), colorKeys.toSet(), reason: th.id);
       for (final l in kLangs) {
@@ -108,7 +108,7 @@ void main() {
     }
   });
 
-  test('ARB: her yeni türde 4 dilde ad/eyebrow; tek isimli yeni türlerde isim etiketi', () {
+  test('ARB: her yeni türde tüm dillerde ad/eyebrow; tek isimli yeni türlerde isim etiketi', () {
     final maps = {for (final l in kLangs) l: AppStrings.parseArb(File('assets/l10n/app_$l.arb').readAsStringSync())};
     for (final l in kLangs) {
       for (final ty in newTypes) {

@@ -44,6 +44,15 @@ const List<Country> kCountries = [
   Country('IT', '39', 'Italia'),
   Country('ES', '34', 'España'),
   Country('AU', '61', 'Australia'),
+  Country('BR', '55', 'Brasil'),
+  Country('MX', '52', 'México'),
+  Country('PT', '351', 'Portugal'),
+  Country('AR', '54', 'Argentina'),
+  Country('CO', '57', 'Colombia'),
+  Country('CL', '56', 'Chile'),
+  Country('PE', '51', 'Perú'),
+  Country('ID', '62', 'Indonesia'),
+  Country('MY', '60', 'Malaysia'),
 ];
 
 /// ISO ülke kodu → çevirme kodu (liste dışındaki ülkeler için null). KZ → +7, CA → +1.
@@ -58,6 +67,9 @@ const Map<String, String> kLangDefaultDial = {
   'de': '49',
   'ar': '966',
   'en': '44',
+  'es': '52',
+  'pt': '55',
+  'id': '62',
 };
 
 /// Ülke adları arayüz dilinde (seçici ve öneri metni için). Liste dışındaki dillerde [Country.name] kullanılır.
@@ -68,6 +80,7 @@ const Map<String, Map<String, String>> kCountryNamesByLang = {
     'QA': 'Katar', 'KW': 'Kuveyt', 'BH': 'Bahreyn', 'OM': 'Umman', 'JO': 'Ürdün', 'EG': 'Mısır', //
     'AZ': 'Azerbaycan', 'RU': 'Rusya / Kazakistan', 'GR': 'Yunanistan', 'BG': 'Bulgaristan', 'SE': 'İsveç', //
     'DK': 'Danimarka', 'NO': 'Norveç', 'IT': 'İtalya', 'ES': 'İspanya', 'AU': 'Avustralya',
+    'BR': 'Brezilya', 'MX': 'Meksika', 'PT': 'Portekiz', 'AR': 'Arjantin', 'CO': 'Kolombiya', 'CL': 'Şili', 'PE': 'Peru', 'ID': 'Endonezya', 'MY': 'Malezya',
   },
   'en': {
     'TR': 'Türkiye', 'DE': 'Germany', 'AT': 'Austria', 'CH': 'Switzerland', 'NL': 'Netherlands', 'BE': 'Belgium', //
@@ -75,6 +88,7 @@ const Map<String, Map<String, String>> kCountryNamesByLang = {
     'QA': 'Qatar', 'KW': 'Kuwait', 'BH': 'Bahrain', 'OM': 'Oman', 'JO': 'Jordan', 'EG': 'Egypt', //
     'AZ': 'Azerbaijan', 'RU': 'Russia / Kazakhstan', 'GR': 'Greece', 'BG': 'Bulgaria', 'SE': 'Sweden', //
     'DK': 'Denmark', 'NO': 'Norway', 'IT': 'Italy', 'ES': 'Spain', 'AU': 'Australia',
+    'BR': 'Brazil', 'MX': 'Mexico', 'PT': 'Portugal', 'AR': 'Argentina', 'CO': 'Colombia', 'CL': 'Chile', 'PE': 'Peru', 'ID': 'Indonesia', 'MY': 'Malaysia',
   },
   'de': {
     'TR': 'Türkei', 'DE': 'Deutschland', 'AT': 'Österreich', 'CH': 'Schweiz', 'NL': 'Niederlande', 'BE': 'Belgien', //
@@ -82,6 +96,7 @@ const Map<String, Map<String, String>> kCountryNamesByLang = {
     'QA': 'Katar', 'KW': 'Kuwait', 'BH': 'Bahrain', 'OM': 'Oman', 'JO': 'Jordanien', 'EG': 'Ägypten', //
     'AZ': 'Aserbaidschan', 'RU': 'Russland / Kasachstan', 'GR': 'Griechenland', 'BG': 'Bulgarien', 'SE': 'Schweden', //
     'DK': 'Dänemark', 'NO': 'Norwegen', 'IT': 'Italien', 'ES': 'Spanien', 'AU': 'Australien',
+    'BR': 'Brasilien', 'MX': 'Mexiko', 'PT': 'Portugal', 'AR': 'Argentinien', 'CO': 'Kolumbien', 'CL': 'Chile', 'PE': 'Peru', 'ID': 'Indonesien', 'MY': 'Malaysia',
   },
   'ar': {
     'TR': 'تركيا', 'DE': 'ألمانيا', 'AT': 'النمسا', 'CH': 'سويسرا', 'NL': 'هولندا', 'BE': 'بلجيكا', //
@@ -89,6 +104,31 @@ const Map<String, Map<String, String>> kCountryNamesByLang = {
     'QA': 'قطر', 'KW': 'الكويت', 'BH': 'البحرين', 'OM': 'عُمان', 'JO': 'الأردن', 'EG': 'مصر', //
     'AZ': 'أذربيجان', 'RU': 'روسيا / كازاخستان', 'GR': 'اليونان', 'BG': 'بلغاريا', 'SE': 'السويد', //
     'DK': 'الدنمارك', 'NO': 'النرويج', 'IT': 'إيطاليا', 'ES': 'إسبانيا', 'AU': 'أستراليا',
+    'BR': 'البرازيل', 'MX': 'المكسيك', 'PT': 'البرتغال', 'AR': 'الأرجنتين', 'CO': 'كولومبيا', 'CL': 'تشيلي', 'PE': 'بيرو', 'ID': 'إندونيسيا', 'MY': 'ماليزيا',
+  },
+  'es': {
+    'TR': 'Turquía', 'DE': 'Alemania', 'AT': 'Austria', 'CH': 'Suiza', 'NL': 'Países Bajos', 'BE': 'Bélgica', //
+    'FR': 'Francia', 'GB': 'Reino Unido', 'US': 'EE. UU. / Canadá', 'SA': 'Arabia Saudita', 'AE': 'EAU', //
+    'QA': 'Catar', 'KW': 'Kuwait', 'BH': 'Baréin', 'OM': 'Omán', 'JO': 'Jordania', 'EG': 'Egipto', //
+    'AZ': 'Azerbaiyán', 'RU': 'Rusia / Kazajistán', 'GR': 'Grecia', 'BG': 'Bulgaria', 'SE': 'Suecia', //
+    'DK': 'Dinamarca', 'NO': 'Noruega', 'IT': 'Italia', 'ES': 'España', 'AU': 'Australia',
+    'BR': 'Brasil', 'MX': 'México', 'PT': 'Portugal', 'AR': 'Argentina', 'CO': 'Colombia', 'CL': 'Chile', 'PE': 'Perú', 'ID': 'Indonesia', 'MY': 'Malasia',
+  },
+  'pt': {
+    'TR': 'Turquia', 'DE': 'Alemanha', 'AT': 'Áustria', 'CH': 'Suíça', 'NL': 'Países Baixos', 'BE': 'Bélgica', //
+    'FR': 'França', 'GB': 'Reino Unido', 'US': 'EUA / Canadá', 'SA': 'Arábia Saudita', 'AE': 'EAU', //
+    'QA': 'Catar', 'KW': 'Kuwait', 'BH': 'Bahrein', 'OM': 'Omã', 'JO': 'Jordânia', 'EG': 'Egito', //
+    'AZ': 'Azerbaijão', 'RU': 'Rússia / Cazaquistão', 'GR': 'Grécia', 'BG': 'Bulgária', 'SE': 'Suécia', //
+    'DK': 'Dinamarca', 'NO': 'Noruega', 'IT': 'Itália', 'ES': 'Espanha', 'AU': 'Austrália',
+    'BR': 'Brasil', 'MX': 'México', 'PT': 'Portugal', 'AR': 'Argentina', 'CO': 'Colômbia', 'CL': 'Chile', 'PE': 'Peru', 'ID': 'Indonésia', 'MY': 'Malásia',
+  },
+  'id': {
+    'TR': 'Turki', 'DE': 'Jerman', 'AT': 'Austria', 'CH': 'Swiss', 'NL': 'Belanda', 'BE': 'Belgia', //
+    'FR': 'Prancis', 'GB': 'Inggris Raya', 'US': 'AS / Kanada', 'SA': 'Arab Saudi', 'AE': 'UEA', //
+    'QA': 'Qatar', 'KW': 'Kuwait', 'BH': 'Bahrain', 'OM': 'Oman', 'JO': 'Yordania', 'EG': 'Mesir', //
+    'AZ': 'Azerbaijan', 'RU': 'Rusia / Kazakhstan', 'GR': 'Yunani', 'BG': 'Bulgaria', 'SE': 'Swedia', //
+    'DK': 'Denmark', 'NO': 'Norwegia', 'IT': 'Italia', 'ES': 'Spanyol', 'AU': 'Australia',
+    'BR': 'Brasil', 'MX': 'Meksiko', 'PT': 'Portugal', 'AR': 'Argentina', 'CO': 'Kolombia', 'CL': 'Cile', 'PE': 'Peru', 'ID': 'Indonesia', 'MY': 'Malaysia',
   },
 };
 

@@ -36,7 +36,7 @@ String? dialForCountry(String? iso) {
   return null;
 }
 
-/// Varsayılan ülke kodu: önce davetiye dilinin ülkesi (tr→+90, de→+49, ar→+966, en→+44), dil eşlemesi
+/// Varsayılan ülke kodu: önce davetiye dilinin ülkesi (tr→+90, de→+49, ar→+966, en→+44, es→+52, pt→+55, id→+62), dil eşlemesi
 /// yoksa cihazın ülkesi, en sonda +90. Cihaz bölgesi farklıysa seçici [deviceDialHint] ile öne çıkarılır.
 String defaultDial({String? deviceCountry, String lang = 'tr'}) {
   return kLangDefaultDial[lang] ?? dialForCountry(deviceCountry) ?? '90';

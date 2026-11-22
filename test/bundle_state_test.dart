@@ -51,7 +51,7 @@ void main() {
     expect(st.creditBalance, 2);
   });
 
-  test('yeni metinler 4 dilde var; tasarruf rozeti yer tutucu {n} içerir', () {
+  test('yeni metinler tüm dillerde var; tasarruf rozeti yer tutucu {n} içerir', () {
     final s = arbStrings();
     for (final l in kLangs) {
       for (final k in ['bundleName', 'bundleSub', 'bundleP', 'bundleSave', 'creditsLeft1', 'creditsLeft2', 'creditsLeftN',

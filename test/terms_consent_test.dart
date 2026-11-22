@@ -21,7 +21,7 @@ void main() {
     expect((await SharedPreferences.getInstance()).getInt(kTermsAcceptedKey), 1000);
   });
 
-  test('koşul satırı dört dilde var ve {n} yer tutucusu içeriyor', () {
+  test('koşul satırı tüm dillerde var ve {n} yer tutucusu içeriyor', () {
     for (final l in kLangs) {
       final m = AppStrings.parseArb(File('assets/l10n/app_$l.arb').readAsStringSync());
       expect(m['termsConsent'], contains('{n}'), reason: l);

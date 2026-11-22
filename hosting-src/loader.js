@@ -13,7 +13,10 @@
     tr:{title:"Davetiye · Zarfla",loading:"Davetiyeniz hazırlanıyor…",gone:"Bu davetiyenin süresi dolmuş ya da bağlantı hatalı.",err:"Bağlantı kurulamadı, tekrar deneyin",retry:"Tekrar",make:"Zarfla ile sen de 2 dakikada davetiye hazırla"},
     en:{title:"Invitation · Zarfla",loading:"Preparing your invitation…",gone:"This invitation has expired or the link is incorrect.",err:"Could not connect, please try again",retry:"Try again",make:"Make your own invitation with Zarfla in 2 minutes"},
     de:{title:"Einladung · Zarfla",loading:"Ihre Einladung wird vorbereitet …",gone:"Diese Einladung ist abgelaufen oder der Link ist fehlerhaft.",err:"Verbindung fehlgeschlagen, bitte erneut versuchen",retry:"Erneut versuchen",make:"Erstelle mit Zarfla in 2 Minuten deine eigene Einladung"},
-    ar:{title:"دعوة · Zarfla",loading:"جارٍ تحضير دعوتك…",gone:"انتهت صلاحية هذه الدعوة أو أن الرابط غير صحيح.",err:"تعذّر الاتصال، حاول مرة أخرى",retry:"إعادة المحاولة",make:"حضّر دعوتك أنت أيضًا مع Zarfla في دقيقتين"}
+    ar:{title:"دعوة · Zarfla",loading:"جارٍ تحضير دعوتك…",gone:"انتهت صلاحية هذه الدعوة أو أن الرابط غير صحيح.",err:"تعذّر الاتصال، حاول مرة أخرى",retry:"إعادة المحاولة",make:"حضّر دعوتك أنت أيضًا مع Zarfla في دقيقتين"},
+    es:{title:"Invitación · Zarfla",loading:"Preparando tu invitación…",gone:"Esta invitación venció o el enlace es incorrecto.",err:"No se pudo conectar, inténtalo de nuevo",retry:"Reintentar",make:"Crea tu propia invitación con Zarfla en 2 minutos"},
+    pt:{title:"Convite · Zarfla",loading:"Preparando o seu convite…",gone:"Este convite expirou ou o link está incorreto.",err:"Não foi possível conectar, tente de novo",retry:"Tentar de novo",make:"Crie o seu convite com o Zarfla em 2 minutos"},
+    id:{title:"Undangan · Zarfla",loading:"Menyiapkan undangan Anda…",gone:"Undangan ini sudah kedaluwarsa atau tautannya salah.",err:"Tidak dapat terhubung, silakan coba lagi",retry:"Coba lagi",make:"Buat undangan Anda sendiri dengan Zarfla dalam 2 menit"}
   };
   function pickLang(){
     const n=(navigator.languages&&navigator.languages.length)?navigator.languages:[navigator.language||"tr"];

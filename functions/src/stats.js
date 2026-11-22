@@ -15,7 +15,7 @@ const DAY_MS = 24 * H;
 const PAGE_SIZE = 200;
 /** Bir boyutta (tür, tasarım...) en çok bu kadar farklı anahtar; fazlası "other" (istemci metnine bağlı anahtar patlamasına karşı). */
 const MAX_KEYS = 40;
-const LANGS = new Set(['tr', 'en', 'de', 'ar']);
+const LANGS = new Set(['tr', 'en', 'de', 'ar', 'es', 'pt', 'id']);
 const PLANS = new Set(['free', 'paid']);
 const TOKEN_RE = /^[a-z0-9_-]{1,40}$/;
 const DAY_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;

@@ -64,7 +64,8 @@ Future<void> _start() async {
     cloud: cloud,
     billing: BillingService(),
   );
-  await _step('state', state.init, timeout: const Duration(seconds: 15));
+  await _step('state', () => state.init(deviceLang: WidgetsBinding.instance.platformDispatcher.locale.languageCode),
+      timeout: const Duration(seconds: 15));
   runApp(ChangeNotifierProvider<AppState>.value(value: state, child: const ZarflaApp()));
 
   if (StartupLog.safeMode) {

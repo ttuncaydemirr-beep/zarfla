@@ -19,6 +19,13 @@ import '../startup/startup_log.dart';
 import '../storage/invitation_store.dart';
 import '../storage/photo_store.dart';
 
+/// Ilk açılışta cihaz diline göre arayüz dili: yalnız yeni diller (es/pt/id) otomatik seçilir; yoksa null.
+String? firstRunLang(String? deviceLang) {
+  final c = (deviceLang ?? '').toLowerCase();
+  const auto = ['es', 'pt', 'id'];
+  return auto.contains(c) ? c : null;
+}
+
 /// Uygulama durumu: tek ChangeNotifier + provider.
 /// Neden provider: tek ekranlı akış ve az sayıda paylaşılan durum için en sade,
 /// en yaygın ve kod üretimi gerektirmeyen seçenek (riverpod'a gerek yok).
@@ -52,7 +59,10 @@ class AppState extends ChangeNotifier {
 
   /// Açılış yüklemesi. Her adım ayrı korunur: biri başarısız olursa (eski sürümün verisi, eklenti hatası)
   /// kaydedilir ve diğerleri yine çalışır; bu işlev hiçbir koşulda istisna fırlatmaz.
-  Future<void> init() async {
+  ///
+  /// [deviceLang]: cihazın dil kodu (ör. "es"). YALNIZ kayıtlı bir dil seçimi yoksa (ilk açılış) ve cihaz dili
+  /// desteklenen yeni dillerden (es/pt/id) biriyse o dil seçilir; diğer cihazlarda varsayılan Türkçe kalır.
+  Future<void> init({String? deviceLang}) async {
     Future<void> step(String name, Future<void> Function() fn) async {
       try {
         await fn();
@@ -64,7 +74,11 @@ class AppState extends ChangeNotifier {
     await step('photos', _photos.init);
     await step('lang', () async {
       final l = await _store.loadLang();
-      if (l != null && kLangs.contains(l)) lang = l;
+      if (l != null && kLangs.contains(l)) {
+        lang = l;
+      } else if (l == null) {
+        lang = firstRunLang(deviceLang) ?? lang;
+      }
     });
     await step('premium', () async => premiumUser = await _store.loadPremiumUser());
     await step('invitations', () async {

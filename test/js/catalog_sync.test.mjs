@@ -53,8 +53,8 @@ test('her yeni düzenin render dalı var (klasik varsayılana düşmez)', () => 
   for (const k of WAVE3_LAYOUTS) assert.ok(html.includes(`.lay-${k}`), 'CSS yok: ' + k);
 });
 
-test('4 dilde lay_*/opn_* etiketleri', () => {
-  for (const l of ['tr', 'en', 'de', 'ar']) {
+test('7 dilde lay_*/opn_* etiketleri', () => {
+  for (const l of ['tr', 'en', 'de', 'ar', 'es', 'pt', 'id']) {
     const arb = JSON.parse(rd(`assets/l10n/app_${l}.arb`));
     for (const k of kLayouts) assert.ok(String(arb['lay_' + k] || '').trim(), `${l}: lay_${k}`);
     for (const k of kOpenings) assert.ok(String(arb['opn_' + k] || '').trim(), `${l}: opn_${k}`);

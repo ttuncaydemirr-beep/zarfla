@@ -130,6 +130,9 @@ describe('stats · gün hesapları', () => {
 describe('stats · toplama', () => {
   test('inviteTraits: yalnız lang/layout/opening; bozuk ve kötü niyetli değerler "other"', () => {
     assert.deepEqual(ST.inviteTraits(dataJson({ lang: 'de', layout: 'modern', opening: 'envelope' })), { lang: 'de', layout: 'modern', opening: 'envelope' });
+    for (const lang of ['tr', 'en', 'ar', 'es', 'pt', 'id']) {
+      assert.equal(ST.inviteTraits(dataJson({ lang, layout: 'modern', opening: 'envelope' })).lang, lang, lang);
+    }
     assert.deepEqual(ST.inviteTraits('{bozuk'), { lang: 'other', layout: 'other', opening: 'other' });
     assert.deepEqual(ST.inviteTraits(undefined), { lang: 'other', layout: 'other', opening: 'other' });
     assert.deepEqual(ST.inviteTraits('[1]'), { lang: 'other', layout: 'other', opening: 'other' });

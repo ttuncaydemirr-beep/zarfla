@@ -182,7 +182,7 @@ void main() {
     }
   });
 
-  test('yer tutucu isimler kişi adı değil ve 4 dilde var', () {
+  test('yer tutucu isimler kişi adı değil ve tüm dillerde var', () {
     for (final l in kLangs) {
       final m = AppStrings.parseArb(File('assets/l10n/app_$l.arb').readAsStringSync());
       for (final k in ['sampleA', 'sampleB', 'sampleParentA', 'sampleParentB', 'sampleOne', 'amp']) {

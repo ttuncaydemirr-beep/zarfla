@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../data/catalog.dart';
 import '../l10n/strings.dart';
 import '../logic/lock_rules.dart';
+import '../logic/type_order.dart';
 import '../models/invitation.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -41,7 +42,7 @@ class TypeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.watch<AppState>();
+    final lang = context.watch<AppState>().lang;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -61,7 +62,7 @@ class TypeScreen extends StatelessWidget {
                     crossAxisSpacing: 10,
                     childAspectRatio: 1.3,
                     children: [
-                      for (final ty in kEventTypes)
+                      for (final ty in eventTypesFor(lang))
                         _Tile(
                           label: context.t('type_$ty'),
                           orn: kTypeIcon[ty] ?? 'o-papatya',

@@ -37,6 +37,12 @@ String intlLocale(String lang) {
       return 'de';
     case 'ar':
       return 'ar';
+    case 'es':
+      return 'es';
+    case 'pt':
+      return 'pt_BR';
+    case 'id':
+      return 'id';
     default:
       return 'tr';
   }

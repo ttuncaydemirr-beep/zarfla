@@ -39,9 +39,9 @@ void main() {
     });
 
     test('listede olmayan ülke diğer moduna geçer', () {
-      final r = normalizeLocalInput('+55 11 91234 5678', '90');
+      final r = normalizeLocalInput('+81 90 1234 5678', '90');
       expect(r.parts.dial, '');
-      expect(composeWa(r.parts.dial, r.parts.local), '5511912345678');
+      expect(composeWa(r.parts.dial, r.parts.local), '819012345678');
     });
   });
 
@@ -71,9 +71,9 @@ void main() {
     });
 
     test('bilinmeyen ülke korunur, boş kayıt varsayılanı alır', () {
-      final p = parsePhone('5511912345678', fallbackDial: '90');
+      final p = parsePhone('819012345678', fallbackDial: '90');
       expect(p.dial, '');
-      expect(p.local, '5511912345678');
+      expect(p.local, '819012345678');
       final e = parsePhone('', fallbackDial: '49');
       expect(e.dial, '49');
       expect(e.local, '');
@@ -98,17 +98,22 @@ void main() {
       expect(defaultDial(deviceCountry: 'BR', lang: 'ar'), '966');
       expect(defaultDial(lang: 'de'), '49');
       expect(defaultDial(lang: 'en'), '44');
+      expect(defaultDial(lang: 'es'), '52');
+      expect(defaultDial(lang: 'pt'), '55');
+      expect(defaultDial(lang: 'id'), '62');
       expect(defaultDial(deviceCountry: 'kz', lang: 'xx'), '7');
       expect(defaultDial(deviceCountry: 'CA', lang: 'xx'), '1');
       expect(defaultDial(lang: 'xx'), '90');
       expect(dialForCountry('at'), '43');
-      expect(dialForCountry('BR'), isNull);
+      expect(dialForCountry('BR'), '55');
+      expect(dialForCountry('JP'), isNull);
     });
 
     test('cihaz bölgesi seçili koddan farklıysa seçici öne çıkarılır', () {
       expect(deviceDialHint(deviceCountry: 'DE', currentDial: '90'), '49');
       expect(deviceDialHint(deviceCountry: 'TR', currentDial: '90'), isNull);
-      expect(deviceDialHint(deviceCountry: 'BR', currentDial: '90'), isNull);
+      expect(deviceDialHint(deviceCountry: 'BR', currentDial: '90'), '55');
+      expect(deviceDialHint(deviceCountry: 'JP', currentDial: '90'), isNull);
       expect(deviceDialHint(currentDial: '90'), isNull);
     });
 
@@ -138,8 +143,8 @@ void main() {
       expect(formatLocalNumber('90', ''), '');
     });
 
-    test('ülke adları dört dilde, her ülke için', () {
-      for (final l in ['tr', 'en', 'de', 'ar']) {
+    test('ülke adları yedi dilde, her ülke için', () {
+      for (final l in ['tr', 'en', 'de', 'ar', 'es', 'pt', 'id']) {
         for (final c in kCountries) {
           expect(kCountryNamesByLang[l]![c.iso], isNotNull, reason: '$l/${c.iso}');
         }
