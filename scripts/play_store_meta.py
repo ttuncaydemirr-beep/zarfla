@@ -129,7 +129,7 @@ def build_product(cur, pid):
         c.setdefault("availability", "AVAILABLE")
         cfgs[region] = c
     # eurozone: every region whose CURRENT currency is EUR (derived from GET)
-    eur_regions = sorted(r for r, c in cfgs.items() if c.get("price", {}).get("currencyCode") == "EUR")
+    eur_regions = sorted(r for r, c in cfgs.items() if c.get("price", {}).get("currencyCode") == "EUR" and r not in DATA["eur"].get("exclude", []))
     u, n = money(DATA["eur"][pid])
     for r in eur_regions:
         cfgs[r]["price"] = {"currencyCode": "EUR", "units": str(u), "nanos": n}
@@ -176,7 +176,7 @@ def step_products():
         print("GET (mevcut):")
         print(json.dumps(cur, ensure_ascii=False, indent=1)[:6000])
         new, po = build_product(cur, pid)
-        eur_regions_seen[pid] = sorted(c["regionCode"] for c in po["regionalPricingAndAvailabilityConfigs"] if c.get("price", {}).get("currencyCode") == "EUR")
+        eur_regions_seen[pid] = sorted(c["regionCode"] for c in po["regionalPricingAndAvailabilityConfigs"] if c.get("price", {}).get("currencyCode") == "EUR" and c["regionCode"] not in DATA["eur"].get("exclude", []) and c.get("price") == {"currencyCode": "EUR", "units": str(money(DATA["eur"][pid])[0]), "nanos": money(DATA["eur"][pid])[1]})
         print("Planlanan durum:")
         summarize(new, pid)
         if not APPLY:
