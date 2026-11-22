@@ -325,4 +325,4 @@ const Map<String, String> kTypeIcon = {'nisan': 'o-sakayik', 'dugun': 'o-kemer',
 const Set<String> kTypeIconDark = {'dugun', 'kurumsal', 'diger'};
 
 /// Fiyat etiketleri (Aşama 3'te Google Play fiyatıyla değişecek).
-const Map<String, String> kPriceLabel = {"tr": "399 TL", "en": "€9.99", "de": "9,99 €", "ar": "39,99 ر.س", "es": "9,99 €", "pt": "R$ 39,90", "id": "Rp 99.000"};
+const Map<String, String> kPriceLabel = {"tr": "399 TL", "en": "€9.99", "de": "9,99 €", "ar": "39,99 ر.س", "es": "9,99 €", "pt": "R\$ 39,90", "id": "Rp 99.000"};
