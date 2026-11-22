@@ -183,7 +183,7 @@ def step_products():
             print("apply=false: PATCH atlandi.")
         else:
             q = "?updateMask=listings,purchaseOptions&regionsVersion.version=%s&latencyTolerance=PRODUCT_UPDATE_LATENCY_TOLERANCE_LATENCY_SENSITIVE" % ver
-            out = call("PATCH", "/oneTimeProducts/%s%s" % (pid, q), json=new)
+            out = call("PATCH", "/onetimeproducts/%s%s" % (pid, q), json=new)
             print("PATCH: OK")
         chk = call("GET", "/oneTimeProducts/%s" % pid)
         got = {x["languageCode"]: x for x in chk.get("listings", [])}
