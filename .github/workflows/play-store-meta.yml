@@ -1,0 +1,40 @@
+name: Play mağaza meta
+
+# Elle çalışır. apply=false: doğrula + oku (hiçbir şey değişmez). apply=true: uygula.
+# Kanallara/sürümlere dokunmaz; derleme veya AAB yüklemesi yapmaz.
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Değişiklikleri Play'e uygula (false = yalnızca doğrula/oku)"
+        type: boolean
+        default: false
+      ref:
+        description: "Betik ve veri dosyalarının bulunduğu dal"
+        type: string
+        default: playmeta
+
+permissions:
+  contents: read
+
+concurrency:
+  group: play-store-meta
+  cancel-in-progress: false
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Bağımlılıklar
+        run: pip install -q google-auth requests
+      - name: Mağaza girişleri, ürün çevirileri ve fiyatlar
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          APPLY: ${{ inputs.apply }}
+        run: |
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then echo "::error::PLAY_SERVICE_ACCOUNT_JSON secret'ı yok"; exit 1; fi
+          if [ "$APPLY" = "true" ]; then python3 scripts/play_store_meta.py --apply; else python3 scripts/play_store_meta.py; fi
