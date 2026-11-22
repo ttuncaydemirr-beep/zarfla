@@ -62,5 +62,10 @@
    "zarfla_invite_3": 349,
    "currency": "MXN"
   }
+ },
+ "eur": {
+  "currency": "EUR",
+  "zarfla_invite_1": 9.99,
+  "zarfla_invite_3": 22.99
  }
 }

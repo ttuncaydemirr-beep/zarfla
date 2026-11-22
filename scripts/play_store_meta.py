@@ -12,6 +12,7 @@ APPLY = "--apply" in sys.argv
 DATA = json.load(open(os.path.join(os.path.dirname(__file__), "..", "play-meta", "data.json"), encoding="utf-8"))
 LIMITS = {"title": 30, "shortDescription": 80, "fullDescription": 4000}
 PRODUCT_LIMITS = {"title": 55, "description": 200}
+eur_regions_seen = {}
 failures = []
 perm_denied = []
 
@@ -127,7 +128,22 @@ def build_product(cur, pid):
         c["price"] = {"currencyCode": pr["currency"], "units": str(u), "nanos": n}
         c.setdefault("availability", "AVAILABLE")
         cfgs[region] = c
+    # eurozone: every region whose CURRENT currency is EUR (derived from GET)
+    eur_regions = sorted(r for r, c in cfgs.items() if c.get("price", {}).get("currencyCode") == "EUR")
+    u, n = money(DATA["eur"][pid])
+    for r in eur_regions:
+        cfgs[r]["price"] = {"currencyCode": "EUR", "units": str(u), "nanos": n}
     po["regionalPricingAndAvailabilityConfigs"] = list(cfgs.values())
+    # before -> after table
+    old = {c["regionCode"]: c.get("price") for po0 in cur.get("purchaseOptions", []) if po0.get("purchaseOptionId") == "buy" for c in po0.get("regionalPricingAndAvailabilityConfigs", [])}
+    print("ONCE -> SONRA fiyat tablosu (%s), EUR bolgeleri: %s" % (pid, eur_regions))
+    changed = 0
+    for r in sorted(cfgs):
+        a, b = old.get(r), cfgs[r].get("price")
+        if a != b:
+            changed += 1
+            print("  %-3s %-24s -> %s" % (r, fmt_money(a) if a else "-", fmt_money(b) if b else "-"))
+    print("  degisen bolge: %d, degismeyen: %d" % (changed, len(cfgs) - changed))
     return new, po
 
 
@@ -160,6 +176,7 @@ def step_products():
         print("GET (mevcut):")
         print(json.dumps(cur, ensure_ascii=False, indent=1)[:6000])
         new, po = build_product(cur, pid)
+        eur_regions_seen[pid] = sorted(c["regionCode"] for c in po["regionalPricingAndAvailabilityConfigs"] if c.get("price", {}).get("currencyCode") == "EUR")
         print("Planlanan durum:")
         summarize(new, pid)
         if not APPLY:
@@ -176,7 +193,7 @@ def step_products():
             if po2.get("purchaseOptionId") == "buy":
                 rc = {c["regionCode"]: c for c in po2.get("regionalPricingAndAvailabilityConfigs", [])}
         ok_p = True
-        for region, pr in DATA["prices"].items():
+        for region, pr in list(DATA["prices"].items()) + [(r, DATA["eur"]) for r in eur_regions_seen.get(pid, [])]:
             u, n = money(pr[pid])
             m = rc.get(region, {}).get("price", {})
             good = m.get("currencyCode") == pr["currency"] and int(m.get("units", 0)) == u and int(m.get("nanos", 0)) == n
