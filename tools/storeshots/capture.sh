@@ -70,11 +70,9 @@ step_paywall() { alive || return 1
   swipe_up; shot $L 06b_paywall; swipe_up; shot $L 06c_paywall; swipe_up; shot $L 06d_paywall; }
 
 step_paywallv() { alive || return 1
-  for d in 650 750 850 950; do
-    tapx "^$(lab $L publish)\$" last; sleep 3.5
-    adb shell input swipe 540 1350 540 $((1350-d)) 1000; sleep 1.5; shot $L 06v_$d
-    adb shell input keyevent KEYCODE_BACK; sleep 1.5
-  done; }
+  tapx "^$(lab $L publish)\$" last; sleep 4
+  adb shell input swipe 540 1250 540 550 1000; sleep 1.5; shot $L 06v_a
+  for k in b c d e; do adb shell input swipe 540 1250 540 1170 900; sleep 1.5; shot $L 06v_$k; done; }
 
 for L in $LANGS; do
   echo "################ DİL: $L"
