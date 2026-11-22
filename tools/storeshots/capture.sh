@@ -69,6 +69,13 @@ step_paywall() { alive || return 1
   tapx "^$(lab $L publish)\$" last; sleep 4; shot $L 06_paywall
   swipe_up; shot $L 06b_paywall; swipe_up; shot $L 06c_paywall; swipe_up; shot $L 06d_paywall; }
 
+step_paywallv() { alive || return 1
+  for d in 650 750 850 950; do
+    tapx "^$(lab $L publish)\$" last; sleep 3.5
+    adb shell input swipe 540 1350 540 $((1350-d)) 1000; sleep 1.5; shot $L 06v_$d
+    adb shell input keyevent KEYCODE_BACK; sleep 1.5
+  done; }
+
 for L in $LANGS; do
   echo "################ DİL: $L"
   alive || break
@@ -77,7 +84,7 @@ for L in $LANGS; do
   mv "$OUT/$L/prefs.xml.meta.json" "$OUT/$L/meta.json"
   reseed $L
   N1=$(python3 -c "import json;print(json.load(open('$OUT/$L/meta.json'))['n1'])")
-  for st in home gallery editor paywall; do echo "--- $st"; step_$st || break; emit_now=1; done
+  for st in ${STEPS:-home gallery editor paywall}; do echo "--- $st"; step_$st || break; emit_now=1; done
   emit $L
 done
 adb shell am broadcast -a com.android.systemui.demo -e command exit >/dev/null 2>&1

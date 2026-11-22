@@ -57,6 +57,7 @@ jobs:
         run: |
           L="$(sed -n 2p .github/storeshots_run_id)"; echo "langs=${L:-tr en de ar es pt id}" >> $GITHUB_OUTPUT
           echo "emit=$(sed -n 3p .github/storeshots_run_id)" >> $GITHUB_OUTPUT
+          echo "steps=$(sed -n 4p .github/storeshots_run_id)" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@v4
         with:
           name: shot-apk
@@ -74,6 +75,7 @@ jobs:
         env:
           LANGS: ${{ steps.rid.outputs.langs }}
           EMIT: ${{ steps.rid.outputs.emit }}
+          STEPS: ${{ steps.rid.outputs.steps }}
         with:
           api-level: 34
           arch: x86_64
