@@ -74,6 +74,14 @@ step_paywallv() { alive || return 1
   adb shell input swipe 540 1250 540 550 1000; sleep 1.5; shot $L 06v_a
   for k in b c d e; do adb shell input swipe 540 1250 540 1170 900; sleep 1.5; shot $L 06v_$k; done; }
 
+step_paywalltall() { alive || return 1
+  adb shell wm size 1080x2400; sleep 2
+  launch 7; tapx "$N1" first; sleep 3
+  tapx "^$(lab $L publish)\$" last; sleep 4; shot $L 07_a
+  adb shell input swipe 540 1700 540 1100 1000; sleep 1.5; shot $L 07_b
+  for k in c d; do adb shell input swipe 540 1700 540 1630 900; sleep 1.5; shot $L 07_$k; done
+  adb shell wm size 1080x1920; sleep 1; }
+
 for L in $LANGS; do
   echo "################ DİL: $L"
   alive || break
