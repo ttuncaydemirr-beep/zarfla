@@ -481,24 +481,26 @@ class _StepTab extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 48),
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 20,
-                  height: 20,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: on ? AppColors.onPrimary : AppColors.tint,
+            // Büyük sistem yazısında etiket "…" ile kesilmez: satır sığmazsa birlikte küçülür.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 20,
+                    height: 20,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: on ? AppColors.onPrimary : AppColors.tint,
+                    ),
+                    child: Text('$n', textScaler: TextScaler.noScaling, style: bodyStyle(11.5, weight: FontWeight.w700, color: AppColors.primary)),
                   ),
-                  child: Text('$n', style: bodyStyle(11.5, weight: FontWeight.w700, color: AppColors.primary)),
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: bodyStyle(14, weight: FontWeight.w600, color: fg)),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(label, maxLines: 1, softWrap: false, style: bodyStyle(14, weight: FontWeight.w600, color: fg)),
+                ],
+              ),
             ),
           ),
         ),
@@ -1029,9 +1031,10 @@ class _DetailsFormState extends State<DetailsForm> {
           )
         : GhostButton(label: context.t('change'), onPressed: onTap);
 
-    Widget nameField(bool first, String label, String ph) => FieldBlock(
+    Widget nameField(bool first, String label, String ph, {int labelLines = 1}) => FieldBlock(
           label: label,
           requiredLabel: reqL,
+          labelMinLines: labelLines,
           child: _framed(
             namesErr && (first ? inv.n1 : inv.n2).trim().isEmpty,
             TextField(
@@ -1130,9 +1133,9 @@ class _DetailsFormState extends State<DetailsForm> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: nameField(true, context.t('name1'), context.t('ph1'))),
+                  Expanded(child: nameField(true, context.t('name1'), context.t('ph1'), labelLines: 2)),
                   const SizedBox(width: 10),
-                  Expanded(child: nameField(false, context.t('name2'), context.t('ph2'))),
+                  Expanded(child: nameField(false, context.t('name2'), context.t('ph2'), labelLines: 2)),
                 ],
               )
             else
@@ -1170,6 +1173,7 @@ class _DetailsFormState extends State<DetailsForm> {
                   child: FieldBlock(
                     label: context.t('time'),
                     requiredLabel: reqL,
+                    labelMinLines: 2,
                     child: _framed(
                       dateErr && inv.time.isEmpty,
                       PickerField(
@@ -1189,6 +1193,7 @@ class _DetailsFormState extends State<DetailsForm> {
                 Expanded(
                   child: FieldBlock(
                     label: context.t('end'),
+                    labelMinLines: 2,
                     child: Row(
                       children: [
                         Expanded(

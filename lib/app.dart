@@ -9,6 +9,15 @@ import 'screens/home_screen.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 
+/// Uygulama genelinde metin ölçeği 1.0–[kMaxTextScale] aralığına sıkıştırılır (Arapça için ayrıca [kArabicTextScale]).
+const double kMaxTextScale = 1.3;
+
+TextScaler clampedTextScaler(TextScaler base, {bool arabic = false}) {
+  final c = base.clamp(minScaleFactor: 1.0, maxScaleFactor: kMaxTextScale);
+  if (!arabic) return c;
+  return TextScaler.linear(c.scale(100) / 100 * kArabicTextScale);
+}
+
 class ZarflaApp extends StatelessWidget {
   const ZarflaApp({super.key});
 
@@ -29,13 +38,13 @@ class ZarflaApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+        // Sistem yazı boyutu sınırı: büyük sistem fontunda (sahibinin telefonu) düzen bozulmasın.
         // Arapça: Naskh x-yüksekliği küçük olduğundan metinler biraz büyütülür (tasarım incelemesi #24).
         builder: (context, child) {
           final c = child ?? const SizedBox.shrink();
-          if (st.lang != 'ar') return c;
           final mq = MediaQuery.of(context);
           return MediaQuery(
-            data: mq.copyWith(textScaler: TextScaler.linear(mq.textScaler.scale(100) / 100 * kArabicTextScale)),
+            data: mq.copyWith(textScaler: clampedTextScaler(mq.textScaler, arabic: st.lang == 'ar')),
             child: c,
           );
         },

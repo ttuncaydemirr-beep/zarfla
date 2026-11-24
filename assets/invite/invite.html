@@ -25,6 +25,7 @@
 @font-face{font-family:"Noto Naskh Arabic";font-style:normal;font-weight:400 700;font-display:swap;src:local("Noto Naskh Arabic"),url("../fonts/NotoNaskhArabic.ttf") format("truetype")}
 :root{--zf-serif:"Fraunces","Noto Naskh Arabic","Amiri",Georgia,"Times New Roman",serif;--zf-sans:"Manrope","Noto Naskh Arabic","Noto Sans Arabic",system-ui,-apple-system,Roboto,"Segoe UI",sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;text-size-adjust:100%}
 html,body{height:100%}
 body{font-family:var(--zf-sans);background:#E4DBCB;color:var(--a-ink);-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -63,7 +64,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .inv .countdown div{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 0;width:64px}
 .inv .countdown b{display:block;font-size:24px;font-weight:600;color:var(--accent)}
 .inv .countdown small{font-family:var(--zf-sans);font-size:10.5px;letter-spacing:.08em;color:var(--muted)}
-.inv .ibtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--zf-sans);font-size:14px;font-weight:600;padding:13px 20px;border-radius:40px;border:none;cursor:pointer;text-decoration:none;min-height:46px}
+.inv .ibtn{max-width:100%;line-height:1.25;text-align:center;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--zf-sans);font-size:14px;font-weight:600;padding:13px 20px;border-radius:40px;border:none;cursor:pointer;text-decoration:none;min-height:46px}
 .inv .ibtn-primary{background:var(--accent);color:var(--onAccent)}
 .inv .ibtn-ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
 .inv .ibtn svg{width:18px;height:18px}
@@ -75,10 +76,11 @@ button,input,select,textarea{font:inherit;color:inherit}
 .inv{--zf-r-sm:10px;--zf-r-md:14px}
 .inv .ifield input,.inv .ifield select,.inv .ifield textarea{width:100%;font-family:inherit;font-size:18px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:var(--zf-r-sm);padding:12px 14px;outline:none;min-height:48px}
 .inv .ifield textarea{min-height:70px;resize:vertical}
-.inv .choice{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.inv .ifield select{font-family:var(--zf-sans);font-size:17px}
+.inv .choice{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .inv .choice input,.inv .ifield .choice input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;min-height:0;padding:0}
-.inv .choice label{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:17px;color:var(--ink);border:1.5px solid var(--line);border-radius:var(--zf-r-md);padding:14px 8px;cursor:pointer;background:var(--bg);text-align:center;margin:0}
-.inv .choice label svg{width:28px;height:28px}
+.inv .choice label{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:clamp(13px,4.3vw,16px);line-height:1.25;min-width:0;overflow-wrap:anywhere;hyphens:auto;-webkit-hyphens:auto;color:var(--ink);border:1.5px solid var(--line);border-radius:var(--zf-r-md);padding:14px 4px;cursor:pointer;background:var(--bg);text-align:center;margin:0}
+.inv .choice label svg{width:28px;height:28px;flex:none}
 .inv .choice input:checked+label{border-color:var(--accent);box-shadow:0 0 0 3px var(--ring)}
 .inv .ierr{color:var(--err);font-family:var(--zf-sans);font-size:13px;margin:-6px 0 10px;display:none}
 .inv .thanks{display:none;text-align:center;padding:8px 0}
@@ -1125,6 +1127,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
   <symbol id="i-wa" viewBox="0 0 24 24"><path fill="currentColor" d="M20.5 3.5A11 11 0 0 0 3.2 17.1L2 22l5-1.3A11 11 0 1 0 20.5 3.5zM12 20.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.4-.3z"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 13.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8M9 9.5h.01M15 9.5h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
   <symbol id="i-sad" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 15.5c1-1 2.2-1.5 3.5-1.5s2.5.5 3.5 1.5M9 9.5h.01M15 9.5h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
 </defs>
 <radialGradient id="gW1_halo" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFB84D" stop-opacity="0.5"/><stop offset="0.55" stop-color="#E8963A" stop-opacity="0.16"/><stop offset="1" stop-color="#E8963A" stop-opacity="0"/></radialGradient>
@@ -1508,7 +1511,7 @@ function mountInvite(host,inv,isGuest){
       <form novalidate data-rsvp>
         <div class="ifield"><label for="rn${inv.id}">${L.name}</label><input id="rn${inv.id}" data-r="name" autocomplete="name" placeholder="${L.namePh}" maxlength="60" value="${esc(guestN)}"></div><div class="ierr" data-e="name">${L.errName}</div>
         <div class="ifield"><div class="choice">
-          <input type="radio" name="att${inv.id}" id="y${inv.id}" value="yes"><label for="y${inv.id}">${orn()}${L.yes}</label>
+          <input type="radio" name="att${inv.id}" id="y${inv.id}" value="yes"><label for="y${inv.id}"><svg style="color:${v.accent}" aria-hidden="true"><use href="#i-smile"/></svg>${L.yes}</label>
           <input type="radio" name="att${inv.id}" id="n${inv.id}" value="no"><label for="n${inv.id}"><svg style="color:${v.muted}"><use href="#i-sad"/></svg>${L.no}</label></div></div>
         <div class="ierr" data-e="att">${L.errAtt}</div>
         <div class="ifield" data-countwrap><label for="rc${inv.id}">${L.count}</label><select id="rc${inv.id}" data-r="count">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}">${n} ${L.person}</option>`).join("")}</select></div>

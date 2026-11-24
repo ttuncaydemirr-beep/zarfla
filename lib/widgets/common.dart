@@ -304,7 +304,7 @@ class ZBadge extends StatelessWidget {
 
 /// Form alanı etiketi + içerik + ipucu + hata.
 class FieldBlock extends StatelessWidget {
-  const FieldBlock({super.key, this.label, required this.child, this.hint, this.error, this.requiredLabel, this.frameError = true});
+  const FieldBlock({super.key, this.label, required this.child, this.hint, this.error, this.requiredLabel, this.frameError = true, this.labelMinLines = 1});
 
   final String? label;
   final Widget child;
@@ -312,6 +312,10 @@ class FieldBlock extends StatelessWidget {
   final String? error;
   /// Hata varken alanın etrafına hata çerçevesi çizilsin mi (bilgi amaçlı hatalarda false).
   final bool frameError;
+
+  /// Yan yana iki alanda etiketler farklı satır sayısına sarılsa da alanlar hizalı kalsın diye
+  /// etiket alanına ayrılan en az satır sayısı (1 ya da 2).
+  final int labelMinLines;
 
   /// Zorunlu alanlarda etiketin yanında yazıyla "zorunlu" (yalnız renk/yıldız değil).
   final String? requiredLabel;
@@ -329,16 +333,7 @@ class FieldBlock extends StatelessWidget {
           if (label != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: requiredLabel == null
-                  ? Text(label!, style: labelStyle)
-                  : Wrap(
-                      spacing: 6,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(label!, style: labelStyle),
-                        RequiredTag(requiredLabel!),
-                      ],
-                    ),
+              child: _FieldLabel(label!, labelStyle, requiredLabel, labelMinLines),
             ),
           hasErr ? ErrorFrame(child: child) : child,
           if (hint != null)
@@ -353,6 +348,40 @@ class FieldBlock extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Alan etiketi: "zorunlu" etiketi metnin satır içi son eki (WidgetSpan) olduğundan etiketi ayrı satıra itmez.
+/// [minLines] 2 ise görünmez ikinci satır yer tutar (komşu alanla hizalama).
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.label, this.style, this.requiredLabel, this.minLines);
+
+  final String label;
+  final TextStyle style;
+  final String? requiredLabel;
+  final int minLines;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Text.rich(
+      TextSpan(children: [
+        TextSpan(text: label, style: style),
+        if (requiredLabel != null) ...[
+          const TextSpan(text: ' '),
+          WidgetSpan(alignment: PlaceholderAlignment.middle, child: RequiredTag(requiredLabel!)),
+        ],
+      ]),
+    );
+    if (minLines <= 1) return text;
+    return Stack(
+      children: [
+        // Görünmez yer tutucu: minLines satır yüksekliği (etiket daha uzunsa o belirler).
+        ExcludeSemantics(
+          child: Opacity(opacity: 0, child: Text('\n' * (minLines - 1), style: style.copyWith(height: 1.6))),
+        ),
+        text,
+      ],
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import '../data/catalog.dart';
 import '../l10n/strings.dart';
@@ -54,6 +55,12 @@ class _InviteViewState extends State<InviteView> {
         onNavigationRequest: _onNav,
       ))
       ..loadFlutterAsset('assets/invite/invite.html');
+    // Sistem yazı boyutu davetiyeyi büyütmesin: WebView metin yakınlaştırması %100'e sabitlenir
+    // (davetli sayfası tarayıcıda zaten sistem ölçeğini uygulamaz; önizleme onunla aynı görünmeli).
+    final p = _c.platform;
+    if (p is AndroidWebViewController) {
+      p.setTextZoom(100);
+    }
   }
 
   void _onJsMessage(JavaScriptMessage m) {
