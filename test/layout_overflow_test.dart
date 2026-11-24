@@ -127,7 +127,7 @@ void main() {
   }
 
   /// [body] içinde ortaya çıkan "overflowed" hataları toplar; diğer (eklenti vb.) hatalar yok sayılır.
-  Future<List<String>> collectOverflows(Future<void> Function() body) async {
+  Future<List<String>> collectOverflows(Future<void> Function() body, WidgetTester t) async {
     final old = FlutterError.onError;
     final overflows = <String>[];
     FlutterError.onError = (d) {
@@ -139,6 +139,11 @@ void main() {
     };
     try {
       await body();
+      // Açık ekranları kapat: editör kapanırken "taslak kaydedildi" mesajını ana ekranda gösterir (süresi dolsun).
+      zarflaNavKey.currentState?.popUntil((r) => r.isFirst);
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 500));
+      await t.pump(const Duration(seconds: 4));
     } finally {
       FlutterError.onError = old;
     }
@@ -162,7 +167,7 @@ void main() {
           await pumpApp(t, st);
           expect(find.byType(HomeScreen), findsOneWidget);
           await scrollThrough(t, steps: 4);
-        });
+        }, t);
         expect(o, isEmpty, reason: o.join('\n'));
       });
 
@@ -176,7 +181,7 @@ void main() {
           await open(t, ThemeScreen(draft: st.createDraft('dugun')));
           expect(find.byType(ThemeScreen), findsOneWidget);
           await scrollThrough(t, steps: 10);
-        });
+        }, t);
         expect(o, isEmpty, reason: o.join('\n'));
       });
 
@@ -187,7 +192,7 @@ void main() {
           await open(t, const EditorScreen(invId: 'd1'));
           expect(find.byType(EditorScreen), findsOneWidget);
           await scrollThrough(t, steps: 22);
-        });
+        }, t);
         expect(o, isEmpty, reason: o.join('\n'));
       });
 
@@ -197,7 +202,7 @@ void main() {
           await pumpApp(t, st);
           await open(t, const EditorScreen(invId: 'b1'));
           await scrollThrough(t, steps: 8);
-        });
+        }, t);
         expect(o, isEmpty, reason: o.join('\n'));
       });
 
@@ -208,7 +213,7 @@ void main() {
           await open(t, const PublishScreen(invId: 'd1'));
           expect(find.byType(PublishScreen), findsOneWidget);
           await scrollThrough(t, steps: 8);
-        });
+        }, t);
         expect(o, isEmpty, reason: o.join('\n'));
       });
 
@@ -219,7 +224,7 @@ void main() {
           await open(t, const DoneScreen(invId: 'l1'));
           expect(find.byType(DoneScreen), findsOneWidget);
           await scrollThrough(t, steps: 8);
-        });
+        }, t);
         expect(o, isEmpty, reason: o.join('\n'));
       });
     });
@@ -234,7 +239,7 @@ void main() {
         expect(MediaQuery.textScalerOf(ctx).scale(100), closeTo(130, 1e-6));
         await open(t, const EditorScreen(invId: 'd1'));
         await scrollThrough(t, steps: 22);
-      });
+      }, t);
       expect(o, isEmpty, reason: o.join('\n'));
     });
   }
@@ -246,7 +251,7 @@ void main() {
       final ctx = zarflaNavKey.currentContext!;
       showReminderSettings(ctx);
       await t.pump(const Duration(milliseconds: 400));
-    });
+    }, t);
     expect(o, isEmpty, reason: o.join('\n'));
   });
 }
