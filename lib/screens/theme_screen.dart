@@ -104,7 +104,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
     final locked = !canChangeTypeOrTheme(inv);
     // Kart yüksekliği: 3:4 küçük resim (+ çerçeve) + ad satırı.
     final tileW = (MediaQuery.sizeOf(context).width - 2 * AppSpace.edge - AppSpace.x3) / 2;
-    final tileH = (tileW - 6) * 4 / 3 + 6 + AppSpace.x2 + MediaQuery.textScalerOf(context).scale(22);
+    final tileH = (tileW - 6) * 4 / 3 + 6 + AppSpace.x2 + MediaQuery.textScalerOf(context).scale(26);
     return Scaffold(
       body: SafeArea(
         child: Column(
