@@ -20,6 +20,7 @@ import 'package:zarfla/screens/publish_screen.dart';
 import 'package:zarfla/screens/theme_screen.dart';
 import 'package:zarfla/screens/type_screen.dart';
 import 'package:zarfla/state/app_state.dart';
+import 'package:zarfla/theme/app_theme.dart' show kArabicTextScale;
 import 'package:zarfla/storage/invitation_store.dart';
 import 'package:zarfla/storage/photo_store.dart';
 
