@@ -141,7 +141,7 @@ class _LangSelect extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: context.t('language'),
+      label: '${context.t('language')}: ${kLangNames[value] ?? value}',
       child: Container(
         constraints: const BoxConstraints(minHeight: 48),
         padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -156,6 +156,11 @@ class _LangSelect extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadii.sm),
             dropdownColor: AppColors.surface,
             style: bodyStyle(14),
+            // Kapalıyken dar ve sabit genişlikte kısa kod ("TR"); açılan listede tam dil adları.
+            // (Tam ad büyük sistem yazısında / 320 px'te üst çubuğu taşırıyordu.)
+            selectedItemBuilder: (_) => [
+              for (final l in kLangs) Center(child: Text(l.toUpperCase(), style: bodyStyle(14, weight: FontWeight.w700))),
+            ],
             items: [
               for (final l in kLangs) DropdownMenuItem(value: l, child: Text(kLangNames[l]!)),
             ],

@@ -295,7 +295,7 @@ class ZBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[Icon(icon, size: 12, color: fg), const SizedBox(width: 4)],
-          Text(label, style: bodyStyle(12, weight: FontWeight.w600, color: fg)),
+          Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: bodyStyle(12, weight: FontWeight.w600, color: fg))),
         ],
       ),
     );
