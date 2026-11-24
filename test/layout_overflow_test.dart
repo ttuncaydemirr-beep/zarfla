@@ -133,7 +133,8 @@ void main() {
     FlutterError.onError = (d) {
       final s = d.exceptionAsString();
       if (s.contains('overflowed')) {
-        overflows.add(s.split('\n').first);
+        final deep = d.toStringDeep().split('\n').where((l) => l.contains('lib/') || l.contains('overflowed') || l.contains('creator') || l.contains('Row') || l.contains('Column')).take(12).join(' | ');
+        overflows.add('${s.split('\n').first} :: $deep');
       }
     };
     try {
