@@ -69,11 +69,14 @@ jobs:
       - name: Yazı tiplerini indir
         run: bash scripts/fetch_fonts.sh
 
+      # Sürüm kilidi (denetim Y-3): pubspec.lock depoda; kilitten sapma derlemeyi durdurur. android/ üretilmeden ÖNCE
+      # çalışır ki flutter create'in kendi pub get'i kilidi sessizce değiştiremesin. Paket güncellemesi ayrı iştir:
+      # yerelde `flutter pub upgrade <paket>` → test → pubspec.lock kaydı.
+      - name: Paketler (kilitli)
+        run: flutter pub get --enforce-lockfile
+
       - name: Android projesini hazırla
         run: bash scripts/prepare_android.sh
-
-      - name: Paketler
-        run: flutter pub get
 
       - name: Çözülen Firebase ve faturalandırma sürümleri
         run: |
