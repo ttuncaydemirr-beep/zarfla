@@ -36,7 +36,7 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
           cache: true
@@ -229,7 +229,7 @@ jobs:
           name: zarfla-r8-mapping
           path: dist-mapping
       - name: Play'e yükle (alpha)
-        uses: r0adkll/upload-google-play@v1.1.3
+        uses: r0adkll/upload-google-play@935ef9c68bb393a8e6116b1575626a7f5be3a7fb # v1.1.3
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.demirgamesstudio.zarfla
