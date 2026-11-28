@@ -36,6 +36,6 @@ void main() {
   test('editör ad alanları kNameMax kullanır', () {
     final src = File('lib/screens/editor_screen.dart').readAsStringSync();
     expect(src.contains('maxLength: kNameMax'), isTrue);
-    expect(src.contains('maxLen(40)'), isFalse);
+    expect(src.contains('buildCounter: nearLimitCounter(kNameCounterFrom)'), isTrue);
   });
 }
