@@ -18,6 +18,10 @@ on:
           - "firestore:rules,storage"
           - "hosting"
 
+# En az yetki (güvenlik denetimi O-3): GITHUB_TOKEN yalnız depoyu okur. Artifact/önbellek ayrı jetonla çalışır.
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-functions
   cancel-in-progress: false

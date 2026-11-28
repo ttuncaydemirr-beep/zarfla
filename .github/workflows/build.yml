@@ -19,6 +19,10 @@ on:
         type: boolean
         default: false
 
+# En az yetki (güvenlik denetimi O-3): GITHUB_TOKEN yalnız depoyu okur. Artifact/önbellek ayrı jetonla çalışır.
+permissions:
+  contents: read
+
 # Aynı dalda yeni push gelince eski çalışma iptal edilir (Actions bütçesi: aylık 10 $).
 concurrency:
   group: build-${{ github.ref }}
