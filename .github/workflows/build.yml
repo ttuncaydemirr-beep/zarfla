@@ -249,7 +249,7 @@ jobs:
 
       - name: Paketler
         working-directory: functions
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Çözülen sürümler
         working-directory: functions

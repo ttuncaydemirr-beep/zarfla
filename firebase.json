@@ -132,7 +132,7 @@
       "source": "functions",
       "codebase": "default",
       "runtime": "nodejs22",
-      "ignore": ["node_modules", "test", ".git", "*.log", "package-lock.json"]
+      "ignore": ["node_modules", "test", ".git", "*.log"]
     }
   ],
   "emulators": {

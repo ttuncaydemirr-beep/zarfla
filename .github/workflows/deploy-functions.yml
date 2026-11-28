@@ -50,7 +50,7 @@ jobs:
         if: inputs.only != 'hosting'
         working-directory: functions
         run: |
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
           npm run verify
 
       # ---- Davetli sayfası (yalnız only içinde hosting varsa) ----
