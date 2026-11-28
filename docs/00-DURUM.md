@@ -1,6 +1,6 @@
 # Zarfla — Durum
 
-Son güncelleme: 28 Kasım 2026 (proje sohbeti, kurulum dalı `docs/kurulum`)
+Son güncelleme: 28 Kasım 2026 (Code, güvenlik denetimi dalı `claude/funny-brown-27mqnm`)
 
 ## Yayın durumu
 
@@ -26,18 +26,19 @@ Son güncelleme: 28 Kasım 2026 (proje sohbeti, kurulum dalı `docs/kurulum`)
 
 | İş | Dal | Kim | Durum |
 |---|---|---|---|
-| Çalışma ve güvenlik düzeni kurulumu | `docs/kurulum` | Sohbet | Onay bekliyor (bu dosya ve CLAUDE.md) |
+| Güvenlik denetimi | `claude/funny-brown-27mqnm` | Code | Aşama 1 (inceleme) raporu verildi: kritik yok, 3 yüksek, 6 orta, 6 düşük bulgu. Düzeltmeler Tuncay'ın madde madde onayını bekliyor |
+| CLAUDE.md güncellemesi (Tuncay'ın 28 Kasım kararları: etiket kuralı, ilk yayın kademeli açılış istisnası, Tasarım galerisi banner'ı, hedef yaş 18+, geri dönüş örneği) | — | Sohbet | Code'un hazırladığı mesaj Sohbet'e iletilecek |
 | Emülatörde çökme teşhisi iş akışı | `crashcheck` | Code | Yardımcı dal; her sürümde main'e göre güncelleniyor, ana dala birleştirilmiyor |
 | Play mağaza bilgileri iş akışı (fiyatlar, çeviriler, görseller) | `playmeta` | Code | main'de olmayan 8 kayıt var [Tuncay'a sor: birleştirilsin mi, yardımcı dal olarak mı kalsın] |
 | Mağaza ekran görüntüsü çekme iş akışı | `storeshots` | Code | main'de olmayan 9 kayıt var [Tuncay'a sor: aynı soru] |
 
-Açık PR yok. `appcheck, bundle, consent, hardening2, hosting, integrate, lang8, layoutfix, longnames, notify, security, stage3-ads, stage3-r8, wave3` dalları tamamen main'e birleşmiş; silinmeleri Tuncay'ın onayına bağlı.
+Açık PR yok. `docs/kurulum` (PR #1 ile birleşti), `appcheck, bundle, consent, hardening2, hosting, integrate, lang8, layoutfix, longnames, notify, security, stage3-ads, stage3-r8, wave3` dalları tamamen main'e birleşmiş; silinmeleri Tuncay'ın onayına bağlı.
 
 ## Sıradaki işler
 
 | # | İş | Kim |
 |---|---|---|
-| 1 | Code: güvenlik denetimi (kurallar belgesindeki standart görevle) | Code |
+| 1 | Code: güvenlik denetimi düzeltmeleri (Aşama 2, onaylanan maddeler) | Code |
 | 2 | Code: üretime ilk çıkan sürüm için sürüm etiketi (ör. `v1.0.196`); üretimden önce de kapalı testteki güncel sürüm etiketlenebilir | Code |
 | 3 | Üretim başvurusu (~1 Aralık): başvuru cevapları, mağaza metinleri, ekran görüntüleri | Sohbet + Tuncay |
 | 4 | Satış ve iade sayfasındaki boş alanlar ile vergi durumu (mali müşavir) | Tuncay |
@@ -54,6 +55,7 @@ Açık PR yok. `appcheck, bundle, consent, hardening2, hosting, integrate, lang8
 
 | Tarih | Kim | Ne |
 |---|---|---|
+| 28 Kasım 2026 | Code | Güvenlik denetimi Aşama 1 raporu; bu dosyada `docs/kurulum` satırı düzeltildi (dal PR #1 ile birleşmişti) |
 | 28 Kasım 2026 | Sohbet | CLAUDE.md (ortak kurallar + Zarfla kalıcı kararları) ve bu durum dosyası eklendi |
 | 28 Kasım 2026 | Code | Uzun adlar kart dışına taşmıyor, ad alanı en çok 24 karakter; 1.0.196 derlendi ve Play'e yüklendi |
 | 25 Kasım 2026 | Code | Büyük sistem yazı boyutunda düzen ve Arapça satır yüksekliği düzeltmeleri |
