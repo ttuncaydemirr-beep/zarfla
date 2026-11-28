@@ -49,9 +49,11 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      # Flutter sürümü sabit (denetim Y-3): pubspec.lock bu sürümle üretildi. Yükseltme ayrı iştir (sürüm + kilit birlikte).
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
+          flutter-version: 3.50.1
           cache: true
 
       - name: Gradle önbelleği
