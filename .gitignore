@@ -38,9 +38,8 @@ rules-test/package-lock.json
 *.keystore
 android/app/upload.jks
 
-# Cloud Functions (bağımlılıklar CI'da kurulur)
+# Cloud Functions (bağımlılıklar CI'da package-lock.json ile kurulur; kilit dosyası depoda)
 functions/node_modules/
-functions/package-lock.json
 
 # Firebase Hosting çıktısı (tools/build_hosting.py üretir)
 hosting/

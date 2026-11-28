@@ -18,6 +18,10 @@ on:
           - "firestore:rules,storage"
           - "hosting"
 
+# En az yetki (güvenlik denetimi O-3): GITHUB_TOKEN yalnız depoyu okur. Artifact/önbellek ayrı jetonla çalışır.
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-functions
   cancel-in-progress: false
@@ -46,7 +50,7 @@ jobs:
         if: inputs.only != 'hosting'
         working-directory: functions
         run: |
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
           npm run verify
 
       # ---- Davetli sayfası (yalnız only içinde hosting varsa) ----

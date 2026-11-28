@@ -14,6 +14,20 @@ import '../theme/app_theme.dart';
 import 'common.dart';
 import 'ornament.dart';
 
+/// Önizleme WebView'inde bir gezinmenin ne olacağı (saf; test/invite_nav_test.dart).
+enum InviteNav { stay, external, block }
+
+/// Yalnız yerel davetiye sayfası (file:, about:blank) WebView içinde açılır. Dış bağlantılar (harita, takvim,
+/// WhatsApp, e-posta, telefon) cihazın kendi uygulamasına gider. data: ve diğer şemalar engellenir
+/// (güvenlik denetimi D-1: WebView'de yerel dosya erişimli bir sayfanın yerine geçebilecek içerik açılmasın).
+InviteNav inviteNavAction(Uri? u) {
+  if (u == null) return InviteNav.block;
+  final s = u.scheme.toLowerCase();
+  if (s == 'file' || s == 'about') return InviteNav.stay;
+  if (s == 'https' || s == 'http' || s == 'mailto' || s == 'tel') return InviteNav.external;
+  return InviteNav.block;
+}
+
 /// Davetli sayfasının uygulama içi önizlemesi.
 /// assets/invite/invite.html (tek kaynak) yüklenir; veri window.renderInvite(json) ile verilir.
 /// Dış bağlantılar (harita, takvim, WhatsApp) cihazın kendi uygulamasında açılır.
@@ -76,14 +90,15 @@ class _InviteViewState extends State<InviteView> {
 
   NavigationDecision _onNav(NavigationRequest req) {
     final u = Uri.tryParse(req.url);
-    if (u == null) return NavigationDecision.prevent;
-    if (u.scheme == 'file' || u.scheme == 'about' || u.scheme == 'data') {
-      return NavigationDecision.navigate;
+    switch (inviteNavAction(u)) {
+      case InviteNav.stay:
+        return NavigationDecision.navigate;
+      case InviteNav.external:
+        launchUrl(u!, mode: LaunchMode.externalApplication);
+        return NavigationDecision.prevent;
+      case InviteNav.block:
+        return NavigationDecision.prevent;
     }
-    if (u.scheme == 'https' || u.scheme == 'http' || u.scheme == 'mailto' || u.scheme == 'tel') {
-      launchUrl(u, mode: LaunchMode.externalApplication);
-    }
-    return NavigationDecision.prevent;
   }
 
   Future<void> _push() async {
