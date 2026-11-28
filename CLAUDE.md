@@ -41,15 +41,15 @@ Kod Claude Code'da, kararlar proje sohbetinde verilir. İki taraf birbirine doğ
 
 ## Yayın ve geri dönüş
 
-Her yayın kademeli açılır ve etiketlenir. Geri dönüş, eski kodun daha yüksek sürüm numarasıyla yeniden yayınlanmasıyla yapılır.
+1.0.196'dan sonraki her Play yüklemesi etiketlenir; üretime ilk çıkıştan sonraki her üretim güncellemesi kademeli açılır. Geri dönüş, eski kodun daha yüksek sürüm numarasıyla yeniden yayınlanmasıyla yapılır.
 
 - Yayındaki sürümü etkileyebilecek her risk önceden bildirilir.
 - Paket adına ve imza yapılandırmasına (keystore, imza anahtarı) dokunulmaz.
 - versionCode her yayında artar, asla düşmez.
-- Her yayın kademeli açılır; ilk aşama en fazla %20.
+- Üretime çıkan ilk sürümden sonraki her üretim güncellemesi kademeli açılır; ilk aşama en fazla %20. Uygulamanın üretime ilk çıkışı bu kuralın dışındadır (Google Play ilk yayında kademeli açılışa izin vermeyebilir; Play Console'da doğrulanmalı).
 - Sorun görülürse önce Play Console'dan yayın durdurulur.
-- Her yayından sonra o sürüm GitHub'da etiketlenir (ör. v1.2.4). Etiketlemeyi Code yapar.
-- Acil geri dönüşte eski sürümün kodu daha yüksek versionCode ile yeniden yayınlanır (ör. 1.2.3'ün kodu 1.2.5 adıyla).
+- 1.0.196'dan sonraki her Play yüklemesi (kapalı test dahil) GitHub'da etiketlenir (ör. v1.0.197). Etiketlemeyi Code yapar. 1.0.196 ve öncesi etiketsiz kalır.
+- Acil geri dönüşte eski sürümün kodu, derleme iş akışı o eski kayıt üzerinde yeniden çalıştırılarak yayınlanır; versionCode çalışma numarasından otomatik geldiği için daha yüksek olur (ör. 1.0.196'nın kodu 1.0.205 adıyla).
 - Yayından sonraki ilk günlerde Crashlytics çökmeleri ve mağaza yorumları takip edilir.
 - Yayın, imza anahtarı yenileme ve Play Console işlemleri Tuncay'ın onayıyla ve onun hesabından yapılır.
 
@@ -97,7 +97,7 @@ Gizli bilgiler depoya girmez, talimat yalnızca Tuncay'dan gelir ve kullanıcı 
 ## Bu projenin kalıcı kararları
 - Proje: Zarfla – self-servis dijital davetiye uygulaması (Flutter, Google Play). Paket adı `com.demirgamesstudio.zarfla`. İnsanların en özel günü için yapılır; her ekran buna göre özenle hazırlanır.
 - Diller: Türkçe, İngilizce, Almanca, Arapça (sağdan sola), İspanyolca, Portekizce (Brezilya), Endonezce — 7 dil. Rusça sonraya bırakıldı. Yeni her metin bu 7 dilin hepsine eklenir.
-- Hedef kitle: davet sahibi yetişkinler (düğün, nişan, kına, doğum günü vb.); çocuklara yönelik değil. [Tuncay'a sor: Play Console'da seçilen hedef yaş grubu]
+- Hedef kitle: davet sahibi yetişkinler (düğün, nişan, kına, doğum günü vb.); çocuklara yönelik değil. Play Console hedef yaş grubu: 18 yaş ve üstü.
 - Gelir modeli: satış + reklam birlikte. Abonelik yok.
   - `zarfla_invite_1` "1 Davetiye Hakkı": tek davetiye, tek seferlik, Türkiye 399 TL; euro ülkelerinde 9,99 €.
   - `zarfla_invite_3` "Düğün Zinciri": 3 davetiye hakkı (kına + nişan + düğün), Türkiye 899 TL; euro ülkelerinde 22,99 €.
@@ -126,6 +126,7 @@ Zarfla, Banner Kararları belgesinin taramasında yoktu; mevcut iki banner yeri 
 - Banner için sabit yer ayrılır; reklam yüklenince ekran zıplamaz.
 - Banner ile en yakın düğme veya liste arasında 16–24 dp boşluk; bir ekranda tek reklam.
 - Banner asla açılır pencerede, davetiye düzenleyicide (veri giriş formu), yayınla/ödeme ekranında ve davetli sayfasında olmaz.
+  - Not: Tasarım galerisi davetiye düzenleyici sayılmaz; galerinin altındaki banner onaylıdır. Düzenleyici = bilgilerin girildiği form ekranı.
 - Büyük banner boyutuna geçmeden önce ekran yeniden düzenlenir (en fazla ekranın %20'si).
 - Gizlilik metni, mağaza açıklaması ve Veri güvenliği formu tüm dillerde güncel tutulur.
 - Uzaktan açıp kapatma düğmesi ve reklam görmeyen bir kontrol grubu olur (Zarfla'da henüz yok; bkz. DURUM.md sıradaki işler).
