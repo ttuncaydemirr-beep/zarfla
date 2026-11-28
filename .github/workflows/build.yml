@@ -18,6 +18,15 @@ on:
         description: "Yalnızca Play API erişimini sına (yükleme yapmaz)"
         type: boolean
         default: false
+      rollout:
+        description: "Yalnız production: ilk aşamada kullanıcıların yüzde kaçına açılsın (en çok %20; artırmak Play Console'dan)"
+        type: choice
+        options: ["20", "10", "5"]
+        default: "20"
+      first_production:
+        description: "Yalnız production: uygulamanın ÜRETİME İLK ÇIKIŞI (kademeli açılış kuralı dışında, %100). Sonraki güncellemelerde işaretlemeyin."
+        type: boolean
+        default: false
 
 # En az yetki (güvenlik denetimi O-3): GITHUB_TOKEN yalnız depoyu okur. Artifact/önbellek ayrı jetonla çalışır.
 permissions:
@@ -273,7 +282,28 @@ jobs:
         with:
           name: zarfla-r8-mapping
           path: dist-mapping
-      - name: Play'e yükle (alpha)
+      # Kademeli açılış (CLAUDE.md "Yayın ve geri dönüş", denetim Y-1): production güncellemesi "inProgress" + userFraction
+      # (ilk aşama en çok %20) ile yüklenir; artırma/tamamlama Play Console'dan elle. Üretime İLK çıkış kural dışıdır
+      # (first_production=true → completed, %100). internal/alpha kanalları eskisi gibi "completed".
+      - name: Yayın biçimi
+        id: rollout
+        env:
+          TRACK: ${{ inputs.track }}
+          ROLLOUT: ${{ inputs.rollout }}
+          FIRST: ${{ inputs.first_production }}
+        run: |
+          if [ "$TRACK" = "production" ] && [ "$FIRST" != "true" ]; then
+            case "$ROLLOUT" in 5|10|20) ;; *) echo "::error::Geçersiz açılış oranı: $ROLLOUT (5/10/20)"; exit 1;; esac
+            echo "status=inProgress" >> "$GITHUB_OUTPUT"
+            echo "fraction=0.$(printf '%02d' "$ROLLOUT")" >> "$GITHUB_OUTPUT"
+            echo "::notice::Production kademeli açılış: %$ROLLOUT"
+          else
+            echo "status=completed" >> "$GITHUB_OUTPUT"
+            echo "fraction=" >> "$GITHUB_OUTPUT"
+            if [ "$TRACK" = "production" ]; then echo "::warning::Üretime İLK çıkış: kademeli değil, %100 (first_production=true)"; fi
+          fi
+
+      - name: Play'e yükle
         uses: r0adkll/upload-google-play@935ef9c68bb393a8e6116b1575626a7f5be3a7fb # v1.1.3
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
@@ -281,7 +311,8 @@ jobs:
           releaseFiles: dist/app-release.aab
           mappingFile: dist-mapping/mapping.txt
           track: ${{ inputs.track }}
-          status: completed
+          status: ${{ steps.rollout.outputs.status }}
+          userFraction: ${{ steps.rollout.outputs.fraction }}
           whatsNewDirectory: distribution/whatsnew
 
   # Play API erişim sınaması: düzenleme açar, kanalları okur, düzenlemeyi siler (hiçbir şey yayınlamaz).
