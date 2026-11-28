@@ -521,6 +521,12 @@ class ErrorFrame extends StatelessWidget {
   }
 }
 
+/// Sayaç yalnız sınıra yaklaşınca (>= [from]) görünür; aksi halde hiçbir şey çizmez.
+InputCounterWidgetBuilder nearLimitCounter(int from) => (context, {required currentLength, required isFocused, required maxLength}) {
+      if (maxLength == null || currentLength < from) return const SizedBox.shrink();
+      return Text('$currentLength/$maxLength', style: bodyStyle(12, color: AppColors.muted));
+    };
+
 /// Uzunluk sınırı (sayaç göstermeden).
 List<TextInputFormatter> maxLen(int n) => [LengthLimitingTextInputFormatter(n)];
 

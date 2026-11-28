@@ -858,6 +858,18 @@ button,input,select,textarea{font:inherit;color:inherit}
   .cfx.open i{animation:none!important;opacity:0}
   .dust.open .dg{animation:none!important}
 }
+/* ===== Uzun metin: ad/ünvan sığdırma + kullanıcı metninde kelime kırma (uzun adlar kartın dışına taşmaz) ===== */
+.inv .names,.inv .ed-names,.inv footer .sign{overflow-wrap:normal;word-break:normal;max-width:100%;min-width:0}
+.inv .host,.inv .lead,.inv .big,.inv .sub,.inv .eyebrow,.inv .label,.inv .guest-hi,.inv .prog span,.inv .prog li,.inv .notes-card li,.inv .gf-holder,.inv .mk-date,.inv .gl-date,.inv .dk-date,.inv .gc-date,.inv .mn-date,.inv .hk-who small,.inv .thanks h3,.inv .thanks p,.inv .mz-credit{overflow-wrap:anywhere;min-width:0;max-width:100%}
+.inv .prog li span{min-width:0}
+.inv-host [data-fitwrap]{overflow-wrap:anywhere!important;word-break:break-word!important;white-space:normal!important;text-overflow:clip!important}
+.zf2 .z-lt b[data-fitwrap],.zf2 .z-to[data-fitwrap]{overflow:visible}
+.zf2 .z-lt b,.zf2 .z-to{min-width:0}
+.inv .daterow .side{flex:1 1 0;min-width:0;text-align:center;letter-spacing:.06em;padding:8px 2px}
+.inv .daterow .day{flex:none}
+.tl-step span,.inv .prog li span{min-width:0;flex:1 1 0;overflow-wrap:anywhere}
+.tl-it,.tl{min-width:0}
+.tk-stub div{min-width:0}.tk-stub b{overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -1414,6 +1426,32 @@ function setupMusic(root,inv,L){
 }
 /*MUSIC-END*/
 let tickTimer=null,io=null;
+/*FIT-BEGIN*/
+/* Ad sığdırma: ad/imza/selam satırı kabının dışına taşarsa yazı boyutu kademeli küçülür (alt sınıra dek),
+   o da yetmezse kelime kırma + satır sarma devreye girer. CSS clamp() ilk yaklaşımdır; bu yordam yedektir.
+   Yazı tipi yüklenince ve pencere boyutu değişince yeniden çalışır; sağdan sola (Arapça) için de geçerli. */
+const FIT_SEL=".inv .names,.inv footer .sign,.inv .guest-hi,.zf2 .z-lt b,.zf2 .z-to,.hk-who b,.inv .daterow .side";
+function fitText(el){
+  el.style.fontSize="";el.removeAttribute("data-fitwrap");
+  if(!el.clientWidth)return;
+  const over=()=>el.scrollWidth>el.clientWidth+1;
+  if(!over())return;
+  const fs0=parseFloat(getComputedStyle(el).fontSize)||16,min=fs0>=30?Math.max(18,fs0*.4):Math.max(9,fs0*.65);
+  let fs=fs0;
+  while(over()&&fs>min){fs=Math.max(min,fs*.93);el.style.fontSize=fs.toFixed(1)+"px"}
+  if(over())el.setAttribute("data-fitwrap","");
+}
+function fitAll(root){if(!root)return;root.querySelectorAll(FIT_SEL).forEach(fitText)}
+let fitRoot=null,fitT=null;
+function scheduleFit(root){
+  if(root)fitRoot=root;
+  fitAll(fitRoot);
+  if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>fitAll(fitRoot));
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>fitAll(fitRoot));
+}
+if(typeof window!=="undefined"&&window.addEventListener)window.addEventListener("resize",()=>{clearTimeout(fitT);fitT=setTimeout(()=>fitAll(fitRoot),80)});
+/*FIT-END*/
+
 /*SAFE-BEGIN*/
 /* Güvenlik (H-1): davetiye verisi güvenilmez (herkes anonim hesapla belge yazabilir). Metin → esc(), öznitelik → attr(),
    görsel adresi → safeImg() (yalnız Zarfla Storage kovası ya da önizlemenin base64 data:image'ı), kimlikler → beyaz liste. */
@@ -1465,7 +1503,8 @@ function mountInvite(host,inv,isGuest){
   const r2=inv.n2.trim()||PH[inv.lang].ph2;
   const n1=esc(r1),n2=esc(r2);
   const noName=couple?(!inv.n1.trim()||!inv.n2.trim()):!inv.n1.trim();
-  const ini=noName?`<svg class="ini-orn" viewBox="0 0 100 100" aria-hidden="true"><use href="#${o}"/></svg>`:esc(couple?(r1.charAt(0)+" & "+r2.charAt(0)):r1.charAt(0));
+  const fc=t=>Array.from(String(t||""))[0]||"";
+  const ini=noName?`<svg class="ini-orn" viewBox="0 0 100 100" aria-hidden="true"><use href="#${o}"/></svg>`:esc(couple?(fc(r1)+" & "+fc(r2)):fc(r1));
   const p=parts(inv);
   const showMade=inv.plan!=="premium";
   const paidInv=inv.plan==="premium";
@@ -1475,7 +1514,7 @@ function mountInvite(host,inv,isGuest){
   const namesH=couple?`${n1}<span class="amp">&amp;</span>${n2}`:n1;
   const eyebrow=`<p class="eyebrow">${EYEBROW[inv.lang][inv.type]}</p>`;
   const hostH=inv.host.trim()?`<p class="host">${esc(inv.host)}</p>`:"";
-  const leadH=`<p class="lead" dir="auto">${esc(inv.msg)}</p>`;
+  const leadH=inv.msg.trim()?`<p class="lead" dir="auto">${esc(inv.msg)}</p>`:"";
   const guestN=cleanGuest(inv.guest),hiH=guestHiHtml(guestN,L.hi,esc);
   const wreath=`<svg class="wreath" viewBox="0 0 300 110" aria-hidden="true" style="color:${v.leaf}">
         <path d="M20 96 C 80 58, 220 58, 280 96" stroke="${v.leaf}" stroke-width="2" fill="none"/>
@@ -1490,16 +1529,16 @@ function mountInvite(host,inv,isGuest){
     const tm=inv.time+(inv.end?" – "+inv.end:"");
     dShort=fmtISO(inv.date,inv.lang);
     dateHtml=`<div class="daterow"><div class="side">${g("weekday")}</div><div class="day">${g("day")}</div><div class="side">${g("month")}</div></div>
-      <p class="sub">${g("year")} · ${L.timeW} ${esc(tm)}</p>
+      ${(()=>{const t=inv.time?`${L.timeW} ${esc(tm)}`:"",y=g("year"),x=[y,t].filter(Boolean).join(" · ");return x?`<p class="sub">${x}</p>`:""})()}
       <div class="countdown">${L.units.map((u,i)=>`<div><b data-cd="${i}">0</b><small>${u}</small></div>`).join("")}</div>`;
   }
   const q=encodeURIComponent([inv.venue,inv.address].filter(Boolean).join(", "));
   /* Ortak kartlar */
   const whenC=`<section class="icard reveal">${orn("mini tl")}<p class="label">${L.when}</p>${dateHtml}
       <div class="brow">${p?`<a class="ibtn ibtn-ghost" data-ics><svg><use href="#i-cal"/></svg>${L.cal}</a>`:""}<button class="ibtn ibtn-primary" type="button" data-rsvpjump><svg><use href="#i-wa"/></svg>${L.rsvpJump}</button></div></section>`;
-  const whereC=`<section class="icard reveal">${orn("mini br")}<p class="label">${L.where}</p>
-      <p class="big">${esc(inv.venue||"—")}</p>${inv.address?`<p class="sub">${esc(inv.address)}</p>`:""}
-      ${q?`<div class="brow"><a class="ibtn ibtn-primary" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${q}"><svg><use href="#i-pin"/></svg>${L.dir}</a><a class="ibtn ibtn-ghost" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">${L.map}</a></div>`:""}</section>`;
+  const whereC=(inv.venue.trim()||inv.address.trim())?`<section class="icard reveal">${orn("mini br")}<p class="label">${L.where}</p>
+      ${inv.venue.trim()?`<p class="big" dir="auto">${esc(inv.venue)}</p>`:""}${inv.address.trim()?`<p class="sub" dir="auto">${esc(inv.address)}</p>`:""}
+      ${q?`<div class="brow"><a class="ibtn ibtn-primary" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${q}"><svg><use href="#i-pin"/></svg>${L.dir}</a><a class="ibtn ibtn-ghost" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">${L.map}</a></div>`:""}</section>`:"";
   const notesL=cleanNotes(inv.notes);
   const notesC=notesL.length?`<section class="icard reveal notes-card"><svg class="nt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.4-7.5-10A4.3 4.3 0 0 1 12 7.9a4.3 4.3 0 0 1 7.5 2.6c0 5.6-7.5 10-7.5 10z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 3v2.6M8.6 4.2l1 1.9M15.4 4.2l-1 1.9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><p class="label">${L.notesT}</p><ul class="nt-list">${notesL.map(x=>`<li dir="auto">${esc(x)}</li>`).join("")}</ul></section>`:"";
   const progC=prog.length?`<section class="icard reveal"><p class="label">${L.program}</p><ol class="prog">${prog.map(st=>`<li><b>${esc(st.t||"")}</b><span dir="auto">${esc(st.x)}</span></li>`).join("")}</ol></section>`:"";
@@ -1546,7 +1585,7 @@ function mountInvite(host,inv,isGuest){
   }else if(lay==="kartpostal"){
     page=`<div class="pc"><div class="pc-top">${cover?`<img class="pc-photo" src="${attr(cover)}" alt="">`:`<div class="pc-art">${orn()}</div>`}
         <div class="pc-stamp" aria-hidden="true"><div>${orn()}</div></div>
-        <div class="pc-mark" aria-hidden="true"><span>${esc(dShort)}</span></div></div>
+        ${p?`<div class="pc-mark" aria-hidden="true"><span>${esc(dShort)}</span></div>`:""}</div>
       <section class="hero">${eyebrow}<h1 class="names">${namesH}</h1>${hostH}${leadH}</section></div>
       <div class="pc-sheet">${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${galC}${rsvpC}${footer}</div>`;
   }else if(lay==="zamancizelgesi"){
@@ -1558,7 +1597,7 @@ function mountInvite(host,inv,isGuest){
     page=`<section class="hero"><div class="tk">${cover?`<img class="tk-cover" src="${attr(cover)}" alt="">`:`<div class="tk-band">${orn()}</div>`}
         <div class="tk-main">${eyebrow}<h1 class="names">${namesH}</h1>${hostH}</div>
         <div class="tk-perf" aria-hidden="true"><i></i></div>
-        <div class="tk-stub"><div><small>${L.dateL}</small><b>${esc(dShort)}</b></div><div><small>${L.timeW}</small><b dir="ltr">${esc(inv.time||"—")}</b></div><div><small>${L.ticketNo}</small><b dir="ltr">${esc(inv.id.slice(0,4).toUpperCase())}</b></div></div></div>
+        ${(()=>{const c=[p?`<div><small>${L.dateL}</small><b>${esc(dShort)}</b></div>`:"",inv.time?`<div><small>${L.timeW}</small><b dir="ltr">${esc(inv.time)}</b></div>`:"",`<div><small>${L.ticketNo}</small><b dir="ltr">${esc(inv.id.slice(0,4).toUpperCase())}</b></div>`].filter(Boolean);return `<div class="tk-stub" style="grid-template-columns:repeat(${c.length},minmax(0,1fr))">${c.join("")}</div>`})()}</div>
         ${leadH}</section>
       ${divider}${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${divider}${galC}${rsvpC}${footer}`;
   }else{
@@ -1611,7 +1650,7 @@ function mountInvite(host,inv,isGuest){
       ${divider}${whenC}${whereC}${liveC}${progC}${notesC}${giftC}${divider}${galC}${rsvpC}${footer}`;
   }else if(lay==="hikaye"){
     const hero=`<section class="hero hk-hero">${cover?`<img class="hk-img" src="${attr(cover)}" alt="">`:`<div class="hk-orn">${orn()}</div>`}
-        <div class="hk-head"><span class="hk-av">${noName?ini:esc(couple?r1.charAt(0)+"&"+r2.charAt(0):r1.charAt(0))}</span><span class="hk-who"><b dir="auto">${couple?`${n1} &amp; ${n2}`:n1}</b><small>${esc(dShort)}</small></span></div>
+        <div class="hk-head"><span class="hk-av">${noName?ini:esc(couple?fc(r1)+"&"+fc(r2):fc(r1))}</span><span class="hk-who"><b dir="auto">${couple?`${n1} &amp; ${n2}`:n1}</b>${p?`<small>${esc(dShort)}</small>`:""}</span></div>
         <div class="hk-txt">${hiH}${eyebrow}<h1 class="names">${namesH}</h1></div>
         <span class="hk-swipe" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></section>`;
     const quote=(inv.msg.trim()||inv.host.trim())?`<section class="hk-quote reveal">${orn("hk-q")}${leadH}${hostH}</section>`:"";
@@ -1647,6 +1686,7 @@ function mountInvite(host,inv,isGuest){
   </div>`;
   const root=host.querySelector(".inv-host");
   for(const k in v) root.style.setProperty("--"+k,v[k]);
+  scheduleFit(root);
   const scroller=root.querySelector(".inv-scroll"),gate=root.querySelector("[data-gate]"),seal=root.querySelector("[data-seal]");
   const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const petals=n=>{const box=root.querySelector("[data-petals]");if(reduced)return;for(let i=0;i<n;i++){const s=document.createElementNS("http://www.w3.org/2000/svg","svg");const z=14+Math.random()*24;s.setAttribute("viewBox","0 0 100 100");s.setAttribute("width",z);s.setAttribute("height",z);s.innerHTML=`<use href="#${th.fall}"/>`;s.style.left=Math.random()*100+"%";s.style.setProperty("--dx",(Math.random()*160-80)+"px");s.style.setProperty("--rot",(Math.random()*720-360)+"deg");s.style.animationDuration=(4+Math.random()*4)+"s";s.style.animationDelay=Math.random()*1.6+"s";box.appendChild(s);setTimeout(()=>s.remove(),10000)}};

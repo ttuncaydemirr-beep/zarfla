@@ -1042,7 +1042,9 @@ class _DetailsFormState extends State<DetailsForm> {
             focusNode: first ? _n1Focus : _n2Focus,
             readOnly: nameRO,
             // Bulut kuralı: isimlerde " \ ve kontrol karakteri yok (bkz. firestore.rules).
-            inputFormatters: [...maxLen(40), FilteringTextInputFormatter.deny(kCloudNameForbidden)],
+            maxLength: kNameMax,
+            buildCounter: nearLimitCounter(kNameCounterFrom),
+            inputFormatters: [FilteringTextInputFormatter.deny(kCloudNameForbidden)],
             textInputAction: TextInputAction.next,
             decoration: fieldDecoration(hint: ph, readOnly: nameRO),
             style: bodyStyle(16),

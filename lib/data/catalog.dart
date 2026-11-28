@@ -17,6 +17,9 @@ const int kMaxGallery = 6;
 const int kMaxSteps = 6;
 const int kMaxNotes = 4;
 const int kNoteLen = 140;
+/// Ad alanları (n1/n2) üst sınırı: kemer/bilet gibi dar düzenlerde bile okunaklı kalır; sayaç sınıra yaklaşınca görünür.
+const int kNameMax = 24;
+const int kNameCounterFrom = 18;
 
 class InviteColors {
   const InviteColors({required this.bg, required this.paper, required this.ink, required this.muted, required this.accent, required this.onAccent, required this.gold, required this.line, required this.ring, required this.err, required this.door1, required this.door2, required this.doorLine, required this.leaf});
