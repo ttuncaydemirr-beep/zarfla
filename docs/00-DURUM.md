@@ -26,8 +26,8 @@ Son güncelleme: 28 Kasım 2026 (Code, güvenlik denetimi dalı `claude/funny-br
 
 | İş | Dal | Kim | Durum |
 |---|---|---|---|
-| Güvenlik denetimi | `claude/funny-brown-27mqnm` | Code | Aşama 1 (inceleme) raporu verildi: kritik yok, 3 yüksek, 6 orta, 6 düşük bulgu. Düzeltmeler Tuncay'ın madde madde onayını bekliyor |
-| CLAUDE.md güncellemesi (Tuncay'ın 28 Kasım kararları: etiket kuralı, ilk yayın kademeli açılış istisnası, Tasarım galerisi banner'ı, hedef yaş 18+, geri dönüş örneği) | — | Sohbet | Code'un hazırladığı mesaj Sohbet'e iletilecek |
+| Güvenlik denetimi | `claude/funny-brown-27mqnm` | Code | Aşama 2 bitti: Y-1, Y-2, Y-3, O-3, O-4, D-1 düzeltildi (PR açıldı, Tuncay'ın birleştirme onayı bekleniyor). Kalan bulgular: O-1, O-2 (Sohbet kararı), O-5 (ayrı iş), O-6, D-5, D-6 (Tuncay) |
+| CLAUDE.md güncellemesi (Tuncay'ın 28 Kasım kararları: etiket kuralı, ilk yayın kademeli açılış istisnası, Tasarım galerisi banner'ı, hedef yaş 18+, geri dönüş örneği) | `docs/claude-md-28kasim` | Sohbet | PR #2 açık; Code içeriği kontrol etti, Tuncay'ın birleştirme onayı bekleniyor |
 | Emülatörde çökme teşhisi iş akışı | `crashcheck` | Code | Yardımcı dal; her sürümde main'e göre güncelleniyor, ana dala birleştirilmiyor |
 | Play mağaza bilgileri iş akışı (fiyatlar, çeviriler, görseller) | `playmeta` | Code | main'de olmayan 8 kayıt var [Tuncay'a sor: birleştirilsin mi, yardımcı dal olarak mı kalsın] |
 | Mağaza ekran görüntüsü çekme iş akışı | `storeshots` | Code | main'de olmayan 9 kayıt var [Tuncay'a sor: aynı soru] |
@@ -38,7 +38,8 @@ Açık PR yok. `docs/kurulum` (PR #1 ile birleşti), `appcheck, bundle, consent,
 
 | # | İş | Kim |
 |---|---|---|
-| 1 | Code: güvenlik denetimi düzeltmeleri (Aşama 2, onaylanan maddeler) | Code |
+| 1 | Güvenlik denetimi PR'ının birleştirilmesi; birleşince bir sonraki derlemede (CI) kilitli paketlerle derlemenin geçtiği görülmeli. Sunucu bir sonraki yayında sabit sürümlerle (firebase-functions 7, firebase-admin 14) çıkar: o yayından sonra ödeme/iade akışı test hesabıyla denenmeli | Tuncay + Code |
+| 1a | Güvenlik denetimi kalanları: O-1 (yeniden kurulumda satın alınan hakların kaybı) ve O-2 (cihazda IBAN/telefon şifresiz) kararları; O-5 App Check zorlaması (yayından birkaç hafta sonra); O-6 Play Uygulama İmzalama doğrulaması ve imza şifresinin gücü; D-5 Firebase API anahtarı kısıtlaması | Sohbet / Tuncay |
 | 2 | Code: üretime ilk çıkan sürüm için sürüm etiketi (ör. `v1.0.196`); üretimden önce de kapalı testteki güncel sürüm etiketlenebilir | Code |
 | 3 | Üretim başvurusu (~1 Aralık): başvuru cevapları, mağaza metinleri, ekran görüntüleri | Sohbet + Tuncay |
 | 4 | Satış ve iade sayfasındaki boş alanlar ile vergi durumu (mali müşavir) | Tuncay |
@@ -55,6 +56,7 @@ Açık PR yok. `docs/kurulum` (PR #1 ile birleşti), `appcheck, bundle, consent,
 
 | Tarih | Kim | Ne |
 |---|---|---|
+| 28 Kasım 2026 | Code | Güvenlik denetimi Aşama 2: iş akışlarında salt okuma yetkisi, production kademeli yayın (%5/10/20, ilk çıkış istisnası), sunucu paketleri ve package-lock sabit, pubspec.lock + Flutter 3.50.1 sabit (CI kilit zorlar), yardımcı dallarda (crashcheck, storeshots) dış eylemler kesin sürümde, önizleme WebView'inde data: engeli |
 | 28 Kasım 2026 | Code | Güvenlik denetimi Aşama 1 raporu; bu dosyada `docs/kurulum` satırı düzeltildi (dal PR #1 ile birleşmişti) |
 | 28 Kasım 2026 | Sohbet | CLAUDE.md (ortak kurallar + Zarfla kalıcı kararları) ve bu durum dosyası eklendi |
 | 28 Kasım 2026 | Code | Uzun adlar kart dışına taşmıyor, ad alanı en çok 24 karakter; 1.0.196 derlendi ve Play'e yüklendi |
